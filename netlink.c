@@ -34,9 +34,6 @@
 #include <netlink/genl/genl.h>
 #include <netlink/genl/ctrl.h>
 
-#include <netlink/cli/utils.h>
-#include <netlink/cli/link.h>
-
 static int callback(struct nl_msg *msg, void *arg) {
     struct nlmsghdr *nlh = nlmsg_hdr(msg);
     struct ifinfomsg *iface = NLMSG_DATA(nlh);
