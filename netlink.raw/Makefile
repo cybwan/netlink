@@ -1,5 +1,3 @@
-#!make
-
 EXEC   := nl
 SRCS   := netlink.c
 OBJS   := netlink.o
@@ -15,9 +13,6 @@ $(EXEC): $(OBJS)
 
 clean:
 	$(RM) $(EXEC) $(OBJS)
-
-run:
-	./$(EXEC)
 
 distclean: clean
 	$(RM) *.o *~ *.bak
