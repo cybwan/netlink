@@ -46,7 +46,7 @@ static int callback(struct nl_msg *msg, void *arg) {
     while (RTA_OK(hdr, remaining)) {
         //printf("Loop\n");
 
-        //printf("hdr->rta_type=%d \n", hdr->rta_type);
+        printf("hdr->rta_type=%d \n", hdr->rta_type);
         if (hdr->rta_type == IFLA_IFNAME) {
             printf("Found network interface %d: %s\n", iface->ifi_index, (char *) RTA_DATA(hdr));
         }
@@ -66,16 +66,26 @@ int main() {
     nl_connect(socket, NETLINK_ROUTE);  // Create file descriptor and bind socket.
 
     //struct nlmsghdr hdr = {.nlmsg_type = RTM_GETLINK, };
+    //struct ifinfomsg rt_hdr = { .ifi_family = AF_UNSPEC };
 
     // Send request for all network interfaces.
-    struct rtgenmsg rt_hdr = { .rtgen_family = AF_PACKET, };
-    int ret = nl_send_simple(socket, RTM_GETLINK, NLM_F_REQUEST | NLM_F_DUMP, &rt_hdr, sizeof(rt_hdr));
-    printf("nl_send_simple returned %d\n", ret);
+    //struct rtgenmsg rt_hdr = { .rtgen_family = AF_PACKET, };
+    //int ret = nl_send_simple(socket, RTM_GETLINK, NLM_F_REQUEST | NLM_F_DUMP, &rt_hdr, sizeof(rt_hdr));
+    //printf("nl_send_simple returned %d\n", ret);
 
-    //struct nl_msg *msg;
-    //struct nlmsghdr hdr;
-    //msg = nlmsg_alloc();
-    //nlmsg_put(msg, NL_AUTO_PID, NL_AUTO_SEQ, RTM_GETLINK, 0, 1);
+    struct nl_msg *msg;
+    struct ifinfomsg *ifih;
+    struct rtattr *aa;
+    struct nlmsghdr *nlh;
+    msg = nlmsg_alloc();
+    nlh = nlmsg_put(msg, NL_AUTO_PID, NL_AUTO_SEQ, RTM_GETLINK, sizeof(ifih), NLM_F_REQUEST | NLM_F_DUMP);
+
+    ifih = nlmsg_data(nlh);
+	memset(ifih, 0, sizeof(*ifih));
+    ifih->ifi_family = AF_UNSPEC;
+
+    int ret = nl_send_auto(socket, msg);
+    printf("nl_send_auto returned %d\n", ret);
 
     // Retrieve the kernel's answer.
     nl_socket_modify_cb(socket, NL_CB_VALID, NL_CB_CUSTOM, callback, NULL);

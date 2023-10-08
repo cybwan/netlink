@@ -27,3 +27,12 @@ https://github.com/Robpol86/libnl/blob/master/example_c/show_wifi_interface.c
 https://gitee.com/crouchggj/libnl-example
 
 https://github.com/thom311/libnl
+
+
+# linux 获取网络状态信息 Rtnetlink）
+https://blog.csdn.net/chen_jianjian/article/details/103050044
+
+https://www.geekpage.jp/programming/linux-network/book/05/5-9.php
+https://olegkutkov.me/2019/03/24/getting-linux-routing-table-using-netlink/
+
+https://github.com/red0ct/network-sketches/blob/master/usermode/nl_parentdev.c
