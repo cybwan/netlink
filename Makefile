@@ -21,3 +21,15 @@ run:
 
 distclean: clean
 	$(RM) *.o *~ *.bak
+
+
+.PHONY: nlp-build
+nlp-build:
+	@CGO_ENABLED=1 go build -v -o ./bin/nlp ./cmd/nlp/*
+
+.PHONY: nlp-run
+nlp-run:
+	@./bin/nlp
+
+.PHONY: nlp
+nlp: nlp-build nlp-run
