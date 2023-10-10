@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"reflect"
 
 	nl "github.com/cybwan/netlink/pkg/netlink"
 )
@@ -13,7 +12,12 @@ func main() {
 		return
 	}
 	for _, link := range links {
-		lt := reflect.TypeOf(link)
-		fmt.Println(lt)
+		if link.Attrs().Index == 2 {
+			fmt.Println(link.Attrs().Name)
+			routes, _ := nl.RouteList(link, nl.FAMILY_ALL)
+			for _, route := range routes {
+				fmt.Println(route)
+			}
+		}
 	}
 }
