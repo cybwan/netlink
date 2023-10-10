@@ -1,8 +1,8 @@
 #!make
 
-EXEC   := nl
-SRCS   := netlink.c
-OBJS   := netlink.o
+EXEC   := linklist
+SRCS   := $(EXEC).c
+OBJS   := $(EXEC).o
 LDLIBS := $(shell pkg-config --libs   libnl-route-3.0 libnl-3.0)
 LDLIBS += -lev
 CFLAGS := $(shell pkg-config --cflags libnl-route-3.0 libnl-3.0)
