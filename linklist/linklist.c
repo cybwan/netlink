@@ -2,7 +2,7 @@
 #include <netlink/genl/genl.h>
 #include <netlink/genl/ctrl.h>
 
-static int callback(struct nl_msg *msg, void *arg) {
+static int link_callback(struct nl_msg *msg, void *arg) {
     struct nlmsghdr *nlh = nlmsg_hdr(msg);
     struct ifinfomsg *iface = NLMSG_DATA(nlh);
     struct rtattr *hdr = IFLA_RTA(iface);
@@ -66,7 +66,7 @@ int main() {
     int ret = nl_send_auto(socket, msg);
     printf("nl_send_auto returned %d\n", ret);
 
-    nl_socket_modify_cb(socket, NL_CB_VALID, NL_CB_CUSTOM, callback, NULL);
+    nl_socket_modify_cb(socket, NL_CB_VALID, NL_CB_CUSTOM, link_callback, NULL);
     nl_recvmsgs_default(socket);
 
     return 0;
