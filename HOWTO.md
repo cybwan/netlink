@@ -37,3 +37,5 @@ https://www.geekpage.jp/programming/linux-network/book/05/5-9.php
 https://olegkutkov.me/2019/03/24/getting-linux-routing-table-using-netlink/
 
 https://github.com/red0ct/network-sketches/blob/master/usermode/nl_parentdev.c
+
+https://developers.redhat.com/blog/2018/10/22/introduction-to-linux-interfaces-for-virtual-networking

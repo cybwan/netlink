@@ -2,22 +2,18 @@ package main
 
 import (
 	"fmt"
+	"reflect"
 
-	nl "github.com/cybwan/netlink/pkg/netlink"
+	nl "github.com/vishvananda/netlink"
+
+	"github.com/cybwan/netlink/pkg/nlp"
 )
 
 func main() {
-	links, err := nl.LinkList()
-	if err != nil {
-		return
-	}
+	nlp.PortList()
+	links, _ := nl.LinkList()
 	for _, link := range links {
-		if link.Attrs().Index == 2 {
-			fmt.Println(link.Attrs().Name)
-			routes, _ := nl.RouteList(link, nl.FAMILY_ALL)
-			for _, route := range routes {
-				fmt.Println(route)
-			}
-		}
+		lt := reflect.TypeOf(link)
+		fmt.Printf("%v = %v\n", lt, link)
 	}
 }

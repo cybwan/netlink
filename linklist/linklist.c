@@ -31,7 +31,9 @@ static int link_callback(struct nl_msg *msg, void *arg) {
             printf(" IFNAME: %10s", (char *) RTA_DATA(hdr));
         }
         if (hdr->rta_type == IFLA_LINKINFO) {
-            printf(" IFLA_LINKINFO: %s", (char *) RTA_DATA(hdr));
+            struct rtattr* tb[IFLA_INFO_MAX+1];
+            parse_rtattr(tb, IFLA_INFO_MAX, RTA_DATA(hdr), remaining);
+            printf(" IFLA_LINKINFO: %s", (char *)RTA_DATA(tb[IFLA_INFO_KIND]));
         }
         if (hdr->rta_type == IFLA_MTU) {
             __u32 *mtu = RTA_DATA(hdr);
@@ -188,6 +190,6 @@ int link_subscribe() {
 }
 
 int main() {
-    link_subscribe();
+    link_list();
     return 0;
 }
