@@ -173,7 +173,21 @@ int route_list() {
     return 0;
 }
 
+int link_subscribe() {
+    struct nl_sock *socket = nl_socket_alloc();
+    nl_socket_disable_seq_check(socket);
+    nl_socket_modify_cb(socket, NL_CB_VALID, NL_CB_CUSTOM, link_callback, NULL);
+    nl_connect(socket, NETLINK_ROUTE);
+    nl_socket_add_memberships(socket, RTNLGRP_LINK, 0);
+    while(1) {
+        printf("nl_recvmsgs_default\n");
+        nl_recvmsgs_default(socket);
+    }
+
+    return 0;
+}
+
 int main() {
-    route_list();
+    link_subscribe();
     return 0;
 }
