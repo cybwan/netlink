@@ -1,6 +1,20 @@
+#include <net/if.h>
+#include <arpa/inet.h>
 #include <netlink/netlink.h>
 #include <netlink/genl/genl.h>
 #include <netlink/genl/ctrl.h>
+
+void parse_rtattr(struct rtattr *tb[], int max, struct rtattr *rta, int len) {
+    memset(tb, 0, sizeof(struct rtattr *) * (max + 1));
+
+    while (RTA_OK(rta, len)) {
+        if (rta->rta_type <= max) {
+            tb[rta->rta_type] = rta;
+        }
+
+        rta = RTA_NEXT(rta,len);
+    }
+}
 
 static int link_callback(struct nl_msg *msg, void *arg) {
     struct nlmsghdr *nlh = nlmsg_hdr(msg);
@@ -39,7 +53,71 @@ static int link_callback(struct nl_msg *msg, void *arg) {
     return NL_OK;
 }
 
-int main() {
+static int route_callback(struct nl_msg *msg, void *arg) {
+    struct nlmsghdr *nlh = nlmsg_hdr(msg);
+    struct rtmsg *rtm = NLMSG_DATA(nlh);
+    //struct rtattr *hdr = RTM_RTA(rtm);
+    struct rtattr* tb[RTA_MAX+1];
+    int remaining = nlh->nlmsg_len - NLMSG_LENGTH(sizeof(*rtm));
+
+    parse_rtattr(tb, RTA_MAX, RTM_RTA(rtm), remaining);
+    //printf("Got something.\n");
+    //nl_msg_dump(msg, stdout);
+
+    if (tb[RTA_OIF]) {
+        int ifidx = *(__u32 *)RTA_DATA(tb[RTA_OIF]);
+        if ( ifidx != 2 ) {
+            return NL_OK;
+        }
+        
+    }
+
+    char buf[256];
+
+    __u32 table = rtm->rtm_table;
+    if (tb[RTA_TABLE]) {
+        table = *(__u32 *)RTA_DATA(tb[RTA_TABLE]);
+    }
+
+    if (rtm->rtm_family != AF_INET && table != RT_TABLE_MAIN) {
+        return NL_OK;
+    }
+
+
+    if (tb[RTA_DST]) {
+        // if ((rtm->rtm_dst_len != 24) && (rtm->rtm_dst_len != 16)) {
+        //     return NL_OK;
+        // }
+
+        printf("%s/%u ", inet_ntop(rtm->rtm_family, RTA_DATA(tb[RTA_DST]), buf, sizeof(buf)), rtm->rtm_dst_len);
+
+    } else if (rtm->rtm_dst_len) {
+        printf("0/%u ", rtm->rtm_dst_len);
+    } else {
+        printf("default ");
+    }
+
+    if (tb[RTA_GATEWAY]) {
+        printf("via %s", inet_ntop(rtm->rtm_family, RTA_DATA(tb[RTA_GATEWAY]), buf, sizeof(buf)));
+    }
+
+    if (tb[RTA_OIF]) {
+        char if_nam_buf[IF_NAMESIZE];
+        int ifidx = *(__u32 *)RTA_DATA(tb[RTA_OIF]);
+
+        printf(" dev %s", if_indextoname(ifidx, if_nam_buf));
+    }
+
+    if (tb[RTA_SRC]) {
+        printf("src %s", inet_ntop(rtm->rtm_family, RTA_DATA(tb[RTA_SRC]), buf, sizeof(buf)));
+    }
+
+    printf("\n");
+
+    return NL_OK;
+}
+
+int link_list() {
     struct nl_sock *socket = nl_socket_alloc();
     nl_connect(socket, NETLINK_ROUTE);
 
@@ -69,5 +147,33 @@ int main() {
     nl_socket_modify_cb(socket, NL_CB_VALID, NL_CB_CUSTOM, link_callback, NULL);
     nl_recvmsgs_default(socket);
 
+    return 0;
+}
+
+int route_list() {
+    struct nl_sock *socket = nl_socket_alloc();
+    nl_connect(socket, NETLINK_ROUTE);
+
+    struct nl_msg *msg = nlmsg_alloc();
+
+    struct rtmsg *nl_req;
+
+    struct nlmsghdr *nlh = nlmsg_put(msg, NL_AUTO_PID, NL_AUTO_SEQ, RTM_GETROUTE, sizeof(*nl_req), NLM_F_REQUEST | NLM_F_DUMP);
+
+    nl_req = nlmsg_data(nlh);
+	memset(nl_req, 0, sizeof(*nl_req));
+    nl_req->rtm_family = AF_UNSPEC;
+
+    int ret = nl_send_auto(socket, msg);
+    printf("nl_send_auto returned %d\n", ret);
+
+    nl_socket_modify_cb(socket, NL_CB_VALID, NL_CB_CUSTOM, route_callback, NULL);
+    nl_recvmsgs_default(socket);
+
+    return 0;
+}
+
+int main() {
+    route_list();
     return 0;
 }
