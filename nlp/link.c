@@ -123,7 +123,7 @@ void mod_link(nl_port_mod_t *port, bool add) {
   }
 }
 
-int link_callback(struct nl_msg *msg, void *arg) {
+int nl_link_list_response(struct nl_msg *msg, void *arg) {
   struct nlmsghdr *nlh = nlmsg_hdr(msg);
   struct ifinfomsg *link_msg = NLMSG_DATA(nlh);
   struct rtattr *attrs[IFLA_MAX + 1];
@@ -206,7 +206,7 @@ int link_callback(struct nl_msg *msg, void *arg) {
   return NL_OK;
 }
 
-int link_list() {
+int nl_link_list() {
   struct nl_sock *socket = nl_socket_alloc();
   nl_connect(socket, NETLINK_ROUTE);
 
@@ -234,7 +234,7 @@ int link_list() {
   int ret = nl_send_auto(socket, msg);
   printf("nl_send_auto returned %d\n", ret);
 
-  nl_socket_modify_cb(socket, NL_CB_VALID, NL_CB_CUSTOM, link_callback, NULL);
+  nl_socket_modify_cb(socket, NL_CB_VALID, NL_CB_CUSTOM, nl_link_list_response, NULL);
   nl_recvmsgs_default(socket);
 
   nlmsg_free(msg);
@@ -243,10 +243,10 @@ int link_list() {
   return 0;
 }
 
-int link_subscribe() {
+int nl_link_subscribe() {
   struct nl_sock *socket = nl_socket_alloc();
   nl_socket_disable_seq_check(socket);
-  nl_socket_modify_cb(socket, NL_CB_VALID, NL_CB_CUSTOM, link_callback, NULL);
+  nl_socket_modify_cb(socket, NL_CB_VALID, NL_CB_CUSTOM, nl_link_list_response, NULL);
   nl_connect(socket, NETLINK_ROUTE);
   nl_socket_add_memberships(socket, RTNLGRP_LINK, 0);
   while (1) {
@@ -258,6 +258,6 @@ int link_subscribe() {
 }
 
 int main() {
-  link_list();
+  nl_link_list();
   return 0;
 }
