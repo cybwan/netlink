@@ -33,13 +33,13 @@
 #define _LINUX_IF_H
 /* RFC 2863 operational status */
 enum {
-	IF_OPER_UNKNOWN,
-	IF_OPER_NOTPRESENT,
-	IF_OPER_DOWN,
-	IF_OPER_LOWERLAYERDOWN,
-	IF_OPER_TESTING,
-	IF_OPER_DORMANT,
-	IF_OPER_UP,
+  IF_OPER_UNKNOWN,
+  IF_OPER_NOTPRESENT,
+  IF_OPER_DOWN,
+  IF_OPER_LOWERLAYERDOWN,
+  IF_OPER_TESTING,
+  IF_OPER_DORMANT,
+  IF_OPER_UP,
 };
 
 #include <net/if.h>
@@ -49,220 +49,205 @@ enum {
 #include <netlink/route/link/veth.h>
 #include <netlink/route/route.h>
 
-#include <netlink/cli/utils.h>
 #include <netlink/cli/link.h>
+#include <netlink/cli/utils.h>
 
 struct context {
-	struct nl_sock        *ns;
-	struct nl_cache_mngr  *mngr;
-	struct nl_cache       *lcache;
-	struct nl_cache       *rcache;
+  struct nl_sock *ns;
+  struct nl_cache_mngr *mngr;
+  struct nl_cache *lcache;
+  struct nl_cache *rcache;
 };
 
 static int veth_only;
 
-static void route_change_cb(struct nl_cache *rcache,
-			    struct nl_object *obj, int action, void *arg)
-{
-	struct rtnl_route *r = (void *)obj;
+static void route_change_cb(struct nl_cache *rcache, struct nl_object *obj,
+                            int action, void *arg) {
+  struct rtnl_route *r = (void *)obj;
 
-printf("route_change_cb \n");
+  printf("route_change_cb \n");
 
-	if (veth_only)
-		return;
-	if (!nl_addr_iszero(rtnl_route_get_dst(r)))
-		return;
+  if (veth_only)
+    return;
+  if (!nl_addr_iszero(rtnl_route_get_dst(r)))
+    return;
 
-	if (action == NL_ACT_DEL)
-		printf("default route removed\n");
-	else
-		printf("default route added\n");
-
+  if (action == NL_ACT_DEL)
+    printf("default route removed\n");
+  else
+    printf("default route added\n");
 }
 
-static void link_change_cb(struct nl_cache *lcache,
-			   struct nl_object *obj, int action, void *arg)
-{
-	struct rtnl_link *link = (void *)obj;
-	const char *ifname;
-	unsigned int flags;
-	int isveth;
+static void link_change_cb(struct nl_cache *lcache, struct nl_object *obj,
+                           int action, void *arg) {
+  struct rtnl_link *link = (void *)obj;
+  const char *ifname;
+  unsigned int flags;
+  int isveth;
 
-	ifname = rtnl_link_get_name(link);
-	isveth = rtnl_link_is_veth(link);
+  ifname = rtnl_link_get_name(link);
+  isveth = rtnl_link_is_veth(link);
 
-	if (veth_only && !isveth)
-		return;
+  if (veth_only && !isveth)
+    return;
 
-	switch (action) {
-	case NL_ACT_DEL:
-		warnx("%siface %s deleted", isveth ? "veth ": "", ifname);
-		break;
+  switch (action) {
+  case NL_ACT_DEL:
+    warnx("%siface %s deleted", isveth ? "veth " : "", ifname);
+    break;
 
-	case NL_ACT_NEW:
-		warnx("%siface %s added", isveth ? "veth ": "", ifname);
-		break;
+  case NL_ACT_NEW:
+    warnx("%siface %s added", isveth ? "veth " : "", ifname);
+    break;
 
-	case NL_ACT_CHANGE:
-		flags = rtnl_link_get_flags(link);
-		warnx("%siface %s changed state %s link %s",
-		      isveth ? "veth ": "", ifname,
-		      flags & IFF_UP ? "UP" : "DOWN",
-		      flags & IFF_RUNNING ? "ON": "OFF");
-		break;
+  case NL_ACT_CHANGE:
+    flags = rtnl_link_get_flags(link);
+    warnx("%siface %s changed state %s link %s", isveth ? "veth " : "", ifname,
+          flags & IFF_UP ? "UP" : "DOWN", flags & IFF_RUNNING ? "ON" : "OFF");
+    break;
 
-	default:
-		return;
-	}
+  default:
+    return;
+  }
 }
 
-static void nlroute_cb(struct ev_loop *loop, ev_io *w, int revents)
-{
-	struct context *ctx = ev_userdata(loop);
+static void nlroute_cb(struct ev_loop *loop, ev_io *w, int revents) {
+  struct context *ctx = ev_userdata(loop);
 
-	assert(ctx);
-	assert(ctx->mngr);
-//	warnx("We got signal");
+  assert(ctx);
+  assert(ctx->mngr);
+  //	warnx("We got signal");
 
-	nl_cache_mngr_data_ready(ctx->mngr);
+  nl_cache_mngr_data_ready(ctx->mngr);
 }
 
-static void reconf_link_iter(struct nl_object *obj, void *arg)
-{
-	link_change_cb(NULL, obj, NL_ACT_NEW, NULL);
+static void reconf_link_iter(struct nl_object *obj, void *arg) {
+  link_change_cb(NULL, obj, NL_ACT_NEW, NULL);
 }
 
-static void reconf_route_iter(struct nl_object *obj, void *arg)
-{
-	route_change_cb(NULL, obj, NL_ACT_NEW, NULL);
+static void reconf_route_iter(struct nl_object *obj, void *arg) {
+  route_change_cb(NULL, obj, NL_ACT_NEW, NULL);
 }
 
 /* reconf */
-static void sighub_cb(struct ev_loop *loop, ev_signal *w, int revents)
-{
-	struct context *ctx = ev_userdata(loop);
+static void sighub_cb(struct ev_loop *loop, ev_signal *w, int revents) {
+  struct context *ctx = ev_userdata(loop);
 
-	nl_cache_refill(ctx->ns, ctx->lcache);
-	nl_cache_foreach(ctx->lcache, reconf_link_iter, NULL);
+  nl_cache_refill(ctx->ns, ctx->lcache);
+  nl_cache_foreach(ctx->lcache, reconf_link_iter, NULL);
 
-	nl_cache_refill(ctx->ns, ctx->rcache);
-	nl_cache_foreach(ctx->rcache, reconf_route_iter, NULL);
+  nl_cache_refill(ctx->ns, ctx->rcache);
+  nl_cache_foreach(ctx->rcache, reconf_route_iter, NULL);
 }
 
-static void sigint_cb(struct ev_loop *loop, ev_signal *w, int revents)
-{
-	ev_unloop(loop, EVUNLOOP_ALL);
+static void sigint_cb(struct ev_loop *loop, ev_signal *w, int revents) {
+  ev_unloop(loop, EVUNLOOP_ALL);
 }
 
-static int init(struct context *ctx)
-{
-	int err;
+static int init(struct context *ctx) {
+  int err;
 
-	nl_socket_set_buffer_size(ctx->ns, 320 << 10, 0);
+  nl_socket_set_buffer_size(ctx->ns, 320 << 10, 0);
 
-	err = rtnl_link_alloc_cache(ctx->ns, AF_UNSPEC, &ctx->lcache);
-	if (err)
-		goto err_free_mngr;
+  err = rtnl_link_alloc_cache(ctx->ns, AF_UNSPEC, &ctx->lcache);
+  if (err)
+    goto err_free_mngr;
 
-	err = rtnl_route_alloc_cache(ctx->ns, AF_UNSPEC, 0, &ctx->rcache);
-	if (err)
-		goto err_free_mngr;
+  err = rtnl_route_alloc_cache(ctx->ns, AF_UNSPEC, 0, &ctx->rcache);
+  if (err)
+    goto err_free_mngr;
 
-	err = nl_cache_mngr_add_cache(ctx->mngr, ctx->lcache,
-				      link_change_cb, ctx);
-	if (err)
-		goto err_free_mngr;
+  err = nl_cache_mngr_add_cache(ctx->mngr, ctx->lcache, link_change_cb, ctx);
+  if (err)
+    goto err_free_mngr;
 
-	err = nl_cache_mngr_add_cache(ctx->mngr, ctx->rcache,
-				      route_change_cb, ctx);
-	if (err)
-		goto err_free_mngr;
+  err = nl_cache_mngr_add_cache(ctx->mngr, ctx->rcache, route_change_cb, ctx);
+  if (err)
+    goto err_free_mngr;
 
-	return 0;
+  return 0;
 
 err_free_mngr:
-	nl_cache_mngr_free(ctx->mngr);
-	warnx("init, nle:%d", err);
+  nl_cache_mngr_free(ctx->mngr);
+  warnx("init, nle:%d", err);
 
-	return 1;
+  return 1;
 }
 
-static int usage(int rc)
-{
-	printf("Usage: nlmon [-h?v]"
-	       "\n"
-	       "Options:\n"
-	       "  -h    This help text\n"
-	       "  -v    Show only events on VETH interfaces\n"
-	       "\n");
+static int usage(int rc) {
+  printf("Usage: nlmon [-h?v]"
+         "\n"
+         "Options:\n"
+         "  -h    This help text\n"
+         "  -v    Show only events on VETH interfaces\n"
+         "\n");
 
-	return rc;
+  return rc;
 }
 
-int main(int argc, char *argv[])
-{
-	struct ev_loop *loop;
-	struct context ctx;
-	ev_signal intw;
-	ev_signal hupw;
-	ev_io io;
-	int err;
-	int fd;
-	int c;
+int main(int argc, char *argv[]) {
+  struct ev_loop *loop;
+  struct context ctx;
+  ev_signal intw;
+  ev_signal hupw;
+  ev_io io;
+  int err;
+  int fd;
+  int c;
 
-	while ((c = getopt(argc, argv, "h?v")) != EOF) {
-		switch (c) {
-		case 'h':
-		case '?':
-			return usage(0);
+  while ((c = getopt(argc, argv, "h?v")) != EOF) {
+    switch (c) {
+    case 'h':
+    case '?':
+      return usage(0);
 
-		case 'v':
-			veth_only = 1;
-			break;
+    case 'v':
+      veth_only = 1;
+      break;
 
-		default:
-			return usage(1);
-		}
-	}
+    default:
+      return usage(1);
+    }
+  }
 
-	ctx.ns = nl_socket_alloc();
-	assert(ctx.ns);
-	nl_socket_set_nonblocking(ctx.ns);
+  ctx.ns = nl_socket_alloc();
+  assert(ctx.ns);
+  nl_socket_set_nonblocking(ctx.ns);
 
-	err = nl_cache_mngr_alloc(ctx.ns, NETLINK_ROUTE, NL_AUTO_PROVIDE, &ctx.mngr);
-	if (err)
-		return 1;
+  err = nl_cache_mngr_alloc(ctx.ns, NETLINK_ROUTE, NL_AUTO_PROVIDE, &ctx.mngr);
+  if (err)
+    return 1;
 
-	fd = nl_cache_mngr_get_fd(ctx.mngr);
-	if (fd == -1) {
-	fail:
-		nl_cache_mngr_free(ctx.mngr);
-		nl_socket_free(ctx.ns);
-		return 1;
-	}
+  fd = nl_cache_mngr_get_fd(ctx.mngr);
+  if (fd == -1) {
+  fail:
+    nl_cache_mngr_free(ctx.mngr);
+    nl_socket_free(ctx.ns);
+    return 1;
+  }
 
-	if (init(&ctx))
-		goto fail;
+  if (init(&ctx))
+    goto fail;
 
-	loop = ev_default_loop(EVFLAG_NOENV);
-	ev_set_userdata(loop, &ctx);
+  loop = ev_default_loop(EVFLAG_NOENV);
+  ev_set_userdata(loop, &ctx);
 
-	ev_io_init(&io, nlroute_cb, fd, EV_READ);
-	ev_io_start(loop, &io);
+  ev_io_init(&io, nlroute_cb, fd, EV_READ);
+  ev_io_start(loop, &io);
 
-	ev_signal_init (&intw, sigint_cb, SIGINT);
-	ev_signal_start (loop, &intw);
+  ev_signal_init(&intw, sigint_cb, SIGINT);
+  ev_signal_start(loop, &intw);
 
-	ev_signal_init (&hupw, sighub_cb, SIGHUP);
-	ev_signal_start (loop, &intw);
+  ev_signal_init(&hupw, sighub_cb, SIGHUP);
+  ev_signal_start(loop, &intw);
 
-	/* Start event loop, remain there until ev_unloop() is called. */
-	ev_run(loop, 0);
+  /* Start event loop, remain there until ev_unloop() is called. */
+  ev_run(loop, 0);
 
-	nl_cache_mngr_free(ctx.mngr);
-	nl_socket_free(ctx.ns);
+  nl_cache_mngr_free(ctx.mngr);
+  nl_socket_free(ctx.ns);
 
-	return 0;
+  return 0;
 }
 
 /**
