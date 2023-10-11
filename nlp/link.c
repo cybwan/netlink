@@ -1,5 +1,24 @@
 #include <nlp.h>
 
+static inline void debug_link(nl_port_mod_t *port) {
+    printf("Master: %2d Index: %2d MTU:%5d "
+        "MAC: %02x:%02x:%02x:%02x:%02x:%02x "
+        "State:%d IFNAME: %8s ", 
+        port->master_index, port->index, port->mtu, 
+        port->hwaddr[0], port->hwaddr[1], port->hwaddr[2], port->hwaddr[3], port->hwaddr[4], port->hwaddr[5], 
+        port->oper_state, port->name);
+    if(port->type.vxlan) {
+        printf("Type: vxlan vxlan_id: %3d vtep_dev_index: %d", port->u.vxlan.vxlan_id ,port->u.vxlan.vtep_dev_index);
+    } else if(port->type.bridge) {
+        printf("Type: bridge");
+    } else if(port->type.bond) {
+        printf("Type: bond");
+    } else if(port->type.ipip) {
+        printf("Type: iptun");
+    }
+    printf("\n");
+}
+
 int link_callback(struct nl_msg *msg, void *arg) {
     struct nlmsghdr *nlh = nlmsg_hdr(msg);
     struct ifinfomsg *link_msg = NLMSG_DATA(nlh);
@@ -75,20 +94,7 @@ int link_callback(struct nl_msg *msg, void *arg) {
         }
     }
 
-    printf("Master: %2d Index: %2d MTU:%5d MAC: %02x:%02x:%02x:%02x:%02x:%02x OperState:%d IFNAME: %8s ", 
-        port.master_index, port.index, port.mtu, 
-        port.hwaddr[0], port.hwaddr[1], port.hwaddr[2], port.hwaddr[3], port.hwaddr[4], port.hwaddr[5], 
-        port.oper_state, port.name);
-    if(port.type.vxlan) {
-        printf("Type: vxlan vxlan_id: %3d vtep_dev_index: %d", port.u.vxlan.vxlan_id ,port.u.vxlan.vtep_dev_index);
-    } else if(port.type.bridge) {
-        printf("Type: bridge");
-    } else if(port.type.bond) {
-        printf("Type: bond");
-    } else if(port.type.ipip) {
-        printf("Type: iptun");
-    }
-    printf("\n");
+    debug_link(&port);
 
     return NL_OK;
 }
