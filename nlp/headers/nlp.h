@@ -125,6 +125,6 @@ typedef struct nl_fdb_mod {
 void parse_rtattr(struct rtattr *tb[], int max, struct rtattr *rta, int len);
 
 int nl_link_get(int ifi_index, nl_port_mod_t *port);
-void nl_mod_link(nl_port_mod_t *port, bool add);
+int nl_mod_link(nl_port_mod_t *port, bool add);
 
 #endif /* __FLB_NLP_H__ */

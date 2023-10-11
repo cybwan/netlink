@@ -23,7 +23,7 @@ static inline void debug_link(nl_port_mod_t *port) {
   printf("\n");
 }
 
-void nl_mod_link(nl_port_mod_t *port, bool add) {
+int nl_mod_link(nl_port_mod_t *port, bool add) {
   bool link_state = (port->flags & FLAG_UP) == 1;
   bool state = port->oper_state != OPER_DOWN;
   int vid = 0;
@@ -103,13 +103,13 @@ void nl_mod_link(nl_port_mod_t *port, bool add) {
         net_vlan_port_del(&vlan_port_q);
       }
       apply_config_map((char *)port->name, state, add);
-      return;
+      return ret;
     } else {
       nl_port_mod_t mif;
       memset(&mif, 0, sizeof(nl_port_mod_t));
       ret = nl_link_get(port->master_index, &mif);
       if (ret < 0) {
-        return;
+        return ret;
       }
       if (mif.type.bond) {
         strcpy(master, (char *)mif.name);
@@ -140,7 +140,7 @@ void nl_mod_link(nl_port_mod_t *port, bool add) {
   } else if (port->type.ipip) {
     p_type = PORT_IPTUN;
     if (port->u.iptun.local == 0 || port->u.iptun.remote == 0) {
-      return;
+      return ret;
     }
     tun_id = 1;
     tun_src = port->u.iptun.local;
@@ -168,7 +168,7 @@ void nl_mod_link(nl_port_mod_t *port, bool add) {
   } else if (port->master_index == 0) {
     ret = net_port_del(&port_q);
     apply_config_map((char *)port->name, state, add);
-    return;
+    return ret;
   }
 
   /* Untagged vlan ports */
@@ -186,6 +186,8 @@ void nl_mod_link(nl_port_mod_t *port, bool add) {
       apply_config_map((char *)port->name, state, add);
     }
   }
+
+  return ret;
 }
 
 int nl_link_list_res(struct nl_msg *msg, void *arg) {
@@ -266,7 +268,12 @@ int nl_link_list_res(struct nl_msg *msg, void *arg) {
     }
   }
 
-  nl_mod_link(&port, true);
+  int ret = nl_mod_link(&port, true);
+  if (ret < 0) {
+    return NL_SKIP;
+  }
+
+  /* Get FDBs */
 
   return NL_OK;
 }
