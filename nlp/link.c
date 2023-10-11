@@ -66,6 +66,61 @@ void mod_link(nl_port_mod_t *port, bool add) {
     }
     // printf("link_state:%d state:%d\n", link_state, state);
   }
+
+  if (port->master_index > 0) {
+    char if_name_buf[IF_NAMESIZE];
+    int vid = 0;
+    regex_t regex;
+    const size_t nmatch = 1;
+    regmatch_t pmatch[1];
+    regcomp(&regex, "[0-9]+", REG_EXTENDED);
+    if_indextoname(port->master_index, if_name_buf);
+    int status = regexec(&regex, (char *)if_name_buf, nmatch, pmatch, 0);
+    if (status == 0) {
+      char str_buf[IF_NAMESIZE];
+      strncpy(str_buf, (char *)if_name_buf + pmatch[0].rm_so,
+              pmatch[0].rm_eo - pmatch[0].rm_so);
+      vid = atoi(str_buf);
+    }
+    regfree(&regex);
+    if (vid == 0 && strcmp((char *)if_name_buf, "docker0") == 0) {
+      // Dirty hack to support docker0 bridge
+      vid = 4090;
+    }
+
+    /* Tagged Vlan port */
+    char *p_pos = strchr((char *)port->name, '.');
+    if ((void *)p_pos > (void *)port->name) {
+      struct net_api_vlan_port_q vlan_port_q;
+      vlan_port_q.vid = vid;
+      vlan_port_q.tagged = true;
+
+      strncpy((char *)vlan_port_q.dev, (char *)port->name,
+              (void *)p_pos - (void *)port->name - 1);
+      if (add) {
+        net_vlan_port_add(&vlan_port_q);
+      } else {
+        net_vlan_port_del(&vlan_port_q);
+      }
+      apply_config_map((char *)port->name, state, add);
+      return;
+    } else {
+      // todo pending
+    }
+  }
+
+  /* Physical port/ Bond/ VxLAN */
+  int p_type = PORT_REAL;
+  int tun_id = 0;
+  int tun_src = 0;
+  int tun_dst = 0;
+
+  if (strstr((char *)port->name, "ipsec") != NULL ||
+      strstr((char *)port->name, "vti") != NULL) {
+    p_type = PORT_VTI;
+  } else if (strstr((char *)port->name, "wg") != NULL) {
+    p_type = PORT_WG;
+  }
 }
 
 int link_callback(struct nl_msg *msg, void *arg) {

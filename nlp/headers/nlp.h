@@ -35,6 +35,20 @@ enum {
   OPER_UP,               // Up, ready to send packets.
 };
 
+enum {
+  PORT_REAL = 1,       // Base port type
+  PORT_BOND_SLAVE_IF,  // Bond slave port type
+  PORT_BOND,           // Bond port type
+  PORT_VLAN_SLAVE_IF,  // Vlan slave port type
+  PORT_VLAN_BR,        // Vlan Br port type
+  PORT_VXLAN_SLAVE_IF, // Vxlan slave port type
+  PORT_VXLAN_BR,       // Vxlan br port type
+  PORT_WG,             // Wireguard port type
+  PORT_VTI,            // Vti port type
+  PORT_IPTUN,          // IPInIP port type
+  PORT_GRE,            // GRE port type
+};
+
 typedef struct nl_port_mod {
   __u32 index;
   __u32 master_index;

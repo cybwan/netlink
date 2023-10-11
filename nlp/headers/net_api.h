@@ -31,10 +31,18 @@ struct net_api_vlan_q {
   __u32 tun_id;
 };
 
+struct net_api_vlan_port_q {
+  __u32 vid;
+  __u8 dev[IF_NAMESIZE];
+  bool tagged;
+};
+
 int net_port_add(struct net_api_port_q *port);
 int net_port_del(struct net_api_port_q *port);
 int net_vlan_add(struct net_api_vlan_q *vlan);
 int net_vlan_del(struct net_api_vlan_q *vlan);
+int net_vlan_port_add(struct net_api_vlan_port_q *vlan_port);
+int net_vlan_port_del(struct net_api_vlan_port_q *vlan_port);
 
 void apply_config_map(const char *name, bool state, bool add);
 #endif /* __FLB_NET_API_H__ */
