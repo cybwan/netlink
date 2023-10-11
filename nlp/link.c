@@ -23,13 +23,13 @@ static inline void debug_link(nl_port_mod_t *port) {
   printf("\n");
 }
 
-void mod_link(nl_port_mod_t *port, bool add) {
+void nl_mod_link(nl_port_mod_t *port, bool add) {
   bool link_state = (port->flags & FLAG_UP) == 1;
   bool state = port->oper_state != OPER_DOWN;
+  int vid = 0;
   int ret;
 
   if (port->type.bridge) {
-    int vid = 0;
     regex_t regex;
     const size_t nmatch = 1;
     regmatch_t pmatch[1];
@@ -65,12 +65,11 @@ void mod_link(nl_port_mod_t *port, bool add) {
     if ((add && ret != 0) || !add) {
       apply_config_map((char *)port->name, state, add);
     }
-    // printf("link_state:%d state:%d\n", link_state, state);
   }
 
+  char master[IF_NAMESIZE];
   if (port->master_index > 0) {
     char if_name_buf[IF_NAMESIZE];
-    int vid = 0;
     regex_t regex;
     const size_t nmatch = 1;
     regmatch_t pmatch[1];
@@ -106,11 +105,20 @@ void mod_link(nl_port_mod_t *port, bool add) {
       apply_config_map((char *)port->name, state, add);
       return;
     } else {
-      // todo pending
+      nl_port_mod_t mif;
+      memset(&mif, 0, sizeof(nl_port_mod_t));
+      ret = nl_link_get(port->master_index, &mif);
+      if (ret < 0) {
+        return;
+      }
+      if (mif.type.bond) {
+        strcpy(master, (char *)mif.name);
+      }
     }
   }
 
   /* Physical port/ Bond/ VxLAN */
+  char real[IF_NAMESIZE];
   int p_type = PORT_REAL;
   int tun_id = 0;
   int tun_src = 0;
@@ -121,6 +129,62 @@ void mod_link(nl_port_mod_t *port, bool add) {
     p_type = PORT_VTI;
   } else if (strstr((char *)port->name, "wg") != NULL) {
     p_type = PORT_WG;
+  }
+
+  if (port->type.vxlan) {
+    p_type = PORT_VXLAN_BR;
+    tun_id = port->u.vxlan.vxlan_id;
+    if_indextoname(port->u.vxlan.vtep_dev_index, real);
+  } else if (port->type.bond) {
+    p_type = PORT_BOND;
+  } else if (port->type.ipip) {
+    p_type = PORT_IPTUN;
+    if (port->u.iptun.local == 0 || port->u.iptun.remote == 0) {
+      return;
+    }
+    tun_id = 1;
+    tun_src = port->u.iptun.local;
+    tun_dst = port->u.iptun.remote;
+  } else if (strlen(master) > 0) {
+    p_type = PORT_BOND_SLAVE_IF;
+  }
+
+  struct net_api_port_q port_q;
+  port_q.link_type = p_type;
+  memcpy(port_q.dev, port->name, IF_NAMESIZE);
+  if (add) {
+    port_q.link_index = port->index;
+    port_q.link = link_state;
+    port_q.state = state;
+    port_q.mtu = port->mtu;
+    port_q.tun_id = tun_id;
+    port_q.tun_src = tun_src;
+    port_q.tun_dst = tun_dst;
+    memcpy(port_q.mac_addr, port->hwaddr, 6);
+    memcpy(port_q.master, master, IF_NAMESIZE);
+    memcpy(port_q.real, real, IF_NAMESIZE);
+    ret = net_port_add(&port_q);
+    apply_config_map((char *)port->name, state, add);
+  } else if (port->master_index == 0) {
+    ret = net_port_del(&port_q);
+    apply_config_map((char *)port->name, state, add);
+    return;
+  }
+
+  /* Untagged vlan ports */
+  if (port->master_index > 0 && strlen(master) > 0) {
+    struct net_api_vlan_port_q vlan_port_q;
+    vlan_port_q.vid = vid;
+    vlan_port_q.tagged = false;
+    memcpy(vlan_port_q.dev, port->name, IF_NAMESIZE);
+    if (add) {
+      ret = net_vlan_port_add(&vlan_port_q);
+    } else {
+      ret = net_vlan_port_del(&vlan_port_q);
+    }
+    if ((add && ret < 0) || !add) {
+      apply_config_map((char *)port->name, state, add);
+    }
   }
 }
 
@@ -202,9 +266,7 @@ int nl_link_list_res(struct nl_msg *msg, void *arg) {
     }
   }
 
-  mod_link(&port, true);
-
-  debug_link(&port);
+  nl_mod_link(&port, true);
 
   return NL_OK;
 }
@@ -385,8 +447,8 @@ int nl_link_subscribe() {
 
 int main() {
   nl_link_list();
-//   nl_port_mod_t port;
-//   nl_link_get(4, &port);
-//   debug_link(&port);
+  //   nl_port_mod_t port;
+  //   nl_link_get(4, &port);
+  //   debug_link(&port);
   return 0;
 }
