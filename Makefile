@@ -1,5 +1,9 @@
 #!make
 
+.PHONY: format-c
+format-c:
+	find . -regex '.*\.\(c\|h\)' -exec clang-format -style=file -i {} \;
+
 .PHONY: gonl-build
 gonl-build:
 	@CGO_ENABLED=1 go build -v -o ./bin/gonl ./cmd/gonl/*

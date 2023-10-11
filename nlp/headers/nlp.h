@@ -2,8 +2,10 @@
 #define __FLB_NLP_H__
 
 #include <linux/types.h>
+#include <stdbool.h>
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #include <net/if.h>
 #include <arpa/inet.h>
@@ -12,6 +14,25 @@
 #include <netlink/netlink.h>
 #include <netlink/genl/genl.h>
 #include <netlink/genl/ctrl.h>
+
+enum {
+  FLAG_UP = 1,        // interface is administratively up
+	FLAG_BROADCAST,     // interface supports broadcast access capability
+	FLAG_LOOPBACK,      // interface is a loopback interface
+	FLAG_POINTTOPOINT,  // interface belongs to a point-to-point link
+	FLAG_MULTICAST,     // interface supports multicast access capability
+	FLAG_RUNNING,       // interface is in running state
+};
+
+enum {
+	OPER_UNKNOWN,          // Status can't be determined.
+	OPER_NOT_PRESENT,      // Some component is missing.
+	OPER_DOWN,             // Down.
+	OPER_LOWER_LAYER_DOWN, // Down due to state of lower layer.
+	OPER_TESTING,          // In some test mode.
+	OPER_DORMANT,          // Not up but pending an external event.
+	OPER_UP,               // Up, ready to send packets.
+};
 
 typedef struct nl_port_mod {
 	__u32	index;
@@ -88,5 +109,7 @@ typedef struct nl_fdb_mod {
 } nl_fdb_mod_t;
 
 void parse_rtattr(struct rtattr *tb[], int max, struct rtattr *rta, int len);
+
+void mod_link(nl_port_mod_t *port, bool add);
 
 #endif /* __FLB_NLP_H__ */

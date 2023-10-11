@@ -1,4 +1,6 @@
 #include <nlp.h>
+#include <net_api.h> 
+#include <regex.h> 
 
 static inline void debug_link(nl_port_mod_t *port) {
     printf("Master: %2d Index: %2d MTU:%5d "
@@ -17,6 +19,41 @@ static inline void debug_link(nl_port_mod_t *port) {
         printf("Type: iptun");
     }
     printf("\n");
+}
+
+void mod_link(nl_port_mod_t *port, bool add) {
+    bool link_state = (port->flags & FLAG_UP) == 1;
+    bool state = port->oper_state != OPER_DOWN;
+    int ret;
+
+    if(port->type.bridge) {
+        int vid = 0;
+        regex_t regex;
+        const size_t nmatch = 1;
+        regmatch_t pmatch[1];
+        regcomp(&regex,"[0-9]+", REG_EXTENDED);
+        int status = regexec(&regex, (char *)port->name, nmatch, pmatch, 0);
+        if(status == 0) {
+            char str_buf[IF_NAMESIZE];
+            strncpy(str_buf, (char *)port->name + pmatch[0].rm_so, pmatch[0].rm_eo-pmatch[0].rm_so);
+            vid = atoi(str_buf);
+        }
+        regfree(&regex);
+        //debug_link(port);
+
+        struct net_api_vlan_q vlan_q;
+        vlan_q.vid = vid;
+        if(add) {
+            ret = net_vlan_add(&vlan_q);
+        } else {
+            ret = net_vlan_del(&vlan_q);
+        }
+
+        if((add && ret != 0) || !add) {
+            apply_config_map((char *)port->name, state, add);
+        }
+        printf("link_state:%d state:%d\n", link_state, state);
+    }
 }
 
 int link_callback(struct nl_msg *msg, void *arg) {
@@ -94,7 +131,7 @@ int link_callback(struct nl_msg *msg, void *arg) {
         }
     }
 
-    debug_link(&port);
+    mod_link(&port, true);
 
     return NL_OK;
 }
