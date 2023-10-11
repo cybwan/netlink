@@ -124,7 +124,7 @@ void mod_link(nl_port_mod_t *port, bool add) {
   }
 }
 
-int nl_link_list_response(struct nl_msg *msg, void *arg) {
+int nl_link_list_res(struct nl_msg *msg, void *arg) {
   struct nlmsghdr *nlh = nlmsg_hdr(msg);
   struct ifinfomsg *link_msg = NLMSG_DATA(nlh);
   struct rtattr *attrs[IFLA_MAX + 1];
@@ -237,7 +237,7 @@ int nl_link_list() {
   int ret = nl_send_auto(socket, msg);
   printf("nl_send_auto returned %d\n", ret);
 
-  nl_socket_modify_cb(socket, NL_CB_VALID, NL_CB_CUSTOM, nl_link_list_response,
+  nl_socket_modify_cb(socket, NL_CB_VALID, NL_CB_CUSTOM, nl_link_list_res,
                       NULL);
   nl_recvmsgs_default(socket);
 
@@ -247,7 +247,7 @@ int nl_link_list() {
   return 0;
 }
 
-int nl_link_get_response(struct nl_msg *msg, void *arg) {
+int nl_link_get_res(struct nl_msg *msg, void *arg) {
   struct nlmsghdr *nlh = nlmsg_hdr(msg);
   struct ifinfomsg *link_msg = NLMSG_DATA(nlh);
   struct rtattr *attrs[IFLA_MAX + 1];
@@ -358,7 +358,7 @@ int nl_link_get(int ifi_index, nl_port_mod_t *port) {
     return ret;
   }
 
-  nl_socket_modify_cb(socket, NL_CB_VALID, NL_CB_CUSTOM, nl_link_get_response,
+  nl_socket_modify_cb(socket, NL_CB_VALID, NL_CB_CUSTOM, nl_link_get_res,
                       (void *)(&port));
   nl_recvmsgs_default(socket);
 
@@ -371,7 +371,7 @@ int nl_link_get(int ifi_index, nl_port_mod_t *port) {
 int nl_link_subscribe() {
   struct nl_sock *socket = nl_socket_alloc();
   nl_socket_disable_seq_check(socket);
-  nl_socket_modify_cb(socket, NL_CB_VALID, NL_CB_CUSTOM, nl_link_list_response,
+  nl_socket_modify_cb(socket, NL_CB_VALID, NL_CB_CUSTOM, nl_link_list_res,
                       NULL);
   nl_connect(socket, NETLINK_ROUTE);
   nl_socket_add_memberships(socket, RTNLGRP_LINK, 0);
@@ -384,10 +384,9 @@ int nl_link_subscribe() {
 }
 
 int main() {
-  // nl_link_list();
-  nl_port_mod_t port;
-  memset(&port, 0, sizeof(nl_port_mod_t));
-  nl_link_get(4, &port);
-  debug_link(&port);
+  nl_link_list();
+//   nl_port_mod_t port;
+//   nl_link_get(4, &port);
+//   debug_link(&port);
   return 0;
 }
