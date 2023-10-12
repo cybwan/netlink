@@ -3,6 +3,8 @@
 #include <regex.h>
 #include <unistd.h>
 
+int nl_mod_link(nl_port_mod_t *port, bool add);
+
 static inline void debug_link(nl_port_mod_t *port) {
   printf("Master: %2d Index: %2d MTU:%5d "
          "MAC: %02x:%02x:%02x:%02x:%02x:%02x "
@@ -23,7 +25,7 @@ static inline void debug_link(nl_port_mod_t *port) {
   printf("\n");
 }
 
-int nl_mod_link(nl_port_mod_t *port, bool add) {
+int nl_link_mod(nl_port_mod_t *port, bool add) {
   bool link_state = (port->flags & FLAG_UP) == 1;
   bool state = port->oper_state != OPER_DOWN;
   int vid = 0;
@@ -194,17 +196,11 @@ int nl_link_list_res(struct nl_msg *msg, void *arg) {
   struct nlmsghdr *nlh = nlmsg_hdr(msg);
   struct ifinfomsg *link_msg = NLMSG_DATA(nlh);
   struct rtattr *attrs[IFLA_MAX + 1];
-  nl_port_mod_t port;
-
-  memset(&port, 0, sizeof(port));
-
   int remaining = nlh->nlmsg_len - NLMSG_LENGTH(sizeof(*link_msg));
-
   parse_rtattr(attrs, IFLA_MAX, IFLA_RTA(link_msg), remaining);
 
-  // printf("Got something.\n");
-  // nl_msg_dump(msg, stdout);
-
+  nl_port_mod_t port;
+  memset(&port, 0, sizeof(port));
   port.index = link_msg->ifi_index;
   port.flags = link_msg->ifi_flags;
 
@@ -268,12 +264,17 @@ int nl_link_list_res(struct nl_msg *msg, void *arg) {
     }
   }
 
-  int ret = nl_mod_link(&port, true);
+  int ret = nl_link_mod(&port, true);
   if (ret < 0) {
     return NL_SKIP;
   }
 
   /* Get FDBs */
+  if (port.master_index > 0 || port.type.vxlan) {
+    nl_neigh_list(&port);
+  }
+
+  // debug_link(&port);
 
   return NL_OK;
 }
@@ -303,8 +304,12 @@ int nl_link_list() {
   nl_req->rtattr.rta_len = 8;
   nl_req->rtattr.rta_val = RTEXT_FILTER_VF;
 
-  int ret = nl_send_auto(socket, msg);
-  printf("nl_send_auto returned %d\n", ret);
+  int ret = nl_send_auto_complete(socket, msg);
+  if (ret < 0) {
+    nlmsg_free(msg);
+    nl_socket_free(socket);
+    return ret;
+  }
 
   nl_socket_modify_cb(socket, NL_CB_VALID, NL_CB_CUSTOM, nl_link_list_res,
                       NULL);
@@ -320,14 +325,10 @@ int nl_link_get_res(struct nl_msg *msg, void *arg) {
   struct nlmsghdr *nlh = nlmsg_hdr(msg);
   struct ifinfomsg *link_msg = NLMSG_DATA(nlh);
   struct rtattr *attrs[IFLA_MAX + 1];
-  nl_port_mod_t *port = *((nl_port_mod_t **)arg);
   int remaining = nlh->nlmsg_len - NLMSG_LENGTH(sizeof(*link_msg));
-
   parse_rtattr(attrs, IFLA_MAX, IFLA_RTA(link_msg), remaining);
 
-  // printf("Got something.\n");
-  // nl_msg_dump(msg, stdout);
-
+  nl_port_mod_t *port = *((nl_port_mod_t **)arg);
   port->index = link_msg->ifi_index;
   port->flags = link_msg->ifi_flags;
 
@@ -454,8 +455,10 @@ int nl_link_subscribe() {
 
 int main() {
   nl_link_list();
-  //   nl_port_mod_t port;
-  //   nl_link_get(4, &port);
-  //   debug_link(&port);
+  // nl_port_mod_t port;
+  // nl_link_get(19, &port);
+  // debug_link(&port);
+
+  // nl_neigh_list(&port);
   return 0;
 }

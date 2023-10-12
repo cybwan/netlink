@@ -37,12 +37,31 @@ struct net_api_vlan_port_q {
   bool tagged;
 };
 
+struct net_api_neigh_q {
+  __u32 ip;
+  __u32 link_index;
+  __u32 state;
+  __u8 hwaddr[6];
+};
+
+struct net_api_fdb_q {
+  __u8 mac_addr[6];
+  __u32 bridge_id;
+  __u32 dst;
+  __u32 type;
+  __u8 dev[IF_NAMESIZE];
+};
+
 int net_port_add(struct net_api_port_q *port);
 int net_port_del(struct net_api_port_q *port);
 int net_vlan_add(struct net_api_vlan_q *vlan);
 int net_vlan_del(struct net_api_vlan_q *vlan);
 int net_vlan_port_add(struct net_api_vlan_port_q *vlan_port);
 int net_vlan_port_del(struct net_api_vlan_port_q *vlan_port);
+int net_neigh_add(struct net_api_neigh_q *neigh);
+int net_neigh_del(struct net_api_neigh_q *neigh);
+int net_fdb_add(struct net_api_fdb_q *fdb);
+int net_fdb_del(struct net_api_fdb_q *fdb);
 
 void apply_config_map(const char *name, bool state, bool add);
 #endif /* __FLB_NET_API_H__ */

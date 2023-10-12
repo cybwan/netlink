@@ -11,6 +11,7 @@
 #include <net/if.h>
 
 #include <linux/if_tunnel.h>
+#include <linux/neighbour.h>
 
 #include <netlink/genl/ctrl.h>
 #include <netlink/genl/genl.h>
@@ -48,6 +49,18 @@ enum {
   PORT_IPTUN,          // IPInIP port type
   PORT_GRE,            // GRE port type
 };
+
+enum {
+  FDB_PHY,  // fdb of a real dev
+  FDB_TUN,  // fdb of a tun dev
+  FDB_VLAN, // fdb of a vlan dev
+};
+
+typedef struct nl_multi_arg {
+  void *arg1;
+  void *arg2;
+  void *arg3;
+} nl_multi_arg_t;
 
 typedef struct nl_port_mod {
   __u32 index;
@@ -114,6 +127,17 @@ typedef struct nl_ip_addr_mod {
 } nl_ip_addr_mod_t;
 
 typedef struct nl_neigh_mod {
+  __u32 link_index;
+  __u32 family;
+  __u32 state;
+  __u32 type;
+  __u32 flags;
+  __u32 vlan;
+  __u32 vni;
+  __u32 master_index;
+  __u32 ip;
+  __u32 ll_ip_addr;
+  __u8 hwaddr[6];
 } nl_neigh_mod_t;
 
 typedef struct nl_route_mod {
@@ -125,6 +149,16 @@ typedef struct nl_fdb_mod {
 void parse_rtattr(struct rtattr *tb[], int max, struct rtattr *rta, int len);
 
 int nl_link_get(int ifi_index, nl_port_mod_t *port);
-int nl_mod_link(nl_port_mod_t *port, bool add);
+
+int nl_neigh_list(nl_port_mod_t *port);
+
+static __u8 zero_mac[6] = {0, 0, 0, 0, 0, 0};
+
+static inline bool is_zero_mac(__u8 mac[6]) {
+  if (memcmp(mac, zero_mac, 6) == 0) {
+    return true;
+  }
+  return false;
+}
 
 #endif /* __FLB_NLP_H__ */
