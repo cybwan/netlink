@@ -276,6 +276,7 @@ int nl_link_list_res(struct nl_msg *msg, void *arg) {
 
   nl_addr_list(&port, FAMILY_ALL);
   nl_neigh_list(&port, FAMILY_ALL);
+  nl_route_list(&port, FAMILY_ALL);
   // debug_link(&port);
 
   return NL_OK;

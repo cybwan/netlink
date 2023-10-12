@@ -1,162 +1,123 @@
-#include <arpa/inet.h>
-#include <net/if.h>
-#include <netlink/genl/ctrl.h>
-#include <netlink/genl/genl.h>
-#include <netlink/netlink.h>
+#include <linux/rtnetlink.h>
+#include <net_api.h>
+#include <nlp.h>
+#include <regex.h>
+#include <unistd.h>
 
-void parse_rtattr(struct rtattr *tb[], int max, struct rtattr *rta, int len) {
-  memset(tb, 0, sizeof(struct rtattr *) * (max + 1));
+static inline void debug_route(nl_route_mod_t *route) {
+  printf("Addr Protocol: %d ", route->protocol);
+  printf("Flags: %d ", route->flags);
+  printf("Link Index: %2d ", route->link_index);
 
-  while (RTA_OK(rta, len)) {
-    if (rta->rta_type <= max) {
-      tb[rta->rta_type] = rta;
-    }
-
-    rta = RTA_NEXT(rta, len);
+  if (route->dst.ip.f.v4) {
+    struct in_addr *in = (struct in_addr *)route->dst.ip.v4.bytes;
+    printf("Dst: %s/%d ", inet_ntoa(*in), route->dst.mask);
+  } else if (route->dst.ip.f.v6) {
+    struct in6_addr *in = (struct in6_addr *)route->dst.ip.v6.bytes;
+    char a_str[INET6_ADDRSTRLEN];
+    inet_ntop(AF_INET6, in, a_str, INET6_ADDRSTRLEN);
+    printf("Dst: %s/%d ", a_str, route->dst.mask);
   }
-}
 
-static int link_callback(struct nl_msg *msg, void *arg) {
-  struct nlmsghdr *nlh = nlmsg_hdr(msg);
-  struct ifinfomsg *iface = NLMSG_DATA(nlh);
-  struct rtattr *hdr = IFLA_RTA(iface);
-  int remaining = nlh->nlmsg_len - NLMSG_LENGTH(sizeof(*iface));
-
-  // printf("Got something.\n");
-  // nl_msg_dump(msg, stdout);
-
-  while (RTA_OK(hdr, remaining)) {
-    if (hdr->rta_type == IFLA_IFNAME) {
-      printf("network interface INDEX: %d", iface->ifi_index);
-      printf(" IFNAME: %10s", (char *)RTA_DATA(hdr));
-    }
-    if (hdr->rta_type == IFLA_LINKINFO) {
-      struct rtattr *tb[IFLA_INFO_MAX + 1];
-      parse_rtattr(tb, IFLA_INFO_MAX, RTA_DATA(hdr), remaining);
-      printf(" IFLA_LINKINFO: %s", (char *)RTA_DATA(tb[IFLA_INFO_KIND]));
-    }
-    if (hdr->rta_type == IFLA_MTU) {
-      __u32 *mtu = RTA_DATA(hdr);
-      printf(" MTU: %5d", *mtu);
-    }
-    if (hdr->rta_type == IFLA_MASTER) {
-      __u32 *master = RTA_DATA(hdr);
-      printf(" IMASTER: %d", *master);
-    }
-    if (hdr->rta_type == IFLA_ADDRESS) {
-      __u8 *mac = RTA_DATA(hdr);
-      printf(" MACADDR: %02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2],
-             mac[3], mac[4], mac[5]);
-    }
-    hdr = RTA_NEXT(hdr, remaining);
+  if (route->gw.f.v4) {
+    struct in_addr *in = (struct in_addr *)route->gw.v4.bytes;
+    printf("Gw: %s ", inet_ntoa(*in));
+  } else if (route->gw.f.v6) {
+    struct in6_addr *in = (struct in6_addr *)route->gw.v6.bytes;
+    char a_str[INET6_ADDRSTRLEN];
+    inet_ntop(AF_INET6, in, a_str, INET6_ADDRSTRLEN);
+    printf("Gw: %s ", a_str);
   }
 
   printf("\n");
-
-  return NL_OK;
 }
 
-static int route_callback(struct nl_msg *msg, void *arg) {
-  struct nlmsghdr *nlh = nlmsg_hdr(msg);
-  struct rtmsg *rtm = NLMSG_DATA(nlh);
-  // struct rtattr *hdr = RTM_RTA(rtm);
-  struct rtattr *tb[RTA_MAX + 1];
-  int remaining = nlh->nlmsg_len - NLMSG_LENGTH(sizeof(*rtm));
+int nl_route_add(nl_route_mod_t *route, nl_port_mod_t *port) {
+  struct net_api_route_q route_q;
+  memset(&route_q, 0, sizeof(route_q));
 
-  parse_rtattr(tb, RTA_MAX, RTM_RTA(rtm), remaining);
-  // printf("Got something.\n");
-  // nl_msg_dump(msg, stdout);
+  route_q.link_index = route->link_index;
+  route_q.protocol = route->protocol;
+  route_q.flags = route->flags;
 
-  if (tb[RTA_OIF]) {
-    int ifidx = *(__u32 *)RTA_DATA(tb[RTA_OIF]);
-    if (ifidx != 2) {
-      return NL_OK;
-    }
-  }
-
-  char buf[256];
-
-  __u32 table = rtm->rtm_table;
-  if (tb[RTA_TABLE]) {
-    table = *(__u32 *)RTA_DATA(tb[RTA_TABLE]);
-  }
-
-  if (rtm->rtm_family != AF_INET && table != RT_TABLE_MAIN) {
-    return NL_OK;
-  }
-
-  if (tb[RTA_DST]) {
-    // if ((rtm->rtm_dst_len != 24) && (rtm->rtm_dst_len != 16)) {
-    //     return NL_OK;
-    // }
-
-    printf("%s/%u ",
-           inet_ntop(rtm->rtm_family, RTA_DATA(tb[RTA_DST]), buf, sizeof(buf)),
-           rtm->rtm_dst_len);
-
-  } else if (rtm->rtm_dst_len) {
-    printf("0/%u ", rtm->rtm_dst_len);
+  if (route->dst.ip.f.v4 || route->dst.ip.f.v6) {
+    memcpy(&route_q.dst, &route->dst, sizeof(struct nl_ipnet));
   } else {
-    printf("default ");
+    route_q.dst.ip.f.v4 = 1;
+    route_q.dst.mask = 32;
   }
 
-  if (tb[RTA_GATEWAY]) {
-    printf("via %s", inet_ntop(rtm->rtm_family, RTA_DATA(tb[RTA_GATEWAY]), buf,
-                               sizeof(buf)));
+  if (route->gw.f.v4 || route->gw.f.v6) {
+    memcpy(&route_q.gw, &route->gw, sizeof(struct nl_ip));
   }
 
-  if (tb[RTA_OIF]) {
-    char if_nam_buf[IF_NAMESIZE];
-    int ifidx = *(__u32 *)RTA_DATA(tb[RTA_OIF]);
+  return net_route_add(&route_q);
+}
 
-    printf(" dev %s", if_indextoname(ifidx, if_nam_buf));
+int nl_route_list_res(struct nl_msg *msg, void *arg) {
+  struct nlmsghdr *nlh = nlmsg_hdr(msg);
+  struct rtmsg *rt_msg = NLMSG_DATA(nlh);
+  struct nl_multi_arg *args = (struct nl_multi_arg *)arg;
+  struct nl_port_mod *port = (struct nl_port_mod *)args->arg1;
+
+  if ((rt_msg->rtm_flags & RTM_F_CLONED) != 0) {
+    return NL_SKIP;
+  }
+  if (rt_msg->rtm_table != RT_TABLE_MAIN) {
+    return NL_SKIP;
   }
 
-  if (tb[RTA_SRC]) {
-    printf("src %s",
-           inet_ntop(rtm->rtm_family, RTA_DATA(tb[RTA_SRC]), buf, sizeof(buf)));
+  struct rtattr *attrs[RTA_MAX + 1];
+  int remaining = nlh->nlmsg_len - NLMSG_LENGTH(sizeof(*rt_msg));
+  parse_rtattr(attrs, RTA_MAX, RTM_RTA(rt_msg), remaining);
+
+  __u32 rt_link_index = 0;
+  if (attrs[RTA_OIF]) {
+    rt_link_index = *(__u32 *)RTA_DATA(attrs[RTA_OIF]);
+    if (rt_link_index != port->index) {
+      return NL_SKIP;
+    }
   }
 
-  printf("\n");
+  nl_route_mod_t route;
+  memset(&route, 0, sizeof(route));
+  route.link_index = rt_link_index;
+  route.protocol = rt_msg->rtm_protocol;
+  route.flags = rt_msg->rtm_flags;
+
+  if (attrs[RTA_GATEWAY]) {
+    struct rtattr *gw_addr = attrs[RTA_GATEWAY];
+    __u8 *rta_val = (__u8 *)RTA_DATA(gw_addr);
+    if (gw_addr->rta_len == 8) {
+      route.gw.f.v4 = 1;
+      memcpy(route.gw.v4.bytes, rta_val, 4);
+    } else if (gw_addr->rta_len == 20) {
+      route.gw.f.v6 = 1;
+      memcpy(route.gw.v6.bytes, rta_val, 16);
+    }
+  }
+
+  if (attrs[RTA_DST]) {
+    struct rtattr *ifa_addr = attrs[RTA_DST];
+    __u8 *rta_val = (__u8 *)RTA_DATA(ifa_addr);
+    if (ifa_addr->rta_len == 8) {
+      route.dst.ip.f.v4 = 1;
+      memcpy(route.dst.ip.v4.bytes, rta_val, 4);
+      route.dst.mask = 32;
+    } else if (ifa_addr->rta_len == 20) {
+      route.dst.ip.f.v6 = 1;
+      memcpy(route.dst.ip.v6.bytes, rta_val, 16);
+      route.dst.mask = 128;
+    }
+  }
+
+  // debug_route(&route);
+  nl_route_add(&route, port);
 
   return NL_OK;
 }
 
-int link_list() {
-  struct nl_sock *socket = nl_socket_alloc();
-  nl_connect(socket, NETLINK_ROUTE);
-
-  struct nl_msg *msg = nlmsg_alloc();
-
-  struct {
-    struct ifinfomsg ifh;
-    struct {
-      __u16 rta_len;
-      __u16 rta_type;
-      __u32 rta_val;
-    } rtattr;
-  } * nl_req;
-
-  struct nlmsghdr *nlh = nlmsg_put(msg, NL_AUTO_PID, NL_AUTO_SEQ, RTM_GETLINK,
-                                   sizeof(*nl_req), NLM_F_REQUEST | NLM_F_DUMP);
-
-  nl_req = nlmsg_data(nlh);
-  memset(nl_req, 0, sizeof(*nl_req));
-  nl_req->ifh.ifi_family = AF_UNSPEC;
-  nl_req->rtattr.rta_type = IFLA_EXT_MASK;
-  nl_req->rtattr.rta_len = 8;
-  nl_req->rtattr.rta_val = RTEXT_FILTER_VF;
-
-  int ret = nl_send_auto(socket, msg);
-  printf("nl_send_auto returned %d\n", ret);
-
-  nl_socket_modify_cb(socket, NL_CB_VALID, NL_CB_CUSTOM, link_callback, NULL);
-  nl_recvmsgs_default(socket);
-
-  return 0;
-}
-
-int route_list() {
+int nl_route_list(nl_port_mod_t *port, __u8 family) {
   struct nl_sock *socket = nl_socket_alloc();
   nl_connect(socket, NETLINK_ROUTE);
 
@@ -169,32 +130,24 @@ int route_list() {
 
   nl_req = nlmsg_data(nlh);
   memset(nl_req, 0, sizeof(*nl_req));
-  nl_req->rtm_family = AF_UNSPEC;
+  nl_req->rtm_family = family;
 
-  int ret = nl_send_auto(socket, msg);
-  printf("nl_send_auto returned %d\n", ret);
-
-  nl_socket_modify_cb(socket, NL_CB_VALID, NL_CB_CUSTOM, route_callback, NULL);
-  nl_recvmsgs_default(socket);
-
-  return 0;
-}
-
-int link_subscribe() {
-  struct nl_sock *socket = nl_socket_alloc();
-  nl_socket_disable_seq_check(socket);
-  nl_socket_modify_cb(socket, NL_CB_VALID, NL_CB_CUSTOM, link_callback, NULL);
-  nl_connect(socket, NETLINK_ROUTE);
-  nl_socket_add_memberships(socket, RTNLGRP_LINK, 0);
-  while (1) {
-    printf("nl_recvmsgs_default\n");
-    nl_recvmsgs_default(socket);
+  int ret = nl_send_auto_complete(socket, msg);
+  if (ret < 0) {
+    nlmsg_free(msg);
+    nl_socket_free(socket);
+    return ret;
   }
 
-  return 0;
-}
+  struct nl_multi_arg args = {
+      .arg1 = port,
+  };
+  nl_socket_modify_cb(socket, NL_CB_VALID, NL_CB_CUSTOM, nl_route_list_res,
+                      &args);
+  nl_recvmsgs_default(socket);
 
-int main() {
-  link_list();
+  nlmsg_free(msg);
+  nl_socket_free(socket);
+
   return 0;
 }

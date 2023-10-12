@@ -55,6 +55,8 @@ int nl_addr_add(nl_addr_mod_t *addr, nl_port_mod_t *port) {
     inet_ntop(AF_INET6, in, (char *)addr_q.ip, INET6_ADDRSTRLEN);
     sprintf((char *)((void *)addr_q.ip + strlen((char *)addr_q.ip)), "/%d",
             addr->ipnet.mask);
+  } else {
+    return NL_SKIP;
   }
 
   memcpy(addr_q.dev, port->name, IF_NAMESIZE);

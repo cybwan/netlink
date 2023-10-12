@@ -62,6 +62,8 @@ enum {
   FDB_VLAN, // fdb of a vlan dev
 };
 
+#ifndef _NL_IP_T_
+#define _NL_IP_T_
 typedef struct nl_ip {
   struct {
     __u8 v4 : 1;
@@ -80,11 +82,15 @@ typedef struct nl_ip {
     } v4;
   };
 } nl_ip_t;
+#endif
 
+#ifndef _NL_IPNET_T_
+#define _NL_IPNET_T_
 typedef struct nl_ipnet {
   struct nl_ip ip;
   __u8 mask;
 } nl_ipnet_t;
+#endif
 
 typedef struct nl_multi_arg {
   void *arg1;
@@ -170,13 +176,19 @@ typedef struct nl_addr_mod {
   __u32 link_index;
 } nl_addr_mod_t;
 
-typedef struct nl_fdb_mod {
-} nl_fdb_mod_t;
+typedef struct nl_route_mod {
+  __u32 link_index;
+  __u32 protocol;
+  __u32 flags;
+  struct nl_ip gw;
+  struct nl_ipnet dst;
+} nl_route_mod_t;
 
 void parse_rtattr(struct rtattr *tb[], int max, struct rtattr *rta, int len);
 int nl_link_get(int ifi_index, nl_port_mod_t *port);
-int nl_neigh_list(nl_port_mod_t *port, __u8 family);
 int nl_addr_list(nl_port_mod_t *port, __u8 family);
+int nl_neigh_list(nl_port_mod_t *port, __u8 family);
+int nl_route_list(nl_port_mod_t *port, __u8 family);
 
 static __u8 zero_mac[6] = {0, 0, 0, 0, 0, 0};
 
