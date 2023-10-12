@@ -7,7 +7,6 @@ void parse_rtattr(struct rtattr *tb[], int max, struct rtattr *rta, int len) {
     if (rta->rta_type <= max) {
       tb[rta->rta_type] = rta;
     }
-
     rta = RTA_NEXT(rta, len);
   }
 }

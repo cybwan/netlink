@@ -194,15 +194,15 @@ int nl_link_mod(nl_port_mod_t *port, bool add) {
 
 int nl_link_list_res(struct nl_msg *msg, void *arg) {
   struct nlmsghdr *nlh = nlmsg_hdr(msg);
-  struct ifinfomsg *link_msg = NLMSG_DATA(nlh);
+  struct ifinfomsg *ifi_msg = NLMSG_DATA(nlh);
   struct rtattr *attrs[IFLA_MAX + 1];
-  int remaining = nlh->nlmsg_len - NLMSG_LENGTH(sizeof(*link_msg));
-  parse_rtattr(attrs, IFLA_MAX, IFLA_RTA(link_msg), remaining);
+  int remaining = nlh->nlmsg_len - NLMSG_LENGTH(sizeof(*ifi_msg));
+  parse_rtattr(attrs, IFLA_MAX, IFLA_RTA(ifi_msg), remaining);
 
   nl_port_mod_t port;
   memset(&port, 0, sizeof(port));
-  port.index = link_msg->ifi_index;
-  port.flags = link_msg->ifi_flags;
+  port.index = ifi_msg->ifi_index;
+  port.flags = ifi_msg->ifi_flags;
 
   if (attrs[IFLA_MASTER]) {
     port.master_index = *(__u32 *)RTA_DATA(attrs[IFLA_MASTER]);
@@ -274,7 +274,8 @@ int nl_link_list_res(struct nl_msg *msg, void *arg) {
     nl_neigh_list(&port, AF_BRIDGE);
   }
 
-  nl_neigh_list(&port, AF_UNSPEC);
+  nl_addr_list(&port, FAMILY_ALL);
+  nl_neigh_list(&port, FAMILY_ALL);
   // debug_link(&port);
 
   return NL_OK;

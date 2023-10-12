@@ -1,8 +1,8 @@
 #!make
 
 EXEC   := nlp
-SRCS   := attr.c link.c neigh.c net_api.c
-OBJS   := attr.o link.o neigh.o net_api.o
+SRCS   := attr.c link.c neigh.c addr.c net_api.c
+OBJS   := attr.o link.o neigh.o addr.o net_api.o
 LDLIBS := $(shell pkg-config --libs   libnl-route-3.0 libnl-3.0)
 LDLIBS += -lev
 CFLAGS := $(shell pkg-config --cflags libnl-route-3.0 libnl-3.0)

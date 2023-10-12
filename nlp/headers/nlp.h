@@ -10,12 +10,18 @@
 #include <arpa/inet.h>
 #include <net/if.h>
 
+#include <linux/if_addr.h>
 #include <linux/if_tunnel.h>
 #include <linux/neighbour.h>
 
 #include <netlink/genl/ctrl.h>
 #include <netlink/genl/genl.h>
 #include <netlink/netlink.h>
+
+#define FAMILY_ALL AF_UNSPEC
+#define FAMILY_V4 AF_INET
+#define FAMILY_V6 AF_INET6
+#define FAMILY_MPLS AF_MPLS
 
 enum {
   FLAG_UP = 1,       // interface is administratively up
@@ -55,6 +61,30 @@ enum {
   FDB_TUN,  // fdb of a tun dev
   FDB_VLAN, // fdb of a vlan dev
 };
+
+typedef struct nl_ip {
+  struct {
+    __u8 v4 : 1;
+    __u8 v6 : 1;
+  } f;
+  union {
+    union {
+      __u8 bytes[16];
+    } v6;
+    union {
+      __u8 _pad[12];
+      union {
+        __u8 bytes[4];
+        __u32 ip;
+      };
+    } v4;
+  };
+} nl_ip_t;
+
+typedef struct nl_ipnet {
+  struct nl_ip ip;
+  __u8 mask;
+} nl_ipnet_t;
 
 typedef struct nl_multi_arg {
   void *arg1;
@@ -117,15 +147,6 @@ typedef struct nl_port_mod {
   __u8 name[IF_NAMESIZE];
 } nl_port_mod_t;
 
-typedef struct nl_vlan_mod {
-} nl_vlan_mod_t;
-
-typedef struct nl_vlan_port_mod {
-} nl_vlan_port_mod_t;
-
-typedef struct nl_ip_addr_mod {
-} nl_ip_addr_mod_t;
-
 typedef struct nl_neigh_mod {
   __u32 link_index;
   __u32 family;
@@ -140,17 +161,22 @@ typedef struct nl_neigh_mod {
   __u8 hwaddr[6];
 } nl_neigh_mod_t;
 
-typedef struct nl_route_mod {
-} nl_route_mod_t;
+typedef struct nl_addr_mod {
+  struct nl_ipnet ipnet;
+  __u32 flags;
+  __u32 scope;
+  struct nl_ipnet peer;
+  struct nl_ip broadcast;
+  __u32 link_index;
+} nl_addr_mod_t;
 
 typedef struct nl_fdb_mod {
 } nl_fdb_mod_t;
 
 void parse_rtattr(struct rtattr *tb[], int max, struct rtattr *rta, int len);
-
 int nl_link_get(int ifi_index, nl_port_mod_t *port);
-
 int nl_neigh_list(nl_port_mod_t *port, __u8 family);
+int nl_addr_list(nl_port_mod_t *port, __u8 family);
 
 static __u8 zero_mac[6] = {0, 0, 0, 0, 0, 0};
 
