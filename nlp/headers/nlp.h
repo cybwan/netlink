@@ -150,7 +150,7 @@ void parse_rtattr(struct rtattr *tb[], int max, struct rtattr *rta, int len);
 
 int nl_link_get(int ifi_index, nl_port_mod_t *port);
 
-int nl_neigh_list(nl_port_mod_t *port);
+int nl_neigh_list(nl_port_mod_t *port, __u8 family);
 
 static __u8 zero_mac[6] = {0, 0, 0, 0, 0, 0};
 

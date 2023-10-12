@@ -180,7 +180,7 @@ int nl_neigh_list_res(struct nl_msg *msg, void *arg) {
   return NL_OK;
 }
 
-int nl_neigh_list(nl_port_mod_t *port) {
+int nl_neigh_list(nl_port_mod_t *port, __u8 family) {
   struct nl_sock *socket = nl_socket_alloc();
   nl_connect(socket, NETLINK_ROUTE);
 
@@ -193,7 +193,7 @@ int nl_neigh_list(nl_port_mod_t *port) {
 
   nl_req = nlmsg_data(nlh);
   memset(nl_req, 0, sizeof(*nl_req));
-  nl_req->ndm_family = AF_BRIDGE;
+  nl_req->ndm_family = family;
   nl_req->ndm_ifindex = port->index;
 
   int ret = nl_send_auto_complete(socket, msg);

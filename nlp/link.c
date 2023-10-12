@@ -271,9 +271,10 @@ int nl_link_list_res(struct nl_msg *msg, void *arg) {
 
   /* Get FDBs */
   if (port.master_index > 0 || port.type.vxlan) {
-    nl_neigh_list(&port);
+    nl_neigh_list(&port, AF_BRIDGE);
   }
 
+  nl_neigh_list(&port, AF_UNSPEC);
   // debug_link(&port);
 
   return NL_OK;
