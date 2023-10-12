@@ -48,12 +48,12 @@ int nl_addr_add(nl_addr_mod_t *addr, nl_port_mod_t *port) {
   if (addr->ipnet.ip.f.v4) {
     struct in_addr *in = (struct in_addr *)addr->ipnet.ip.v4.bytes;
     inet_ntop(AF_INET, in, (char *)(addr_q.ip), INET_ADDRSTRLEN);
-    sprintf((char *)((void *)addr_q.ip + strlen(addr_q.ip)), "/%d",
+    sprintf((char *)((void *)addr_q.ip + strlen((char *)addr_q.ip)), "/%d",
             addr->ipnet.mask);
   } else if (addr->ipnet.ip.f.v6) {
     struct in6_addr *in = (struct in6_addr *)addr->ipnet.ip.v6.bytes;
     inet_ntop(AF_INET6, in, (char *)addr_q.ip, INET6_ADDRSTRLEN);
-    sprintf((char *)((void *)addr_q.ip + strlen(addr_q.ip)), "/%d",
+    sprintf((char *)((void *)addr_q.ip + strlen((char *)addr_q.ip)), "/%d",
             addr->ipnet.mask);
   }
 
