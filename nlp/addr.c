@@ -171,7 +171,7 @@ int nl_addr_list_res(struct nl_msg *msg, void *arg) {
 
   addr.scope = ifa_msg->ifa_scope;
 
-  //debug_addr(&addr);
+  // debug_addr(&addr);
   return nl_addr_mod(&addr, port, add);
 }
 
