@@ -2,6 +2,7 @@
 #define __FLB_NET_API_H__
 
 #include <arpa/inet.h>
+#include <linux/if_ether.h>
 #include <linux/types.h>
 #include <net/if.h>
 #include <stdbool.h>
@@ -40,7 +41,7 @@ struct net_api_port_q {
   __u8 dev[IF_NAMESIZE];
   __u32 link_index;
   __u32 link_type;
-  __u8 mac_addr[6];
+  __u8 mac_addr[ETH_ALEN];
   bool link;  // link - lowerlayer state
   bool state; // state - administrative state
   __u32 mtu;
@@ -55,7 +56,7 @@ struct net_api_vlan_q {
   __u32 vid;
   __u8 dev[IF_NAMESIZE];
   __u32 link_index;
-  __u8 mac_addr[6];
+  __u8 mac_addr[ETH_ALEN];
   bool link;
   bool state;
   __u32 mtu;
@@ -72,11 +73,11 @@ struct net_api_neigh_q {
   __u32 ip;
   __u32 link_index;
   __u32 state;
-  __u8 hwaddr[6];
+  __u8 hwaddr[ETH_ALEN];
 };
 
 struct net_api_fdb_q {
-  __u8 mac_addr[6];
+  __u8 mac_addr[ETH_ALEN];
   __u32 bridge_id;
   __u32 dst;
   __u32 type;
@@ -112,4 +113,5 @@ int net_route_add(struct net_api_route_q *route);
 int net_route_del(struct net_api_route_q *route);
 
 void apply_config_map(const char *name, bool state, bool add);
+
 #endif /* __FLB_NET_API_H__ */

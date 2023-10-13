@@ -11,6 +11,7 @@
 #include <net/if.h>
 
 #include <linux/if_addr.h>
+#include <linux/if_ether.h>
 #include <linux/if_tunnel.h>
 #include <linux/neighbour.h>
 
@@ -104,7 +105,7 @@ typedef struct nl_port_mod {
   __u32 flags;
   __u32 mtu;
   __u8 oper_state;
-  __u8 hwaddr[6];
+  __u8 hwaddr[ETH_ALEN];
   struct {
     __u32 dummy : 1;
     __u32 ifb : 1;
@@ -164,7 +165,7 @@ typedef struct nl_neigh_mod {
   __u32 master_index;
   __u32 ip;
   __u32 ll_ip_addr;
-  __u8 hwaddr[6];
+  __u8 hwaddr[ETH_ALEN];
 } nl_neigh_mod_t;
 
 typedef struct nl_addr_mod {
