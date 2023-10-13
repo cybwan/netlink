@@ -185,7 +185,7 @@ typedef struct nl_route_mod {
   struct nl_ipnet dst;
 } nl_route_mod_t;
 
-void parse_rtattr(struct rtattr *tb[], int max, struct rtattr *rta, int len);
+//void parse_rtattr(struct rtattr *tb[], int max, struct rtattr *rta, int len);
 
 int nl_link_get(int ifi_index, nl_port_mod_t *port);
 
@@ -207,6 +207,17 @@ static inline bool is_zero_mac(__u8 mac[ETH_ALEN]) {
     return true;
   }
   return false;
+}
+
+static inline void parse_rtattr(struct rtattr *tb[], int max, struct rtattr *rta, int len) {
+  memset(tb, 0, sizeof(struct rtattr *) * (max + 1));
+
+  while (RTA_OK(rta, len)) {
+    if (rta->rta_type <= max) {
+      tb[rta->rta_type] = rta;
+    }
+    rta = RTA_NEXT(rta, len);
+  }
 }
 
 #endif /* __FLB_NLP_H__ */

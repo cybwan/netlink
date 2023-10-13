@@ -206,4 +206,4 @@ int net_route_del(struct net_api_route_q *route) {
   return 0;
 }
 
-void apply_config_map(const char *name, bool state, bool add) {}
+void apply_config_map(char *name, bool state, bool add) {}

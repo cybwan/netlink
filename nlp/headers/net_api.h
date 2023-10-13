@@ -82,6 +82,6 @@ int net_addr_del(struct net_api_addr_q *addr);
 int net_route_add(struct net_api_route_q *route);
 int net_route_del(struct net_api_route_q *route);
 
-void apply_config_map(const char *name, bool state, bool add);
+void apply_config_map(char *name, bool state, bool add);
 
 #endif /* __FLB_NET_API_H__ */
