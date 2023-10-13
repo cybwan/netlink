@@ -3,35 +3,35 @@
 #include <string.h>
 
 struct {
-  bool net_port_add;
-  bool net_port_del;
-  bool net_vlan_add;
-  bool net_vlan_del;
-  bool net_vlan_port_add;
-  bool net_vlan_port_del;
-  bool net_neigh_add;
-  bool net_neigh_del;
-  bool net_fdb_add;
-  bool net_fdb_del;
-  bool net_addr_add;
-  bool net_addr_del;
-  bool net_route_add;
-  bool net_route_del;
+  __u32 net_port_add : 1;
+  __u32 net_port_del : 1;
+  __u32 net_vlan_add : 1;
+  __u32 net_vlan_del : 1;
+  __u32 net_vlan_port_add : 1;
+  __u32 net_vlan_port_del : 1;
+  __u32 net_neigh_add : 1;
+  __u32 net_neigh_del : 1;
+  __u32 net_fdb_add : 1;
+  __u32 net_fdb_del : 1;
+  __u32 net_addr_add : 1;
+  __u32 net_addr_del : 1;
+  __u32 net_route_add : 1;
+  __u32 net_route_del : 1;
 } debug = {
-    .net_port_add = true,
-    .net_port_del = false,
-    .net_vlan_add = false,
-    .net_vlan_del = false,
-    .net_vlan_port_add = false,
-    .net_vlan_port_del = false,
-    .net_neigh_add = false,
-    .net_neigh_del = false,
-    .net_fdb_add = false,
-    .net_fdb_del = false,
-    .net_addr_add = false,
-    .net_addr_del = false,
-    .net_route_add = false,
-    .net_route_del = false,
+    .net_port_add = 1,
+    .net_port_del = 0,
+    .net_vlan_add = 0,
+    .net_vlan_del = 0,
+    .net_vlan_port_add = 0,
+    .net_vlan_port_del = 0,
+    .net_neigh_add = 0,
+    .net_neigh_del = 0,
+    .net_fdb_add = 0,
+    .net_fdb_del = 0,
+    .net_addr_add = 0,
+    .net_addr_del = 0,
+    .net_route_add = 0,
+    .net_route_del = 0,
 };
 
 int net_port_add(struct net_api_port_q *port) {
