@@ -207,7 +207,9 @@ int nl_link_list_res(struct nl_msg *msg, void *arg) {
   struct nlmsghdr *nlh = nlmsg_hdr(msg);
   struct ifinfomsg *ifi_msg = NLMSG_DATA(nlh);
   struct nl_multi_arg *args = (struct nl_multi_arg *)arg;
-  bool only_bridge = *(bool *)args->arg1;
+  bool only_bridges = *(bool *)args->arg1;
+  bool only_links = *(bool *)args->arg2;
+  bool add = nlh->nlmsg_type == RTM_NEWLINK;
 
   struct rtattr *attrs[IFLA_MAX + 1];
   int remaining = nlh->nlmsg_len - NLMSG_LENGTH(sizeof(*ifi_msg));
@@ -223,7 +225,7 @@ int nl_link_list_res(struct nl_msg *msg, void *arg) {
     struct rtattr *info_attrs[IFLA_INFO_MAX + 1];
     parse_rtattr(info_attrs, IFLA_INFO_MAX, RTA_DATA(info), RTA_PAYLOAD(info));
     char *kind = (char *)RTA_DATA(info_attrs[IFLA_INFO_KIND]);
-    if (only_bridge && strcmp(kind, "bridge") != 0) {
+    if (only_bridges && strcmp(kind, "bridge") != 0) {
       return NL_SKIP;
     }
     if (strcmp(kind, "bridge") == 0) {
@@ -257,12 +259,8 @@ int nl_link_list_res(struct nl_msg *msg, void *arg) {
       }
       port.type.ipip = 1;
     }
-  } else if (only_bridge) {
+  } else if (only_bridges) {
     return NL_SKIP;
-  }
-
-  if (attrs[IFLA_MASTER]) {
-    port.master_index = *(__u32 *)RTA_DATA(attrs[IFLA_MASTER]);
   }
 
   if (attrs[IFLA_IFNAME]) {
@@ -270,20 +268,30 @@ int nl_link_list_res(struct nl_msg *msg, void *arg) {
     memcpy(port.name, ifname, attrs[IFLA_IFNAME]->rta_len - 4);
   }
 
-  if (attrs[IFLA_MTU]) {
-    port.mtu = *(__u32 *)RTA_DATA(attrs[IFLA_MTU]);
-  }
-  if (attrs[IFLA_OPERSTATE]) {
-    port.oper_state = *(__u8 *)RTA_DATA(attrs[IFLA_OPERSTATE]);
-  }
-  if (attrs[IFLA_ADDRESS]) {
-    __u8 *hwaddr = (__u8 *)RTA_DATA(attrs[IFLA_ADDRESS]);
-    memcpy(port.hwaddr, hwaddr, attrs[IFLA_ADDRESS]->rta_len - 4);
+  if (attrs[IFLA_MASTER]) {
+    port.master_index = *(__u32 *)RTA_DATA(attrs[IFLA_MASTER]);
   }
 
-  int ret = nl_link_mod(&port, true);
+  if (add) {
+    if (attrs[IFLA_MTU]) {
+      port.mtu = *(__u32 *)RTA_DATA(attrs[IFLA_MTU]);
+    }
+    if (attrs[IFLA_OPERSTATE]) {
+      port.oper_state = *(__u8 *)RTA_DATA(attrs[IFLA_OPERSTATE]);
+    }
+    if (attrs[IFLA_ADDRESS]) {
+      __u8 *hwaddr = (__u8 *)RTA_DATA(attrs[IFLA_ADDRESS]);
+      memcpy(port.hwaddr, hwaddr, attrs[IFLA_ADDRESS]->rta_len - 4);
+    }
+  }
+
+  int ret = nl_link_mod(&port, add);
   if (ret < 0) {
     return NL_SKIP;
+  }
+
+  if (only_links) {
+    return NL_OK;
   }
 
   /* Get FDBs */
@@ -299,7 +307,7 @@ int nl_link_list_res(struct nl_msg *msg, void *arg) {
   return NL_OK;
 }
 
-static inline int _internal_nl_link_list(bool only_bridge) {
+static inline int _internal_nl_link_list(bool only_bridges) {
   struct nl_sock *socket = nl_socket_alloc();
   nl_connect(socket, NETLINK_ROUTE);
 
@@ -331,8 +339,10 @@ static inline int _internal_nl_link_list(bool only_bridge) {
     return ret;
   }
 
+  bool only_links = false;
   struct nl_multi_arg args = {
-      .arg1 = &only_bridge,
+      .arg1 = &only_bridges,
+      .arg2 = &only_links,
   };
   nl_socket_modify_cb(socket, NL_CB_VALID, NL_CB_CUSTOM, nl_link_list_res,
                       &args);
@@ -466,14 +476,19 @@ int nl_link_get(int ifi_index, nl_port_mod_t *port) {
 }
 
 int nl_link_subscribe() {
+  bool only_bridges = false;
+  bool only_links = true;
+  struct nl_multi_arg args = {
+      .arg1 = &only_bridges,
+      .arg2 = &only_links,
+  };
   struct nl_sock *socket = nl_socket_alloc();
   nl_socket_disable_seq_check(socket);
   nl_socket_modify_cb(socket, NL_CB_VALID, NL_CB_CUSTOM, nl_link_list_res,
-                      NULL);
+                      &args);
   nl_connect(socket, NETLINK_ROUTE);
   nl_socket_add_memberships(socket, RTNLGRP_LINK, 0);
   while (1) {
-    printf("nl_recvmsgs_default\n");
     nl_recvmsgs_default(socket);
   }
   nl_socket_free(socket);

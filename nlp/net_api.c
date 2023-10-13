@@ -19,7 +19,7 @@ struct {
   __u32 net_route_del : 1;
 } debug = {
     .net_port_add = 1,
-    .net_port_del = 0,
+    .net_port_del = 1,
     .net_vlan_add = 0,
     .net_vlan_del = 0,
     .net_vlan_port_add = 0,
@@ -51,12 +51,19 @@ int net_port_add(struct net_api_port_q *port) {
     printf("TunID: %-4d ", port->tun_id);
     printf("TunSrc: %-18s ", port->tun_src);
     printf("TunDst: %-18s ", port->tun_dst);
-
     printf("\n");
   }
   return 0;
 }
-int net_port_del(struct net_api_port_q *port) { return 0; }
+int net_port_del(struct net_api_port_q *port) {
+  if (debug.net_port_del) {
+    printf("net_port_del ");
+    printf("Dev: %-8s ", (char *)(port->dev));
+    printf("Ptype: %d ", port->link_type);
+    printf("\n");
+  }
+  return 0;
+}
 
 int net_vlan_add(struct net_api_vlan_q *vlan) {
   if (debug.net_vlan_add) {
