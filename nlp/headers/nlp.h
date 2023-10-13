@@ -191,10 +191,10 @@ int nl_addr_list(nl_port_mod_t *port, __u8 family);
 int nl_neigh_list(nl_port_mod_t *port, __u8 family);
 int nl_route_list(nl_port_mod_t *port, __u8 family);
 
-static __u8 zero_mac[6] = {0, 0, 0, 0, 0, 0};
+static __u8 zero_mac[ETH_ALEN] = {0, 0, 0, 0, 0, 0};
 
-static inline bool is_zero_mac(__u8 mac[6]) {
-  if (memcmp(mac, zero_mac, 6) == 0) {
+static inline bool is_zero_mac(__u8 mac[ETH_ALEN]) {
+  if (memcmp(mac, zero_mac, ETH_ALEN) == 0) {
     return true;
   }
   return false;
