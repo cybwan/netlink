@@ -186,10 +186,14 @@ typedef struct nl_route_mod {
 } nl_route_mod_t;
 
 void parse_rtattr(struct rtattr *tb[], int max, struct rtattr *rta, int len);
+
 int nl_link_get(int ifi_index, nl_port_mod_t *port);
+
 int nl_addr_list(nl_port_mod_t *port, __u8 family);
 int nl_neigh_list(nl_port_mod_t *port, __u8 family);
 int nl_route_list(nl_port_mod_t *port, __u8 family);
+int nl_bridge_list();
+int nl_link_list();
 
 static __u8 zero_mac[ETH_ALEN] = {0, 0, 0, 0, 0, 0};
 
