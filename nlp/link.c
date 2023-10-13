@@ -3,12 +3,10 @@
 #include <regex.h>
 #include <unistd.h>
 
-int nl_mod_link(nl_port_mod_t *port, bool add);
-
 static inline void debug_link(nl_port_mod_t *port) {
-  printf("Master: %2d Index: %2d MTU:%5d "
+  printf("Master: %2d Index: %2d MTU: %5d "
          "MAC: %02x:%02x:%02x:%02x:%02x:%02x "
-         "State:%d IFNAME: %8s ",
+         "State: %d IFNAME: %8s ",
          port->master_index, port->index, port->mtu, port->hwaddr[0],
          port->hwaddr[1], port->hwaddr[2], port->hwaddr[3], port->hwaddr[4],
          port->hwaddr[5], port->oper_state, port->name);
@@ -70,6 +68,7 @@ int nl_link_mod(nl_port_mod_t *port, bool add) {
   }
 
   char master[IF_NAMESIZE];
+  memset(master, 0, IF_NAMESIZE);
   if (port->master_index > 0) {
     char if_name_buf[IF_NAMESIZE];
     regex_t regex;
@@ -114,7 +113,7 @@ int nl_link_mod(nl_port_mod_t *port, bool add) {
         return ret;
       }
       if (mif.type.bond) {
-        strcpy(master, (char *)mif.name);
+        memcpy(master, mif.name, IF_NAMESIZE);
       }
     }
   }
@@ -125,7 +124,7 @@ int nl_link_mod(nl_port_mod_t *port, bool add) {
   int tun_id = 0;
   int tun_src = 0;
   int tun_dst = 0;
-
+  memset(real, 0, IF_NAMESIZE);
   if (strstr((char *)port->name, "ipsec") != NULL ||
       strstr((char *)port->name, "vti") != NULL) {
     p_type = PORT_VTI;
@@ -152,6 +151,7 @@ int nl_link_mod(nl_port_mod_t *port, bool add) {
   }
 
   struct net_api_port_q port_q;
+  memset(&port_q, 0, sizeof(port_q));
   port_q.link_type = p_type;
   memcpy(port_q.dev, port->name, IF_NAMESIZE);
   if (add) {
@@ -160,11 +160,20 @@ int nl_link_mod(nl_port_mod_t *port, bool add) {
     port_q.state = state;
     port_q.mtu = port->mtu;
     port_q.tun_id = tun_id;
-    port_q.tun_src = tun_src;
-    port_q.tun_dst = tun_dst;
-    memcpy(port_q.mac_addr, port->hwaddr, 6);
-    memcpy(port_q.master, master, IF_NAMESIZE);
-    memcpy(port_q.real, real, IF_NAMESIZE);
+    memcpy(port_q.mac_addr, port->hwaddr, ETH_ALEN);
+
+    struct in_addr *tun_src_in = (struct in_addr *)&tun_src;
+    inet_ntop(AF_INET, tun_src_in, (char *)port_q.tun_src, INET_ADDRSTRLEN);
+
+    struct in_addr *tun_dst_in = (struct in_addr *)&tun_dst;
+    inet_ntop(AF_INET, tun_dst_in, (char *)port_q.tun_dst, INET_ADDRSTRLEN);
+
+    if (strlen(master) > 0) {
+      memcpy(port_q.master, master, IF_NAMESIZE);
+    }
+    if (strlen(real) > 0) {
+      memcpy(port_q.real, real, IF_NAMESIZE);
+    }
     ret = net_port_add(&port_q);
     apply_config_map((char *)port->name, state, add);
   } else if (port->master_index == 0) {

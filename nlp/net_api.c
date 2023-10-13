@@ -18,7 +18,7 @@ struct {
   bool net_route_add;
   bool net_route_del;
 } debug = {
-    .net_port_add = false,
+    .net_port_add = true,
     .net_port_del = false,
     .net_vlan_add = false,
     .net_vlan_del = false,
@@ -41,21 +41,17 @@ int net_port_add(struct net_api_port_q *port) {
     printf("LinkIndex: %-4d ", port->link_index);
     printf("Ptype: %d ", port->link_type);
 
-    printf("MacAddr: [%d,%d,%d,%d,%d,%d] ", port->mac_addr[0],
+    printf("MacAddr: [%3d,%3d,%3d,%3d,%3d,%3d] ", port->mac_addr[0],
            port->mac_addr[1], port->mac_addr[2], port->mac_addr[3],
            port->mac_addr[4], port->mac_addr[5]);
     printf("Link: %d ", port->link);
     printf("State: %d ", port->state);
-    printf("Mtu: %-4d ", port->mtu);
-    printf("Master: %s ", (char *)port->master);
-    printf("Real: %s ", (char *)port->real);
-    printf("Mtu: %d ", port->tun_id);
-
-    struct in_addr *tun_src_in = (struct in_addr *)&port->tun_src;
-    printf("TunSrc: %s ", inet_ntoa(*tun_src_in));
-
-    struct in_addr *tun_dst_in = (struct in_addr *)&port->tun_dst;
-    printf("TunDst: %s ", inet_ntoa(*tun_dst_in));
+    printf("Mtu: %-5d ", port->mtu);
+    printf("Master: %-12s ", (char *)port->master);
+    printf("Real: %-12s ", (char *)port->real);
+    printf("TunID: %-4d ", port->tun_id);
+    printf("TunSrc: %-15s ", port->tun_src);
+    printf("TunDst: %-15s ", port->tun_dst);
 
     printf("\n");
   }

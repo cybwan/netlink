@@ -18,8 +18,8 @@ struct net_api_port_q {
   __u8 master[IF_NAMESIZE];
   __u8 real[IF_NAMESIZE];
   __u32 tun_id;
-  __u32 tun_src;
-  __u32 tun_dst;
+  __u8 tun_src[INET_ADDRSTRLEN];
+  __u8 tun_dst[INET_ADDRSTRLEN];
 };
 
 struct net_api_vlan_q {
