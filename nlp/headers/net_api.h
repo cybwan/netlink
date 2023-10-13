@@ -7,36 +7,6 @@
 #include <net/if.h>
 #include <stdbool.h>
 
-#ifndef _NL_IP_T_
-#define _NL_IP_T_
-typedef struct nl_ip {
-  struct {
-    __u8 v4 : 1;
-    __u8 v6 : 1;
-  } f;
-  union {
-    union {
-      __u8 bytes[16];
-    } v6;
-    union {
-      __u8 _pad[12];
-      union {
-        __u8 bytes[4];
-        __u32 ip;
-      };
-    } v4;
-  };
-} nl_ip_t;
-#endif
-
-#ifndef _NL_IPNET_T_
-#define _NL_IPNET_T_
-typedef struct nl_ipnet {
-  struct nl_ip ip;
-  __u8 mask;
-} nl_ipnet_t;
-#endif
-
 struct net_api_port_q {
   __u8 dev[IF_NAMESIZE];
   __u32 link_index;
@@ -79,7 +49,7 @@ struct net_api_neigh_q {
 struct net_api_fdb_q {
   __u8 mac_addr[ETH_ALEN];
   __u32 bridge_id;
-  __u32 dst;
+  __u8 dst[INET6_ADDRSTRLEN];
   __u32 type;
   __u8 dev[IF_NAMESIZE];
 };
@@ -93,8 +63,8 @@ struct net_api_route_q {
   __u32 link_index;
   __u32 protocol;
   __u32 flags;
-  struct nl_ip gw;
-  struct nl_ipnet dst;
+  __u8 gw[INET6_ADDRSTRLEN];
+  __u8 dst[INET6_ADDRSTRLEN + 4];
 };
 
 int net_port_add(struct net_api_port_q *port);

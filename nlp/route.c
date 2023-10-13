@@ -40,15 +40,35 @@ int nl_route_add(nl_route_mod_t *route, nl_port_mod_t *port) {
   route_q.protocol = route->protocol;
   route_q.flags = route->flags;
 
-  if (route->dst.ip.f.v4 || route->dst.ip.f.v6) {
-    memcpy(&route_q.dst, &route->dst, sizeof(struct nl_ipnet));
-  } else {
-    route_q.dst.ip.f.v4 = 1;
-    route_q.dst.mask = 32;
+  // if (route->dst.ip.f.v4 || route->dst.ip.f.v6) {
+  //   memcpy(&route_q.dst, &route->dst, sizeof(struct nl_ipnet));
+  // } else {
+  //   route_q.dst.ip.f.v4 = 1;
+  //   route_q.dst.mask = 32;
+  // }
+
+  // if (route->gw.f.v4 || route->gw.f.v6) {
+  //   memcpy(&route_q.gw, &route->gw, sizeof(struct nl_ip));
+  // }
+
+  if (route->dst.ip.f.v4 || !route->dst.ip.f.v6) {
+    struct in_addr *in = (struct in_addr *)route->dst.ip.v4.bytes;
+    char a_str[INET_ADDRSTRLEN];
+    inet_ntop(AF_INET, in, a_str, INET_ADDRSTRLEN);
+    sprintf((char *)route_q.dst, "%s/%d ", a_str, route->dst.mask);
+  } else if (route->dst.ip.f.v6) {
+    struct in6_addr *in = (struct in6_addr *)route->dst.ip.v6.bytes;
+    char a_str[INET6_ADDRSTRLEN];
+    inet_ntop(AF_INET6, in, a_str, INET6_ADDRSTRLEN);
+    sprintf((char *)route_q.dst, "%s/%d", a_str, route->dst.mask);
   }
 
-  if (route->gw.f.v4 || route->gw.f.v6) {
-    memcpy(&route_q.gw, &route->gw, sizeof(struct nl_ip));
+  if (route->gw.f.v4) {
+    struct in_addr *in = (struct in_addr *)route->gw.v4.bytes;
+    inet_ntop(AF_INET, in, (char *)route_q.gw, INET_ADDRSTRLEN);
+  } else if (route->gw.f.v6) {
+    struct in6_addr *in = (struct in6_addr *)route->gw.v6.bytes;
+    inet_ntop(AF_INET6, in, (char *)route_q.gw, INET6_ADDRSTRLEN);
   }
 
   return net_route_add(&route_q);

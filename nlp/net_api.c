@@ -124,10 +124,7 @@ int net_fdb_add(struct net_api_fdb_q *fdb) {
            fdb->mac_addr[5]);
     printf("BridgeID: %d ", fdb->bridge_id);
     printf("Dev: %-8s ", (char *)(fdb->dev));
-
-    struct in_addr *in = (struct in_addr *)&fdb->dst;
-    printf("Dst: %s ", inet_ntoa(*in));
-
+    printf("Dst: %-16s ", (char *)(fdb->dst));
     printf("Type: %d ", fdb->type);
     printf("\n");
   }
@@ -154,27 +151,8 @@ int net_route_add(struct net_api_route_q *route) {
     printf("Protocol: %d ", route->protocol);
     printf("Flags: %d ", route->flags);
     printf("Link Index: %2d ", route->link_index);
-
-    if (route->dst.ip.f.v4) {
-      struct in_addr *in = (struct in_addr *)route->dst.ip.v4.bytes;
-      printf("Dst: %s/%d ", inet_ntoa(*in), route->dst.mask);
-    } else if (route->dst.ip.f.v6) {
-      struct in6_addr *in = (struct in6_addr *)route->dst.ip.v6.bytes;
-      char a_str[INET6_ADDRSTRLEN];
-      inet_ntop(AF_INET6, in, a_str, INET6_ADDRSTRLEN);
-      printf("Dst: %s/%d ", a_str, route->dst.mask);
-    }
-
-    if (route->gw.f.v4) {
-      struct in_addr *in = (struct in_addr *)route->gw.v4.bytes;
-      printf("Gw: %s ", inet_ntoa(*in));
-    } else if (route->gw.f.v6) {
-      struct in6_addr *in = (struct in6_addr *)route->gw.v6.bytes;
-      char a_str[INET6_ADDRSTRLEN];
-      inet_ntop(AF_INET6, in, a_str, INET6_ADDRSTRLEN);
-      printf("Gw: %s ", a_str);
-    }
-
+    printf("Dst: %-20s ", route->dst);
+    printf("Gw: %-16s ", route->gw);
     printf("\n");
   }
   return 0;

@@ -87,10 +87,11 @@ int nl_neigh_add(nl_neigh_mod_t *neigh, nl_port_mod_t *port) {
 
     struct net_api_fdb_q fdb_q;
     fdb_q.bridge_id = brId;
-    fdb_q.dst = dst;
     fdb_q.type = ftype;
     memcpy(fdb_q.mac_addr, neigh->hwaddr, 6);
     memcpy(fdb_q.dev, port->name, IF_NAMESIZE);
+    struct in_addr *in = (struct in_addr *)&dst;
+    inet_ntop(AF_INET, in, (char *)fdb_q.dst, INET_ADDRSTRLEN);
     return net_fdb_add(&fdb_q);
   }
   return 0;
