@@ -141,7 +141,7 @@ func net_fdb_add(fdb *C.struct_net_api_fdb_q) C.int {
 	printf("BridgeID: %d ", fdb.bridge_id)
 	printf("Dev: %-8s ", c16str(fdb.dev))
 	printf("Dst: %-33s ", c46str(fdb.dst))
-	printf("Type: %5t ", fdb.fdb_type)
+	printf("Type: %d ", fdb.fdb_type)
 	printf("\n")
 	return C.NL_OK
 }
