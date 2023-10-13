@@ -41,7 +41,12 @@ static inline void debug_addr(nl_addr_mod_t *addr) {
   printf("\n");
 }
 
-int nl_addr_add(nl_addr_mod_t *addr, nl_port_mod_t *port) {
+int nl_addr_mod(nl_addr_mod_t *addr, bool add) {
+  nl_port_mod_t port;
+  memset(&port, 0, sizeof(port));
+  if (nl_link_get(addr->link_index, &port) < 0) {
+    return -1;
+  }
   struct net_api_addr_q addr_q;
   memset(&addr_q, 0, sizeof(addr_q));
 
@@ -59,24 +64,39 @@ int nl_addr_add(nl_addr_mod_t *addr, nl_port_mod_t *port) {
     return NL_SKIP;
   }
 
-  memcpy(addr_q.dev, port->name, IF_NAMESIZE);
-  return net_addr_add(&addr_q);
+  memcpy(addr_q.dev, port.name, IF_NAMESIZE);
+
+  if (add) {
+    return net_addr_add(&addr_q);
+  } else {
+    return net_addr_del(&addr_q);
+  }
 }
 
 int nl_addr_list_res(struct nl_msg *msg, void *arg) {
   struct nlmsghdr *nlh = nlmsg_hdr(msg);
+  if (nlh->nlmsg_type == NLMSG_DONE || nlh->nlmsg_type == NLMSG_ERROR) {
+    return NL_SKIP;
+  }
+  if (nlh->nlmsg_type != RTM_NEWADDR && nlh->nlmsg_type != RTM_DELADDR) {
+    return NL_SKIP;
+  }
+
   struct ifaddrmsg *ifa_msg = NLMSG_DATA(nlh);
-  struct nl_multi_arg *args = (struct nl_multi_arg *)arg;
-  struct nl_port_mod *port = (struct nl_port_mod *)args->arg1;
-  struct ifaddrmsg *nl_req = (struct ifaddrmsg *)args->arg2;
+  if (arg != NULL) {
+    struct nl_multi_arg *args = (struct nl_multi_arg *)arg;
+    struct ifaddrmsg *nl_req = (struct ifaddrmsg *)args->arg1;
 
-  if (nl_req->ifa_index != 0 && nl_req->ifa_index != ifa_msg->ifa_index) {
-    return NL_SKIP;
+    if (nl_req->ifa_index != 0 && nl_req->ifa_index != ifa_msg->ifa_index) {
+      return NL_SKIP;
+    }
+
+    if (nl_req->ifa_family != 0 && nl_req->ifa_family != ifa_msg->ifa_family) {
+      return NL_SKIP;
+    }
   }
 
-  if (nl_req->ifa_family != 0 && nl_req->ifa_family != ifa_msg->ifa_family) {
-    return NL_SKIP;
-  }
+  bool add = nlh->nlmsg_type == RTM_NEWADDR;
 
   struct rtattr *attrs[IFA_MAX + 1];
   int remaining = nlh->nlmsg_len - NLMSG_LENGTH(sizeof(*ifa_msg));
@@ -146,9 +166,7 @@ int nl_addr_list_res(struct nl_msg *msg, void *arg) {
   addr.scope = ifa_msg->ifa_scope;
 
   // debug_addr(&addr);
-  nl_addr_add(&addr, port);
-
-  return NL_OK;
+  return nl_addr_mod(&addr, add);
 }
 
 int nl_addr_list(nl_port_mod_t *port, __u8 family) {
@@ -175,8 +193,7 @@ int nl_addr_list(nl_port_mod_t *port, __u8 family) {
   }
 
   struct nl_multi_arg args = {
-      .arg1 = port,
-      .arg2 = nl_req,
+      .arg1 = nl_req,
   };
   nl_socket_modify_cb(socket, NL_CB_VALID, NL_CB_CUSTOM, nl_addr_list_res,
                       &args);
@@ -185,5 +202,20 @@ int nl_addr_list(nl_port_mod_t *port, __u8 family) {
   nlmsg_free(msg);
   nl_socket_free(socket);
 
+  return 0;
+}
+
+int nl_addr_subscribe() {
+  struct nl_sock *socket = nl_socket_alloc();
+  nl_socket_disable_seq_check(socket);
+  nl_socket_modify_cb(socket, NL_CB_VALID, NL_CB_CUSTOM, nl_addr_list_res,
+                      NULL);
+  nl_connect(socket, NETLINK_ROUTE);
+  nl_socket_add_memberships(socket, RTNLGRP_IPV4_IFADDR, 0);
+  nl_socket_add_memberships(socket, RTNLGRP_IPV6_IFADDR, 0);
+  while (1) {
+    nl_recvmsgs_default(socket);
+  }
+  nl_socket_free(socket);
   return 0;
 }

@@ -195,6 +195,9 @@ int nl_route_list(nl_port_mod_t *port, __u8 family);
 int nl_bridge_list();
 int nl_link_list();
 
+int nl_addr_subscribe();
+int nl_neigh_subscribe();
+int nl_route_subscribe();
 int nl_link_subscribe();
 
 static __u8 zero_mac[ETH_ALEN] = {0, 0, 0, 0, 0, 0};

@@ -18,8 +18,8 @@ struct {
   __u32 net_route_add : 1;
   __u32 net_route_del : 1;
 } debug = {
-    .net_port_add = 1,
-    .net_port_del = 1,
+    .net_port_add = 0,
+    .net_port_del = 0,
     .net_vlan_add = 0,
     .net_vlan_del = 0,
     .net_vlan_port_add = 0,
@@ -28,8 +28,8 @@ struct {
     .net_neigh_del = 0,
     .net_fdb_add = 0,
     .net_fdb_del = 0,
-    .net_addr_add = 0,
-    .net_addr_del = 0,
+    .net_addr_add = 1,
+    .net_addr_del = 1,
     .net_route_add = 0,
     .net_route_del = 0,
 };
@@ -141,7 +141,15 @@ int net_addr_add(struct net_api_addr_q *addr) {
   return 0;
 }
 
-int net_addr_del(struct net_api_addr_q *addr) { return 0; }
+int net_addr_del(struct net_api_addr_q *addr) {
+  if (debug.net_addr_add) {
+    printf("net_addr_del ");
+    printf("Dev: %-8s ", addr->dev);
+    printf("IP: %-18s", (char *)(addr->ip));
+    printf("\n");
+  }
+  return 0;
+}
 
 int net_route_add(struct net_api_route_q *route) {
   if (debug.net_route_add) {

@@ -5,7 +5,9 @@ int main() {
   nl_bridge_list();
   nl_link_list();
 
-  nl_link_subscribe();
+  // nl_link_subscribe();
+  nl_addr_subscribe();
+
   // nl_port_mod_t port;
   // nl_link_get(19, &port);
   // debug_link(&port);

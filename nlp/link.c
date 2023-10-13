@@ -205,6 +205,10 @@ int nl_link_mod(nl_port_mod_t *port, bool add) {
 
 int nl_link_list_res(struct nl_msg *msg, void *arg) {
   struct nlmsghdr *nlh = nlmsg_hdr(msg);
+  if (nlh->nlmsg_type == NLMSG_DONE || nlh->nlmsg_type == NLMSG_ERROR) {
+    return NL_SKIP;
+  }
+
   struct ifinfomsg *ifi_msg = NLMSG_DATA(nlh);
   struct nl_multi_arg *args = (struct nl_multi_arg *)arg;
   bool only_bridges = *(bool *)args->arg1;
