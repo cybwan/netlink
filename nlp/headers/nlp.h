@@ -163,8 +163,8 @@ typedef struct nl_neigh_mod {
   __u32 vlan;
   __u32 vni;
   __u32 master_index;
-  __u32 ip;
-  __u32 ll_ip_addr;
+  struct nl_ip ip;
+  struct nl_ip ll_ip_addr;
   __u8 hwaddr[ETH_ALEN];
 } nl_neigh_mod_t;
 

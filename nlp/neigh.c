@@ -13,12 +13,24 @@
 #endif
 
 static inline void debug_neigh(nl_neigh_mod_t *neigh) {
-  printf("Neigh Master: %2d Index: %2d "
-         "MAC: %02x:%02x:%02x:%02x:%02x:%02x "
-         "State:%d IP:%x",
-         neigh->master_index, neigh->link_index, neigh->hwaddr[0],
+  printf("Neigh Master: %2d ", neigh->master_index);
+  printf("Index: %2d ", neigh->link_index);
+
+  printf("MAC: %02x:%02x:%02x:%02x:%02x:%02x ", neigh->hwaddr[0],
          neigh->hwaddr[1], neigh->hwaddr[2], neigh->hwaddr[3], neigh->hwaddr[4],
-         neigh->hwaddr[5], neigh->state, neigh->ip);
+         neigh->hwaddr[5]);
+  printf("State: %d ", neigh->state);
+
+  if (neigh->ip.f.v4) {
+    struct in_addr *in = (struct in_addr *)neigh->ip.v4.bytes;
+    printf("IP: %s ", inet_ntoa(*in));
+  } else if (neigh->ip.f.v6) {
+    struct in6_addr *in = (struct in6_addr *)neigh->ip.v6.bytes;
+    char a_str[INET6_ADDRSTRLEN];
+    inet_ntop(AF_INET6, in, a_str, INET6_ADDRSTRLEN);
+    printf("IP: %s ", a_str);
+  }
+
   printf("\n");
 }
 
@@ -28,10 +40,17 @@ int nl_neigh_add(nl_neigh_mod_t *neigh, nl_port_mod_t *port) {
   }
   if (neigh->family == AF_INET || neigh->family == AF_INET6) {
     struct net_api_neigh_q neigh_q;
-    neigh_q.ip = neigh->ip;
+    memset(&neigh_q, 0, sizeof(neigh_q));
     neigh_q.link_index = neigh->link_index;
     neigh_q.state = neigh->state;
-    memcpy(neigh_q.hwaddr, neigh->hwaddr, 6);
+    memcpy(neigh_q.hwaddr, neigh->hwaddr, ETH_ALEN);
+    if (neigh->ip.f.v4) {
+      struct in_addr *in = (struct in_addr *)neigh->ip.v4.bytes;
+      inet_ntop(AF_INET, in, (char *)neigh_q.ip, INET_ADDRSTRLEN);
+    } else if (neigh->ip.f.v6) {
+      struct in6_addr *in = (struct in6_addr *)neigh->ip.v6.bytes;
+      inet_ntop(AF_INET6, in, (char *)neigh_q.ip, INET6_ADDRSTRLEN);
+    }
     net_neigh_add(&neigh_q);
   } else if (neigh->family == AF_BRIDGE) {
     if (neigh->vlan == 1) {
@@ -45,7 +64,9 @@ int nl_neigh_add(nl_neigh_mod_t *neigh, nl_port_mod_t *port) {
 
     int brId = 0;
     int ftype;
-    int dst;
+    __u8 dst[INET6_ADDRSTRLEN];
+
+    memset(dst, 0, INET_ADDRSTRLEN);
 
     if (neigh->master_index > 0) {
       nl_port_mod_t brLink;
@@ -73,25 +94,30 @@ int nl_neigh_add(nl_neigh_mod_t *neigh, nl_port_mod_t *port) {
 
     if (port->type.vxlan) {
       /* Interested in only VxLAN FDB */
-      if (neigh->ip > 0 && neigh->master_index == 0) {
-        dst = neigh->ip;
+      if ((neigh->ip.f.v4 || neigh->ip.f.v6) && neigh->master_index == 0) {
+        if (neigh->ip.f.v4) {
+          struct in_addr *in = (struct in_addr *)neigh->ip.v4.bytes;
+          inet_ntop(AF_INET, in, (char *)dst, INET_ADDRSTRLEN);
+        } else if (neigh->ip.f.v6) {
+          struct in6_addr *in = (struct in6_addr *)neigh->ip.v6.bytes;
+          inet_ntop(AF_INET6, in, (char *)dst, INET6_ADDRSTRLEN);
+        }
         brId = port->u.vxlan.vxlan_id;
         ftype = FDB_TUN;
       } else {
         return 0;
       }
     } else {
-      dst = 0;
+      memset(dst, 0, INET_ADDRSTRLEN);
       ftype = FDB_VLAN;
     }
 
     struct net_api_fdb_q fdb_q;
     fdb_q.bridge_id = brId;
     fdb_q.type = ftype;
-    memcpy(fdb_q.mac_addr, neigh->hwaddr, 6);
+    memcpy(fdb_q.mac_addr, neigh->hwaddr, ETH_ALEN);
     memcpy(fdb_q.dev, port->name, IF_NAMESIZE);
-    struct in_addr *in = (struct in_addr *)&dst;
-    inet_ntop(AF_INET, in, (char *)fdb_q.dst, INET_ADDRSTRLEN);
+    memcpy(fdb_q.dst, dst, INET6_ADDRSTRLEN);
     return net_fdb_add(&fdb_q);
   }
   return 0;
@@ -150,28 +176,29 @@ int nl_neigh_list_res(struct nl_msg *msg, void *arg) {
   }
 
   if (attrs[NDA_DST]) {
-    neigh.ip = *(__u32 *)RTA_DATA(attrs[NDA_DST]);
+    struct rtattr *dst_addr = attrs[NDA_DST];
+    __u8 *rta_val = (__u8 *)RTA_DATA(dst_addr);
+    if (dst_addr->rta_len == 8) {
+      neigh.ip.f.v4 = 1;
+      memcpy(neigh.ip.v4.bytes, rta_val, 4);
+    } else if (dst_addr->rta_len == 20) {
+      neigh.ip.f.v6 = 1;
+      memcpy(neigh.ip.v6.bytes, rta_val, 16);
+    }
   }
 
   if (attrs[NDA_LLADDR]) {
-    struct rtattr *lladdr = attrs[NDA_LLADDR];
-    int attr_len = RTA_PAYLOAD(lladdr);
-    if (attr_len == 4) {
-      neigh.ll_ip_addr = *(__u32 *)RTA_DATA(lladdr);
-
-    } else if (attr_len == 16) {
+    struct rtattr *ll_addr = attrs[NDA_LLADDR];
+    __u8 *rta_val = (__u8 *)RTA_DATA(ll_addr);
+    if (ll_addr->rta_len == 8) {
+      neigh.ll_ip_addr.f.v4 = 1;
+      memcpy(neigh.ll_ip_addr.v4.bytes, rta_val, 4);
+    } else if (ll_addr->rta_len == 20) {
       // Can be IPv6 or FireWire HWAddr
-
-      // FIXME ? EncapType? tunnel6
-      // nl_port_mod_t link;
-      // memset(&link, 0, sizeof(nl_port_mod_t));
-      // int ret = nl_link_get(neigh.link_index, &link);
-
-      __u8 *hwaddr = (__u8 *)RTA_DATA(lladdr);
-      memcpy(neigh.hwaddr, hwaddr, attr_len);
+      neigh.ll_ip_addr.f.v6 = 1;
+      memcpy(neigh.ll_ip_addr.v6.bytes, rta_val, 16);
     } else {
-      __u8 *hwaddr = (__u8 *)RTA_DATA(lladdr);
-      memcpy(neigh.hwaddr, hwaddr, attr_len);
+      memcpy(neigh.hwaddr, rta_val, ETH_ALEN);
     }
   }
 

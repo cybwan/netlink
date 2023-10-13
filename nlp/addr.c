@@ -98,16 +98,10 @@ int nl_addr_list_res(struct nl_msg *msg, void *arg) {
       dst.ip.f.v4 = 1;
       memcpy(dst.ip.v4.bytes, rta_val, 4);
       dst.mask = ifa_msg->ifa_prefixlen;
-      // struct in_addr *in = (struct in_addr *)dst.ip.v4.bytes;
-      // printf("dst ipv4: %s/%d\n", inet_ntoa(*in), dst.mask);
     } else if (ifa_addr->rta_len == 20) {
       dst.ip.f.v6 = 1;
       memcpy(dst.ip.v6.bytes, rta_val, 16);
       dst.mask = ifa_msg->ifa_prefixlen;
-      // struct in6_addr *in = (struct in6_addr *)dst.ip.v6.bytes;
-      // char astring[INET6_ADDRSTRLEN];
-      // inet_ntop(AF_INET6, in, astring, INET6_ADDRSTRLEN);
-      // printf("dst ipv6: %s/%d\n", astring, dst.mask);
     }
   }
   if (attrs[IFA_LOCAL]) {
@@ -118,17 +112,11 @@ int nl_addr_list_res(struct nl_msg *msg, void *arg) {
       memcpy(local.ip.v4.bytes, rta_val, 4);
       local.mask = 32;
       has_local = true;
-      // struct in_addr *in = (struct in_addr *)local.ip.v4.bytes;
-      // printf("local ipv4: %s/%d\n", inet_ntoa(*in), local.mask);
     } else if (ifa_addr->rta_len == 20) {
       local.ip.f.v6 = 1;
       memcpy(local.ip.v6.bytes, rta_val, 16);
       local.mask = 128;
       has_local = true;
-      // struct in6_addr *in = (struct in6_addr *)local.ip.v6.bytes;
-      // char astring[INET6_ADDRSTRLEN];
-      // inet_ntop(AF_INET6, in, astring, INET6_ADDRSTRLEN);
-      // printf("local ipv6: %s/%d\n", astring, local.mask);
     }
   }
   if (attrs[IFA_BROADCAST]) {
