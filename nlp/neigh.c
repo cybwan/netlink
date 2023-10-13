@@ -113,6 +113,7 @@ int nl_neigh_add(nl_neigh_mod_t *neigh, nl_port_mod_t *port) {
     }
 
     struct net_api_fdb_q fdb_q;
+    memset(&fdb_q, 0, sizeof(fdb_q));
     fdb_q.bridge_id = brId;
     fdb_q.type = ftype;
     memcpy(fdb_q.mac_addr, neigh->hwaddr, ETH_ALEN);

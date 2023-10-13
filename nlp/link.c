@@ -28,7 +28,6 @@ int nl_link_mod(nl_port_mod_t *port, bool add) {
   bool state = port->oper_state != OPER_DOWN;
   int vid = 0;
   int ret;
-
   if (port->type.bridge) {
     regex_t regex;
     const size_t nmatch = 1;
@@ -48,6 +47,7 @@ int nl_link_mod(nl_port_mod_t *port, bool add) {
     }
 
     struct net_api_vlan_q vlan_q;
+    memset(&vlan_q, 0, sizeof(vlan_q));
     vlan_q.vid = vid;
     if (add) {
       vlan_q.link_index = port->index;
@@ -93,6 +93,7 @@ int nl_link_mod(nl_port_mod_t *port, bool add) {
     char *p_pos = strchr((char *)port->name, '.');
     if ((void *)p_pos > (void *)port->name) {
       struct net_api_vlan_port_q vlan_port_q;
+      memset(&vlan_port_q, 0, sizeof(vlan_port_q));
       vlan_port_q.vid = vid;
       vlan_port_q.tagged = true;
 
@@ -185,6 +186,7 @@ int nl_link_mod(nl_port_mod_t *port, bool add) {
   /* Untagged vlan ports */
   if (port->master_index > 0 && strlen(master) > 0) {
     struct net_api_vlan_port_q vlan_port_q;
+    memset(&vlan_port_q, 0, sizeof(vlan_port_q));
     vlan_port_q.vid = vid;
     vlan_port_q.tagged = false;
     memcpy(vlan_port_q.dev, port->name, IF_NAMESIZE);
@@ -219,22 +221,19 @@ int nl_link_list_res(struct nl_msg *msg, void *arg) {
 
   if (attrs[IFLA_IFNAME]) {
     __u8 *ifname = (__u8 *)RTA_DATA(attrs[IFLA_IFNAME]);
-    memcpy(port.name, ifname, attrs[IFLA_IFNAME]->rta_len);
+    memcpy(port.name, ifname, attrs[IFLA_IFNAME]->rta_len - 4);
   }
 
   if (attrs[IFLA_MTU]) {
     port.mtu = *(__u32 *)RTA_DATA(attrs[IFLA_MTU]);
   }
-
   if (attrs[IFLA_OPERSTATE]) {
     port.oper_state = *(__u8 *)RTA_DATA(attrs[IFLA_OPERSTATE]);
   }
-
   if (attrs[IFLA_ADDRESS]) {
     __u8 *hwaddr = (__u8 *)RTA_DATA(attrs[IFLA_ADDRESS]);
-    memcpy(port.hwaddr, hwaddr, attrs[IFLA_ADDRESS]->rta_len);
+    memcpy(port.hwaddr, hwaddr, attrs[IFLA_ADDRESS]->rta_len - 4);
   }
-
   struct rtattr *info = attrs[IFLA_LINKINFO];
   if (info) {
     struct rtattr *info_attrs[IFLA_INFO_MAX + 1];
@@ -350,7 +349,7 @@ int nl_link_get_res(struct nl_msg *msg, void *arg) {
 
   if (attrs[IFLA_IFNAME]) {
     __u8 *ifname = (__u8 *)RTA_DATA(attrs[IFLA_IFNAME]);
-    memcpy(port->name, ifname, attrs[IFLA_IFNAME]->rta_len);
+    memcpy(port->name, ifname, attrs[IFLA_IFNAME]->rta_len - 4);
   }
 
   if (attrs[IFLA_MTU]) {
@@ -363,7 +362,7 @@ int nl_link_get_res(struct nl_msg *msg, void *arg) {
 
   if (attrs[IFLA_ADDRESS]) {
     __u8 *hwaddr = (__u8 *)RTA_DATA(attrs[IFLA_ADDRESS]);
-    memcpy(port->hwaddr, hwaddr, attrs[IFLA_ADDRESS]->rta_len);
+    memcpy(port->hwaddr, hwaddr, attrs[IFLA_ADDRESS]->rta_len - 4);
   }
 
   struct rtattr *info = attrs[IFLA_LINKINFO];
