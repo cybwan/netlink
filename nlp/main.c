@@ -7,6 +7,7 @@ int main() {
 
   // nl_link_subscribe();
   nl_addr_subscribe();
+  //nl_neigh_subscribe();
 
   // nl_port_mod_t port;
   // nl_link_get(19, &port);

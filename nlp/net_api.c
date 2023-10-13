@@ -24,10 +24,10 @@ struct {
     .net_vlan_del = 0,
     .net_vlan_port_add = 0,
     .net_vlan_port_del = 0,
-    .net_neigh_add = 0,
-    .net_neigh_del = 0,
-    .net_fdb_add = 0,
-    .net_fdb_del = 0,
+    .net_neigh_add = 1,
+    .net_neigh_del = 1,
+    .net_fdb_add = 1,
+    .net_fdb_del = 1,
     .net_addr_add = 1,
     .net_addr_del = 1,
     .net_route_add = 0,
@@ -112,7 +112,14 @@ int net_neigh_add(struct net_api_neigh_q *neigh) {
   return 0;
 }
 
-int net_neigh_del(struct net_api_neigh_q *neigh) { return 0; }
+int net_neigh_del(struct net_api_neigh_q *neigh) {
+  if (debug.net_neigh_del) {
+    printf("net_neigh_del ");
+    printf("IP: %-18s ", neigh->ip);
+    printf("\n");
+  }
+  return 0;
+}
 
 int net_fdb_add(struct net_api_fdb_q *fdb) {
   if (debug.net_fdb_add) {
@@ -129,7 +136,17 @@ int net_fdb_add(struct net_api_fdb_q *fdb) {
   return 0;
 }
 
-int net_fdb_del(struct net_api_fdb_q *fdb) { return 0; }
+int net_fdb_del(struct net_api_fdb_q *fdb) {
+  if (debug.net_fdb_del) {
+    printf("net_fdb_del ");
+    printf("MacAddr: [%3d,%3d,%3d,%3d,%3d,%3d] ", fdb->mac_addr[0],
+           fdb->mac_addr[1], fdb->mac_addr[2], fdb->mac_addr[3],
+           fdb->mac_addr[4], fdb->mac_addr[5]);
+    printf("BridgeID: %d ", fdb->bridge_id);
+    printf("\n");
+  }
+  return 0;
+}
 
 int net_addr_add(struct net_api_addr_q *addr) {
   if (debug.net_addr_add) {
@@ -142,7 +159,7 @@ int net_addr_add(struct net_api_addr_q *addr) {
 }
 
 int net_addr_del(struct net_api_addr_q *addr) {
-  if (debug.net_addr_add) {
+  if (debug.net_addr_del) {
     printf("net_addr_del ");
     printf("Dev: %-8s ", addr->dev);
     printf("IP: %-18s", (char *)(addr->ip));

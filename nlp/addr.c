@@ -41,12 +41,16 @@ static inline void debug_addr(nl_addr_mod_t *addr) {
   printf("\n");
 }
 
-int nl_addr_mod(nl_addr_mod_t *addr, bool add) {
-  nl_port_mod_t port;
-  memset(&port, 0, sizeof(port));
-  if (nl_link_get(addr->link_index, &port) < 0) {
-    return -1;
+int nl_addr_mod(nl_addr_mod_t *addr, struct nl_port_mod *port, bool add) {
+  if (port == NULL) {
+    nl_port_mod_t l_port;
+    memset(&l_port, 0, sizeof(l_port));
+    if (nl_link_get(addr->link_index, &l_port) < 0) {
+      return NL_SKIP;
+    }
+    port = &l_port;
   }
+
   struct net_api_addr_q addr_q;
   memset(&addr_q, 0, sizeof(addr_q));
 
@@ -64,7 +68,7 @@ int nl_addr_mod(nl_addr_mod_t *addr, bool add) {
     return NL_SKIP;
   }
 
-  memcpy(addr_q.dev, port.name, IF_NAMESIZE);
+  memcpy(addr_q.dev, port->name, IF_NAMESIZE);
 
   if (add) {
     return net_addr_add(&addr_q);
@@ -83,9 +87,11 @@ int nl_addr_list_res(struct nl_msg *msg, void *arg) {
   }
 
   struct ifaddrmsg *ifa_msg = NLMSG_DATA(nlh);
+  struct nl_port_mod *port = NULL;
   if (arg != NULL) {
     struct nl_multi_arg *args = (struct nl_multi_arg *)arg;
-    struct ifaddrmsg *nl_req = (struct ifaddrmsg *)args->arg1;
+    port = (struct nl_port_mod *)args->arg1;
+    struct ifaddrmsg *nl_req = (struct ifaddrmsg *)args->arg2;
 
     if (nl_req->ifa_index != 0 && nl_req->ifa_index != ifa_msg->ifa_index) {
       return NL_SKIP;
@@ -165,8 +171,8 @@ int nl_addr_list_res(struct nl_msg *msg, void *arg) {
 
   addr.scope = ifa_msg->ifa_scope;
 
-  // debug_addr(&addr);
-  return nl_addr_mod(&addr, add);
+  //debug_addr(&addr);
+  return nl_addr_mod(&addr, port, add);
 }
 
 int nl_addr_list(nl_port_mod_t *port, __u8 family) {
@@ -193,7 +199,8 @@ int nl_addr_list(nl_port_mod_t *port, __u8 family) {
   }
 
   struct nl_multi_arg args = {
-      .arg1 = nl_req,
+      .arg1 = port,
+      .arg2 = nl_req,
   };
   nl_socket_modify_cb(socket, NL_CB_VALID, NL_CB_CUSTOM, nl_addr_list_res,
                       &args);
@@ -211,8 +218,7 @@ int nl_addr_subscribe() {
   nl_socket_modify_cb(socket, NL_CB_VALID, NL_CB_CUSTOM, nl_addr_list_res,
                       NULL);
   nl_connect(socket, NETLINK_ROUTE);
-  nl_socket_add_memberships(socket, RTNLGRP_IPV4_IFADDR, 0);
-  nl_socket_add_memberships(socket, RTNLGRP_IPV6_IFADDR, 0);
+  nl_socket_add_memberships(socket, RTNLGRP_IPV4_IFADDR, RTNLGRP_IPV6_IFADDR);
   while (1) {
     nl_recvmsgs_default(socket);
   }

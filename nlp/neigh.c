@@ -34,16 +34,16 @@ static inline void debug_neigh(nl_neigh_mod_t *neigh) {
   printf("\n");
 }
 
-int nl_neigh_add(nl_neigh_mod_t *neigh, nl_port_mod_t *port) {
-  if (is_zero_mac(neigh->hwaddr)) {
-    return -1;
+int nl_neigh_mod(nl_neigh_mod_t *neigh, struct nl_port_mod *port, bool add) {
+  if (add) {
+    if (is_zero_mac(neigh->hwaddr)) {
+      return NL_SKIP;
+    }
   }
+
   if (neigh->family == AF_INET || neigh->family == AF_INET6) {
     struct net_api_neigh_q neigh_q;
     memset(&neigh_q, 0, sizeof(neigh_q));
-    neigh_q.link_index = neigh->link_index;
-    neigh_q.state = neigh->state;
-    memcpy(neigh_q.hwaddr, neigh->hwaddr, ETH_ALEN);
     if (neigh->ip.f.v4) {
       struct in_addr *in = (struct in_addr *)neigh->ip.v4.bytes;
       inet_ntop(AF_INET, in, (char *)neigh_q.ip, INET_ADDRSTRLEN);
@@ -51,15 +51,27 @@ int nl_neigh_add(nl_neigh_mod_t *neigh, nl_port_mod_t *port) {
       struct in6_addr *in = (struct in6_addr *)neigh->ip.v6.bytes;
       inet_ntop(AF_INET6, in, (char *)neigh_q.ip, INET6_ADDRSTRLEN);
     }
-    net_neigh_add(&neigh_q);
+    if (add) {
+      neigh_q.link_index = neigh->link_index;
+      neigh_q.state = neigh->state;
+      memcpy(neigh_q.hwaddr, neigh->hwaddr, ETH_ALEN);
+      return net_neigh_add(&neigh_q);
+    } else {
+      return net_neigh_del(&neigh_q);
+    }
   } else if (neigh->family == AF_BRIDGE) {
     if (neigh->vlan == 1) {
       /*FDB comes with vlan 1 also */
-      return 0;
+      return NL_SKIP;
+    }
+    if (!add) {
+      if (is_zero_mac(neigh->hwaddr)) {
+        return NL_SKIP;
+      }
     }
     if ((neigh->hwaddr[0] & 0x01) == 1 || neigh->hwaddr[0] == 0) {
       /* Multicast MAC or ZERO address --- IGNORED */
-      return 0;
+      return NL_SKIP;
     }
 
     int brId = 0;
@@ -85,13 +97,21 @@ int nl_neigh_add(nl_neigh_mod_t *neigh, nl_port_mod_t *port) {
       int status = regexec(&regex, (char *)brLink.name, nmatch, pmatch, 0);
       if (status == 0) {
         char str_buf[IF_NAMESIZE];
-        strncpy(str_buf, (char *)port->name + pmatch[0].rm_so,
+        strncpy(str_buf, (char *)brLink.name + pmatch[0].rm_so,
                 pmatch[0].rm_eo - pmatch[0].rm_so);
         brId = atoi(str_buf);
       }
       regfree(&regex);
     }
 
+    if (port == NULL) {
+      nl_port_mod_t l_port;
+      memset(&l_port, 0, sizeof(l_port));
+      if (nl_link_get(neigh->link_index, &l_port) < 0) {
+        return NL_SKIP;
+      }
+      port = &l_port;
+    }
     if (port->type.vxlan) {
       /* Interested in only VxLAN FDB */
       if ((neigh->ip.f.v4 || neigh->ip.f.v6) && neigh->master_index == 0) {
@@ -115,42 +135,56 @@ int nl_neigh_add(nl_neigh_mod_t *neigh, nl_port_mod_t *port) {
     struct net_api_fdb_q fdb_q;
     memset(&fdb_q, 0, sizeof(fdb_q));
     fdb_q.bridge_id = brId;
-    fdb_q.type = ftype;
     memcpy(fdb_q.mac_addr, neigh->hwaddr, ETH_ALEN);
-    memcpy(fdb_q.dev, port->name, IF_NAMESIZE);
-    memcpy(fdb_q.dst, dst, INET6_ADDRSTRLEN);
-    return net_fdb_add(&fdb_q);
+    if (add) {
+      fdb_q.type = ftype;
+      memcpy(fdb_q.dev, port->name, IF_NAMESIZE);
+      memcpy(fdb_q.dst, dst, INET6_ADDRSTRLEN);
+      return net_fdb_add(&fdb_q);
+    } else {
+      return net_fdb_del(&fdb_q);
+    }
   }
   return 0;
 }
 
 int nl_neigh_list_res(struct nl_msg *msg, void *arg) {
   struct nlmsghdr *nlh = nlmsg_hdr(msg);
+  if (nlh->nlmsg_type == NLMSG_DONE || nlh->nlmsg_type == NLMSG_ERROR) {
+    return NL_SKIP;
+  }
+
   struct ndmsg *neigh_msg = NLMSG_DATA(nlh);
-  struct nl_multi_arg *args = (struct nl_multi_arg *)arg;
-  struct nl_port_mod *port = (struct nl_port_mod *)args->arg1;
-  struct ndmsg *nl_req = (struct ndmsg *)args->arg2;
+  struct nl_port_mod *port = NULL;
+  if (arg != NULL) {
+    struct nl_multi_arg *args = (struct nl_multi_arg *)arg;
+    port = (struct nl_port_mod *)args->arg1;
+    struct ndmsg *nl_req = (struct ndmsg *)args->arg2;
 
-  if (nl_req->ndm_ifindex != 0 &&
-      nl_req->ndm_ifindex != neigh_msg->ndm_ifindex) {
-    return NL_SKIP;
+    if (nl_req->ndm_ifindex != 0 &&
+        nl_req->ndm_ifindex != neigh_msg->ndm_ifindex) {
+      return NL_SKIP;
+    }
+
+    if (nl_req->ndm_family != 0 &&
+        nl_req->ndm_family != neigh_msg->ndm_family) {
+      return NL_SKIP;
+    }
+
+    if (nl_req->ndm_state != 0 && nl_req->ndm_state != neigh_msg->ndm_state) {
+      return NL_SKIP;
+    }
+
+    if (nl_req->ndm_type != 0 && nl_req->ndm_type != neigh_msg->ndm_type) {
+      return NL_SKIP;
+    }
+
+    if (nl_req->ndm_flags != 0 && nl_req->ndm_flags != neigh_msg->ndm_flags) {
+      return NL_SKIP;
+    }
   }
 
-  if (nl_req->ndm_family != 0 && nl_req->ndm_family != neigh_msg->ndm_family) {
-    return NL_SKIP;
-  }
-
-  if (nl_req->ndm_state != 0 && nl_req->ndm_state != neigh_msg->ndm_state) {
-    return NL_SKIP;
-  }
-
-  if (nl_req->ndm_type != 0 && nl_req->ndm_type != neigh_msg->ndm_type) {
-    return NL_SKIP;
-  }
-
-  if (nl_req->ndm_flags != 0 && nl_req->ndm_flags != neigh_msg->ndm_flags) {
-    return NL_SKIP;
-  }
+  bool add = nlh->nlmsg_type == RTM_NEWNEIGH;
 
   struct rtattr *attrs[NDA_MAX + 1];
   int remaining = nlh->nlmsg_len - NLMSG_LENGTH(sizeof(*neigh_msg));
@@ -204,9 +238,7 @@ int nl_neigh_list_res(struct nl_msg *msg, void *arg) {
   }
 
   // debug_neigh(&neigh);
-  nl_neigh_add(&neigh, port);
-
-  return NL_OK;
+  return nl_neigh_mod(&neigh, port, add);
 }
 
 int nl_neigh_list(nl_port_mod_t *port, __u8 family) {
@@ -243,5 +275,19 @@ int nl_neigh_list(nl_port_mod_t *port, __u8 family) {
   nlmsg_free(msg);
   nl_socket_free(socket);
 
+  return 0;
+}
+
+int nl_neigh_subscribe() {
+  struct nl_sock *socket = nl_socket_alloc();
+  nl_socket_disable_seq_check(socket);
+  nl_socket_modify_cb(socket, NL_CB_VALID, NL_CB_CUSTOM, nl_neigh_list_res,
+                      NULL);
+  nl_connect(socket, NETLINK_ROUTE);
+  nl_socket_add_memberships(socket, RTNLGRP_NEIGH);
+  while (1) {
+    nl_recvmsgs_default(socket);
+  }
+  nl_socket_free(socket);
   return 0;
 }

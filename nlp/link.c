@@ -491,7 +491,7 @@ int nl_link_subscribe() {
   nl_socket_modify_cb(socket, NL_CB_VALID, NL_CB_CUSTOM, nl_link_list_res,
                       &args);
   nl_connect(socket, NETLINK_ROUTE);
-  nl_socket_add_memberships(socket, RTNLGRP_LINK, 0);
+  nl_socket_add_memberships(socket, RTNLGRP_LINK);
   while (1) {
     nl_recvmsgs_default(socket);
   }
