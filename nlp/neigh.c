@@ -137,7 +137,7 @@ int nl_neigh_mod(nl_neigh_mod_t *neigh, struct nl_port_mod *port, bool add) {
     fdb_q.bridge_id = brId;
     memcpy(fdb_q.mac_addr, neigh->hwaddr, ETH_ALEN);
     if (add) {
-      fdb_q.type = ftype;
+      fdb_q.fdb_type = ftype;
       memcpy(fdb_q.dev, port->name, IF_NAMESIZE);
       memcpy(fdb_q.dst, dst, INET6_ADDRSTRLEN);
       return net_fdb_add(&fdb_q);

@@ -1,6 +1,6 @@
 module github.com/cybwan/netlink
 
-go 1.12
+go 1.19
 
 require (
 	github.com/vishvananda/netlink v1.1.0 // indirect

@@ -18,7 +18,7 @@ struct {
   __u32 net_route_add : 1;
   __u32 net_route_del : 1;
 } debug = {
-    .net_port_add = 0,
+    .net_port_add = 1,
     .net_port_del = 0,
     .net_vlan_add = 0,
     .net_vlan_del = 0,
@@ -30,8 +30,8 @@ struct {
     .net_fdb_del = 0,
     .net_addr_add = 0,
     .net_addr_del = 0,
-    .net_route_add = 1,
-    .net_route_del = 1,
+    .net_route_add = 0,
+    .net_route_del = 0,
 };
 
 int net_port_add(struct net_api_port_q *port) {
@@ -39,7 +39,7 @@ int net_port_add(struct net_api_port_q *port) {
     printf("net_port_add ");
     printf("Dev: %-8s ", (char *)(port->dev));
     printf("LinkIndex: %-4d ", port->link_index);
-    printf("Ptype: %d ", port->link_type);
+    printf("Ptype: %2d ", port->link_type);
     printf("MacAddr: [%3d,%3d,%3d,%3d,%3d,%3d] ", port->mac_addr[0],
            port->mac_addr[1], port->mac_addr[2], port->mac_addr[3],
            port->mac_addr[4], port->mac_addr[5]);
@@ -49,8 +49,8 @@ int net_port_add(struct net_api_port_q *port) {
     printf("Master: %-12s ", (char *)port->master);
     printf("Real: %-12s ", (char *)port->real);
     printf("TunID: %-4d ", port->tun_id);
-    printf("TunSrc: %-50s ", port->tun_src);
-    printf("TunDst: %-50s ", port->tun_dst);
+    printf("TunSrc: %-20s ", port->tun_src);
+    printf("TunDst: %-20s ", port->tun_dst);
     printf("\n");
   }
   return 0;
@@ -76,7 +76,7 @@ int net_vlan_add(struct net_api_vlan_q *vlan) {
            vlan->mac_addr[4], vlan->mac_addr[5]);
     printf("Link: %2d ", vlan->link);
     printf("State: %2d ", vlan->state);
-    printf("Mtu: %-4d ", vlan->mtu);
+    printf("Mtu: %-5d ", vlan->mtu);
     printf("TunID: %-4d ", vlan->tun_id);
     printf("\n");
   }
@@ -146,7 +146,7 @@ int net_fdb_add(struct net_api_fdb_q *fdb) {
     printf("BridgeID: %d ", fdb->bridge_id);
     printf("Dev: %-8s ", (char *)(fdb->dev));
     printf("Dst: %-50s ", (char *)(fdb->dst));
-    printf("Type: %d ", fdb->type);
+    printf("Type: %d ", fdb->fdb_type);
     printf("\n");
   }
   return 0;

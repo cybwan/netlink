@@ -50,7 +50,7 @@ struct net_api_fdb_q {
   __u8 mac_addr[ETH_ALEN];
   __u32 bridge_id;
   __u8 dst[INET6_ADDRSTRLEN];
-  __u32 type;
+  __u32 fdb_type;
   __u8 dev[IF_NAMESIZE];
 };
 

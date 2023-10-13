@@ -5,7 +5,7 @@ import (
 )
 
 func main() {
-	nlp.PortList()
+	nlp.NetlinkMonitor()
 
 	wait := make(chan int, 1)
 	<-wait
