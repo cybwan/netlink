@@ -109,7 +109,7 @@ int nl_filter_list_res(struct nl_msg *msg, void *arg) {
 
 #define HANDLE_MIN_INGRESS 0xFFFFFFF2
 
-bool nl_has_loaded_tc_prog(nl_port_mod_t *port) {
+bool _internal_nl_has_loaded_tc_prog(nl_port_mod_t *port) {
   struct nl_sock *socket = nl_socket_alloc();
   nl_connect(socket, NETLINK_ROUTE);
 
@@ -143,4 +143,13 @@ bool nl_has_loaded_tc_prog(nl_port_mod_t *port) {
   nl_socket_free(socket);
 
   return loaded;
+}
+
+bool nl_has_loaded_tc_prog(const char *ifi_name) {
+  nl_port_mod_t port;
+  int ret = nl_link_get_by_name(ifi_name, &port);
+  if (ret < 0) {
+    return false;
+  }
+  return _internal_nl_has_loaded_tc_prog(&port);
 }

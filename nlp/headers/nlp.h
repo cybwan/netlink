@@ -235,7 +235,7 @@ int nl_neigh_subscribe();
 int nl_route_subscribe();
 int nl_link_subscribe();
 
-bool nl_has_loaded_tc_prog(nl_port_mod_t *port);
+bool nl_has_loaded_tc_prog(const char *ifi_name);
 
 static __u8 zero_mac[ETH_ALEN] = {0, 0, 0, 0, 0, 0};
 
