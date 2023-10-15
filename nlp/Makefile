@@ -2,9 +2,9 @@
 
 LIB    := nlp.so
 EXEC   := nlp
-SRCS   := link.c neigh.c addr.c route.c net_api.c main.c
-OBJS   := link.o neigh.o addr.o route.o net_api.o main.o
-OBJSSO := link.o neigh.o addr.o route.o
+SRCS   := link.c neigh.c addr.c route.c filter.c net_api.c main.c
+OBJS   := link.o neigh.o addr.o route.o filter.o net_api.o main.o
+OBJSSO := link.o neigh.o addr.o route.o filter.o
 LDLIBS := $(shell pkg-config --libs   libnl-route-3.0 libnl-3.0)
 LDLIBS += -lev
 CFLAGS := $(shell pkg-config --cflags libnl-route-3.0 libnl-3.0)
