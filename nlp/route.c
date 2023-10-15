@@ -134,16 +134,16 @@ int nl_route_list_res(struct nl_msg *msg, void *arg) {
     __u8 *rta_val = (__u8 *)RTA_DATA(rta_addr);
     if (rta_addr->rta_len == 8) {
       route.dst.ip.f.v4 = 1;
+      route.dst.mask = rt_msg->rtm_dst_len;
       memcpy(route.dst.ip.v4.bytes, rta_val, 4);
-      route.dst.mask = 32;
     } else if (rta_addr->rta_len == 20) {
       route.dst.ip.f.v6 = 1;
+      route.dst.mask = rt_msg->rtm_dst_len;
       memcpy(route.dst.ip.v6.bytes, rta_val, 16);
-      route.dst.mask = 128;
     }
   }
 
-  // debug_route(&route);
+  //debug_route(&route);
   return nl_route_mod(&route, add);
 }
 

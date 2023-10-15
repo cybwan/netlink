@@ -18,7 +18,7 @@ struct {
   __u32 net_route_add : 1;
   __u32 net_route_del : 1;
 } debug = {
-    .net_port_add = 1,
+    .net_port_add = 0,
     .net_port_del = 0,
     .net_vlan_add = 0,
     .net_vlan_del = 0,
