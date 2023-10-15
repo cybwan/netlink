@@ -42,6 +42,14 @@ int nl_neigh_mod(nl_neigh_mod_t *neigh, struct nl_port_mod *port, bool add) {
   }
 
   if (neigh->family == AF_INET || neigh->family == AF_INET6) {
+    if (port == NULL) {
+      nl_port_mod_t l_port;
+      memset(&l_port, 0, sizeof(l_port));
+      if (nl_link_get(neigh->link_index, &l_port) < 0) {
+        return NL_SKIP;
+      }
+      port = &l_port;
+    }
     struct net_api_neigh_q neigh_q;
     memset(&neigh_q, 0, sizeof(neigh_q));
     memcpy(neigh_q.dev, port->name, IF_NAMESIZE);
