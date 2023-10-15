@@ -10,7 +10,7 @@ gonl-build: nlp-so
 
 .PHONY: gonl-run
 gonl-run:
-	@./bin/gonl
+	@LD_LIBRARY_PATH=./nlp ./bin/gonl
 
 .PHONY: gonl-clean
 gonl-clean:
