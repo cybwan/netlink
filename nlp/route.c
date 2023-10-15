@@ -40,7 +40,7 @@ int nl_route_mod(nl_route_mod_t *route, bool add) {
     struct in_addr *in = (struct in_addr *)route->dst.ip.v4.bytes;
     char a_str[INET_ADDRSTRLEN];
     inet_ntop(AF_INET, in, a_str, INET_ADDRSTRLEN);
-    sprintf((char *)route_q.dst, "%s/%d ", a_str, route->dst.mask);
+    sprintf((char *)route_q.dst, "%s/%d", a_str, route->dst.mask);
   } else if (route->dst.ip.f.v6) {
     struct in6_addr *in = (struct in6_addr *)route->dst.ip.v6.bytes;
     char a_str[INET6_ADDRSTRLEN];
