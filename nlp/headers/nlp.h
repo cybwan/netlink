@@ -1,6 +1,7 @@
 #ifndef __FLB_NLP_H__
 #define __FLB_NLP_H__
 
+#include <ctype.h>
 #include <linux/types.h>
 #include <stdbool.h>
 
@@ -329,6 +330,32 @@ static inline bool parse_label_net(const char *ip_net_str,
   parse_ip_net((const char *)ip, (struct nl_ip_net *)ip_net);
   label_str++;
   memcpy(ip_net->label, label_str, strlen(label_str));
+  return true;
+}
+
+static inline int hex_to_bin(__u8 ch) {
+  __u8 cu = ch & 0xdf;
+  return -1 + ((ch - '0' + 1) & (__u8)((ch - '9' - 1) & ('0' - 1 - ch)) >> 8) +
+         ((cu - 'A' + 11) & (__u8)((cu - 'F' - 1) & ('A' - 1 - cu)) >> 8);
+}
+
+static inline bool mac_pton(const char *s, __u8 *mac) {
+  int i;
+
+  /* XX:XX:XX:XX:XX:XX */
+  if (strlen(s) < 3 * ETH_ALEN - 1)
+    return false;
+
+  /* Don't dirty result unless string is valid MAC. */
+  for (i = 0; i < ETH_ALEN; i++) {
+    if (!isxdigit(s[i * 3]) || !isxdigit(s[i * 3 + 1]))
+      return false;
+    if (i != ETH_ALEN - 1 && s[i * 3 + 2] != ':')
+      return false;
+  }
+  for (i = 0; i < ETH_ALEN; i++) {
+    mac[i] = (hex_to_bin(s[i * 3]) << 4) | hex_to_bin(s[i * 3 + 1]);
+  }
   return true;
 }
 
