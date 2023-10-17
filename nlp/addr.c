@@ -113,7 +113,7 @@ int nl_addr_list_res(struct nl_msg *msg, void *arg) {
   memset(&addr, 0, sizeof(addr));
   addr.link_index = ifa_msg->ifa_index;
 
-  nl_ipnet_t local, dst;
+  nl_ip_net_t local, dst;
   bool has_local = false;
   memset(&local, 0, sizeof(local));
   memset(&dst, 0, sizeof(dst));
@@ -160,13 +160,13 @@ int nl_addr_list_res(struct nl_msg *msg, void *arg) {
   if (has_local) {
     if (family == FAMILY_V4 &&
         memcmp(&local.ip, &dst.ip, sizeof(nl_ip_t)) == 0) {
-      memcpy(&addr.ipnet, &dst, sizeof(nl_ipnet_t));
+      memcpy(&addr.ipnet, &dst, sizeof(nl_ip_net_t));
     } else {
-      memcpy(&addr.ipnet, &local, sizeof(nl_ipnet_t));
-      memcpy(&addr.peer, &dst, sizeof(nl_ipnet_t));
+      memcpy(&addr.ipnet, &local, sizeof(nl_ip_net_t));
+      memcpy(&addr.peer, &dst, sizeof(nl_ip_net_t));
     }
   } else {
-    memcpy(&addr.ipnet, &dst, sizeof(nl_ipnet_t));
+    memcpy(&addr.ipnet, &dst, sizeof(nl_ip_net_t));
   }
 
   addr.scope = ifa_msg->ifa_scope;

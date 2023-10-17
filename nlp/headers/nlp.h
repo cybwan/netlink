@@ -85,12 +85,21 @@ typedef struct nl_ip {
 } nl_ip_t;
 #endif
 
-#ifndef _NL_IPNET_T_
-#define _NL_IPNET_T_
-typedef struct nl_ipnet {
+#ifndef _NL_IP_NET_T_
+#define _NL_IP_NET_T_
+typedef struct nl_ip_net {
   struct nl_ip ip;
   __u8 mask;
-} nl_ipnet_t;
+} nl_ip_net_t;
+#endif
+
+#ifndef _NL_LABEL_NET_T_
+#define _NL_LABEL_NET_T_
+typedef struct nl_label_net {
+  struct nl_ip ip;
+  __u8 mask;
+  __u8 label[IF_NAMESIZE];
+} nl_label_net_t;
 #endif
 
 typedef struct nl_multi_arg {
@@ -169,10 +178,10 @@ typedef struct nl_neigh_mod {
 } nl_neigh_mod_t;
 
 typedef struct nl_addr_mod {
-  struct nl_ipnet ipnet;
+  struct nl_ip_net ipnet;
   __u32 flags;
   __u32 scope;
-  struct nl_ipnet peer;
+  struct nl_ip_net peer;
   struct nl_ip broadcast;
   __u32 link_index;
 } nl_addr_mod_t;
@@ -182,7 +191,7 @@ typedef struct nl_route_mod {
   __u32 protocol;
   __u32 flags;
   struct nl_ip gw;
-  struct nl_ipnet dst;
+  struct nl_ip_net dst;
 } nl_route_mod_t;
 
 #define CLS_BPF_NAME_LEN 256
@@ -237,7 +246,12 @@ int nl_link_subscribe();
 
 bool nl_has_loaded_tc_prog(const char *ifi_name);
 
-static __u8 zero_mac[ETH_ALEN] = {0, 0, 0, 0, 0, 0};
+bool nl_route_add(const char *dst_str, const char *gw_str);
+bool nl_route_del(const char *dst_str);
+bool nl_addr_add(const char *addr_str, const char *ifi_name);
+bool nl_addr_del(const char *addr_str, const char *ifi_name);
+
+static __u8 zero_mac[ETH_ALEN] = {0};
 
 static inline bool is_zero_mac(__u8 mac[ETH_ALEN]) {
   if (memcmp(mac, zero_mac, ETH_ALEN) == 0) {
@@ -256,6 +270,66 @@ static inline void parse_rtattr(struct rtattr *tb[], int max,
     }
     rta = RTA_NEXT(rta, len);
   }
+}
+
+static inline bool parse_ip(const char *ip_str, struct nl_ip *ip) {
+  memset(ip, 0, sizeof(*ip));
+  if (strchr(ip_str, '.')) {
+    ip->f.v4 = 1;
+    if (inet_pton(AF_INET, ip_str, (char *)ip->v4.bytes) <= 0) {
+      return false;
+    }
+  } else if (strchr(ip_str, ':')) {
+    ip->f.v6 = 1;
+    if (inet_pton(AF_INET6, ip_str, (char *)ip->v6.bytes) <= 0) {
+      return false;
+    }
+  } else {
+    return false;
+  }
+  return true;
+}
+
+static inline bool parse_ip_net(const char *ip_net_str,
+                                struct nl_ip_net *ip_net) {
+  memset(ip_net, 0, sizeof(*ip_net));
+  char *mask_str = strchr(ip_net_str, '/');
+  if (!mask_str) {
+    return false;
+  }
+  __u8 ip[INET6_ADDRSTRLEN] = {0};
+  memcpy(ip, ip_net_str, mask_str - ip_net_str);
+  if (strchr((char *)ip, '.')) {
+    ip_net->ip.f.v4 = 1;
+    if (inet_pton(AF_INET, (char *)ip, (char *)ip_net->ip.v4.bytes) <= 0) {
+      return false;
+    }
+  } else if (strchr((char *)ip, ':')) {
+    ip_net->ip.f.v6 = 1;
+    if (inet_pton(AF_INET6, (char *)ip, (char *)ip_net->ip.v6.bytes) <= 0) {
+      return false;
+    }
+  } else {
+    return false;
+  }
+  mask_str++;
+  ip_net->mask = (__u8)atoi(mask_str);
+  return true;
+}
+
+static inline bool parse_label_net(const char *ip_net_str,
+                                   struct nl_label_net *ip_net) {
+  memset(ip_net, 0, sizeof(*ip_net));
+  char *label_str = strchr(ip_net_str, ' ');
+  if (!label_str) {
+    return parse_ip_net(ip_net_str, (struct nl_ip_net *)ip_net);
+  }
+  __u8 ip[INET6_ADDRSTRLEN] = {0};
+  memcpy(ip, ip_net_str, label_str - ip_net_str);
+  parse_ip_net((const char *)ip, (struct nl_ip_net *)ip_net);
+  label_str++;
+  memcpy(ip_net->label, label_str, strlen(label_str));
+  return true;
 }
 
 #endif /* __FLB_NLP_H__ */

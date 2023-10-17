@@ -88,11 +88,12 @@ func (h *Handle) addrHandle(link Link, addr *Addr, req *nl.NetlinkRequest) error
 	msg := nl.NewIfAddrmsg(family)
 	msg.Index = uint32(base.Index)
 	msg.Scope = uint8(addr.Scope)
+	fmt.Println("addr.Scope:", addr.Scope)
 	mask := addr.Mask
 	if addr.Peer != nil {
 		mask = addr.Peer.Mask
 	}
-	prefixlen, masklen := mask.Size()
+	prefixlen, _ := mask.Size()
 	msg.Prefixlen = uint8(prefixlen)
 	req.AddData(msg)
 
@@ -105,49 +106,50 @@ func (h *Handle) addrHandle(link Link, addr *Addr, req *nl.NetlinkRequest) error
 
 	localData := nl.NewRtAttr(unix.IFA_LOCAL, localAddrData)
 	req.AddData(localData)
-	var peerAddrData []byte
-	if addr.Peer != nil {
-		if family == FAMILY_V4 {
-			peerAddrData = addr.Peer.IP.To4()
-		} else {
-			peerAddrData = addr.Peer.IP.To16()
-		}
-	} else {
-		peerAddrData = localAddrData
-	}
+	// var peerAddrData []byte
+	// if addr.Peer != nil {
+	// 	if family == FAMILY_V4 {
+	// 		peerAddrData = addr.Peer.IP.To4()
+	// 	} else {
+	// 		peerAddrData = addr.Peer.IP.To16()
+	// 	}
+	// } else {
+	// 	peerAddrData = localAddrData
+	// }
 
-	addressData := nl.NewRtAttr(unix.IFA_ADDRESS, peerAddrData)
-	req.AddData(addressData)
+	// addressData := nl.NewRtAttr(unix.IFA_ADDRESS, peerAddrData)
+	// req.AddData(addressData)
 
-	if addr.Flags != 0 {
-		if addr.Flags <= 0xff {
-			msg.IfAddrmsg.Flags = uint8(addr.Flags)
-		} else {
-			b := make([]byte, 4)
-			native.PutUint32(b, uint32(addr.Flags))
-			flagsData := nl.NewRtAttr(IFA_FLAGS, b)
-			req.AddData(flagsData)
-		}
-	}
+	// if addr.Flags != 0 {
+	// 	if addr.Flags <= 0xff {
+	// 		msg.IfAddrmsg.Flags = uint8(addr.Flags)
+	// 	} else {
+	// 		b := make([]byte, 4)
+	// 		native.PutUint32(b, uint32(addr.Flags))
+	// 		flagsData := nl.NewRtAttr(IFA_FLAGS, b)
+	// 		req.AddData(flagsData)
+	// 	}
+	// }
 
 	if family == FAMILY_V4 {
 		// Automatically set the broadcast address if it is unset and the
 		// subnet is large enough to sensibly have one (/30 or larger).
 		// See: RFC 3021
-		if addr.Broadcast == nil && prefixlen < 31 {
-			calcBroadcast := make(net.IP, masklen/8)
-			for i := range localAddrData {
-				calcBroadcast[i] = localAddrData[i] | ^mask[i]
-			}
-			addr.Broadcast = calcBroadcast
-		}
+		// if addr.Broadcast == nil && prefixlen < 31 {
+		// 	calcBroadcast := make(net.IP, masklen/8)
+		// 	for i := range localAddrData {
+		// 		calcBroadcast[i] = localAddrData[i] | ^mask[i]
+		// 	}
+		// 	addr.Broadcast = calcBroadcast
+		// }
 
-		if addr.Broadcast != nil {
-			req.AddData(nl.NewRtAttr(unix.IFA_BROADCAST, addr.Broadcast))
-		}
+		// if addr.Broadcast != nil {
+		// 	req.AddData(nl.NewRtAttr(unix.IFA_BROADCAST, addr.Broadcast))
+		// }
 
 		if addr.Label != "" {
 			labelData := nl.NewRtAttr(unix.IFA_LABEL, nl.ZeroTerminated(addr.Label))
+			fmt.Println(addr.Label, labelData.Len())
 			req.AddData(labelData)
 		}
 	}
@@ -155,13 +157,13 @@ func (h *Handle) addrHandle(link Link, addr *Addr, req *nl.NetlinkRequest) error
 	// 0 is the default value for these attributes. However, 0 means "expired", while the least-surprising default
 	// value should be "forever". To compensate for that, only add the attributes if at least one of the values is
 	// non-zero, which means the caller has explicitly set them
-	if addr.ValidLft > 0 || addr.PreferedLft > 0 {
-		cachedata := nl.IfaCacheInfo{
-			IfaValid:    uint32(addr.ValidLft),
-			IfaPrefered: uint32(addr.PreferedLft),
-		}
-		req.AddData(nl.NewRtAttr(unix.IFA_CACHEINFO, cachedata.Serialize()))
-	}
+	// if addr.ValidLft > 0 || addr.PreferedLft > 0 {
+	// 	cachedata := nl.IfaCacheInfo{
+	// 		IfaValid:    uint32(addr.ValidLft),
+	// 		IfaPrefered: uint32(addr.PreferedLft),
+	// 	}
+	// 	req.AddData(nl.NewRtAttr(unix.IFA_CACHEINFO, cachedata.Serialize()))
+	// }
 
 	_, err := req.Execute(unix.NETLINK_ROUTE, 0)
 	return err
