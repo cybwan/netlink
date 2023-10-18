@@ -356,3 +356,135 @@ bool nl_addr_add(const char *addr_str, const char *ifi_name) {
 bool nl_addr_del(const char *addr_str, const char *ifi_name) {
   return _internal_nl_addr_mod(addr_str, ifi_name, RTM_DELADDR);
 }
+
+bool _internal_nl_neigh_mod(nl_neigh_mod_t *neigh, int type, int flags) {
+  __u8 family = neigh->family;
+  if (family == 0) {
+    if (neigh->ip.f.v4) {
+      family = FAMILY_V4;
+    } else {
+      family = FAMILY_V6;
+    }
+  }
+  __u8 ip_data_len = 0;
+  if (neigh->ip.f.v4) {
+    ip_data_len = 4;
+  } else if (neigh->ip.f.v6) {
+    ip_data_len = 16;
+  }
+  __u8 ll_addr_data_len = 0;
+  if (neigh->ll_ip_addr.f.v4) {
+    ll_addr_data_len = 4;
+  } else if (neigh->flags != NTF_PROXY || is_zero_mac(neigh->hwaddr)) {
+    ll_addr_data_len = ETH_ALEN;
+  }
+
+  struct nl_sock *socket = nl_socket_alloc();
+  nl_connect(socket, NETLINK_ROUTE);
+  struct nl_msg *msg = nlmsg_alloc();
+
+  struct {
+    struct ndmsg ndm;
+    struct {
+      __u16 rta_len;
+      __u16 rta_type;
+      __u8 rta_val[ip_data_len];
+    } rta_dst;
+    struct {
+      __u16 rta_len;
+      __u16 rta_type;
+      __u8 rta_val[ll_addr_data_len];
+    } rta_lladr;
+    struct {
+      __u16 rta_len;
+      __u16 rta_type;
+      __u16 rta_val;
+    } rta_vlan;
+    struct {
+      __u16 rta_len;
+      __u16 rta_type;
+      __u32 rta_val;
+    } rta_vni;
+    struct {
+      __u16 rta_len;
+      __u16 rta_type;
+      __u32 rta_val;
+    } rta_master;
+  } * nl_req;
+
+  struct nlmsghdr *nlh = nlmsg_put(msg, NL_AUTO_PID, NL_AUTO_SEQ, type,
+                                   sizeof(*nl_req), NLM_F_REQUEST | flags);
+
+  nl_req = nlmsg_data(nlh);
+  memset(nl_req, 0, sizeof(*nl_req));
+  nl_req->ndm.ndm_family = family;
+  nl_req->ndm.ndm_ifindex = neigh->link_index;
+  nl_req->ndm.ndm_state = neigh->state;
+  nl_req->ndm.ndm_type = neigh->type;
+  nl_req->ndm.ndm_flags = neigh->flags;
+
+  nl_req->rta_dst.rta_type = NDA_DST;
+  nl_req->rta_dst.rta_len = ip_data_len + 4;
+  if (neigh->ip.f.v4) {
+    memcpy(nl_req->rta_dst.rta_val, neigh->ip.v4.bytes, 4);
+  } else if (neigh->ip.f.v6) {
+    memcpy(nl_req->rta_dst.rta_val, neigh->ip.v6.bytes, 16);
+  }
+
+  nl_req->rta_lladr.rta_type = NDA_LLADDR;
+  nl_req->rta_lladr.rta_len = ll_addr_data_len + 4;
+  if (neigh->ll_ip_addr.f.v4) {
+    memcpy(nl_req->rta_lladr.rta_val, neigh->ll_ip_addr.v4.bytes, 4);
+  } else if (neigh->flags != NTF_PROXY || is_zero_mac(neigh->hwaddr)) {
+    memcpy(nl_req->rta_lladr.rta_val, neigh->hwaddr, ETH_ALEN);
+  }
+
+  nl_req->rta_vlan.rta_len = 6;
+  if (neigh->vlan > 0) {
+    nl_req->rta_vlan.rta_type = NDA_VLAN;
+    nl_req->rta_vlan.rta_val = (__u16)neigh->vlan;
+  } else {
+    nl_req->rta_vlan.rta_type = IFA_UNSPEC;
+  }
+
+  nl_req->rta_vni.rta_len = 8;
+  if (neigh->vni > 0) {
+    nl_req->rta_vni.rta_type = NDA_VNI;
+    nl_req->rta_vni.rta_val = neigh->vni;
+  } else {
+    nl_req->rta_vni.rta_type = IFA_UNSPEC;
+  }
+
+  nl_req->rta_master.rta_len = 8;
+  if (neigh->master_index > 0) {
+    nl_req->rta_master.rta_type = NDA_MASTER;
+    nl_req->rta_master.rta_val = neigh->master_index;
+  } else {
+    nl_req->rta_master.rta_type = IFA_UNSPEC;
+  }
+
+  int ret = nl_send_auto_complete(socket, msg);
+  if (ret < 0) {
+    nlmsg_free(msg);
+    nl_socket_free(socket);
+    return false;
+  }
+
+  nlmsg_free(msg);
+  nl_socket_free(socket);
+
+  return true;
+}
+
+bool _internal_nl_neigh_add(nl_neigh_mod_t *neigh) {
+  return _internal_nl_neigh_mod(neigh, RTM_NEWNEIGH, NLM_F_ACK);
+}
+
+bool _internal_nl_neigh_append(nl_neigh_mod_t *neigh) {
+  return _internal_nl_neigh_mod(neigh, RTM_NEWNEIGH,
+                                NLM_F_CREATE | NLM_F_APPEND | NLM_F_ACK);
+}
+
+bool _internal_nl_neigh_del(nl_neigh_mod_t *neigh) {
+  return _internal_nl_neigh_mod(neigh, RTM_DELNEIGH, NLM_F_ACK);
+}
