@@ -17,37 +17,66 @@ int mask(uint a,uint b) {
 import "C"
 import (
 	"fmt"
+	"net"
+	"syscall"
+
+	"github.com/cybwan/netlink/pkg/netlink"
+	"golang.org/x/sys/unix"
 )
 
 func main() {
-	// ret := AddAddrNoHook("7.7.7.0/24 ens33:1", "ens33")
-	// fmt.Println(ret)
-	//DelRouteNoHook("7.7.7.0/24")
-
-	a := byte(0b01010101)
-	b := byte(0b11110101)
-	fmt.Printf("A=%08b\n", a)
-	fmt.Printf("B=%08b\n", b|^a)
-
-	c := uint8(C.test(C.int(a), C.int(b)))
-	fmt.Printf("C=%08b\n", ^a)
-	fmt.Printf("C=%08b\n", c)
-	fmt.Printf("Mask=%032b\n", uint32(C.mask(C.uint(0xFFFFFFFF), C.uint(24))))
+	AddFDBNoHook("11:11:11:11:11:11", "ens33")
 }
 
-// func AddAddrNoHook(address, ifName string) int {
-// 	var ret int
-// 	IfName, err := netlink.LinkByName(ifName)
-// 	if err != nil {
-// 		return -1
-// 	}
-// 	Address, err := netlink.ParseAddr(address)
-// 	if err != nil {
-// 		return -1
-// 	}
-// 	err = netlink.AddrAdd(IfName, Address)
-// 	if err != nil {
-// 		return -1
-// 	}
-// 	return ret
-// }
+func AddFDBNoHook(macAddress, ifName string) int {
+	var ret int
+	MacAddress, err := net.ParseMAC(macAddress)
+	if err != nil {
+		return -1
+	}
+	IfName, err := netlink.LinkByName(ifName)
+	if err != nil {
+		return -1
+	}
+
+	// Make Neigh
+	neigh := netlink.Neigh{
+		Family:       syscall.AF_BRIDGE,
+		HardwareAddr: MacAddress,
+		LinkIndex:    IfName.Attrs().Index,
+		State:        unix.NUD_PERMANENT,
+		Flags:        unix.NTF_SELF,
+	}
+	err = netlink.NeighAppend(&neigh)
+	if err != nil {
+		fmt.Printf("err.Error(): %v\n", err.Error())
+		return -1
+	}
+	return ret
+}
+
+func DelFDBNoHook(macAddress, ifName string) int {
+	var ret int
+	MacAddress, err := net.ParseMAC(macAddress)
+	if err != nil {
+		return -1
+	}
+	IfName, err := netlink.LinkByName(ifName)
+	if err != nil {
+		return -1
+	}
+
+	// Make Neigh
+	neigh := netlink.Neigh{
+		Family:       syscall.AF_BRIDGE,
+		HardwareAddr: MacAddress,
+		LinkIndex:    IfName.Attrs().Index,
+		State:        unix.NUD_PERMANENT,
+		Flags:        unix.NTF_SELF,
+	}
+	err = netlink.NeighDel(&neigh)
+	if err != nil {
+		return -1
+	}
+	return ret
+}

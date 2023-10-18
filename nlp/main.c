@@ -36,13 +36,19 @@ int main() {
   // bool ret = nl_route_del("7.7.7.0/24");
   // printf("success:[%d]\n", ret);
 
-  bool ret = nl_addr_add("ee00::/64 ens33:1", "ens33");
-  printf("add success:[%d]\n", ret);
-  ret = nl_addr_del("ee00::/64 ens33:1", "ens33");
-  printf("del success:[%d]\n", ret);
-  ret = nl_addr_add("7.7.7.0/24 ens33:1", "ens33");
-  printf("add success:[%d]\n", ret);
-  ret = nl_addr_del("7.7.7.0/24 ens33:1", "ens33");
+  // bool ret = nl_addr_add("ee00::/64 ens33:1", "ens33");
+  // printf("add success:[%d]\n", ret);
+  // ret = nl_addr_del("ee00::/64 ens33:1", "ens33");
+  // printf("del success:[%d]\n", ret);
+  // ret = nl_addr_add("7.7.7.0/24 ens33:1", "ens33");
+  // printf("add success:[%d]\n", ret);
+  // ret = nl_addr_del("7.7.7.0/24 ens33:1", "ens33");
+  // printf("del success:[%d]\n", ret);
+
+  // bool ret = nl_fdb_add("11:11:11:11:11:11", "ens33");
+  // printf("add success:[%d]\n", ret);
+
+  bool ret = nl_fdb_del("11:11:11:11:11:11", "ens33");
   printf("del success:[%d]\n", ret);
 
   return 0;

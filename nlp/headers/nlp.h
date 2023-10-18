@@ -251,6 +251,8 @@ bool nl_route_add(const char *dst_str, const char *gw_str);
 bool nl_route_del(const char *dst_str);
 bool nl_addr_add(const char *addr_str, const char *ifi_name);
 bool nl_addr_del(const char *addr_str, const char *ifi_name);
+bool nl_fdb_add(const char *mac_addr, const char *ifi_name);
+bool nl_fdb_del(const char *mac_addr, const char *ifi_name);
 
 static __u8 zero_mac[ETH_ALEN] = {0};
 
@@ -335,8 +337,9 @@ static inline bool parse_label_net(const char *ip_net_str,
 
 static inline int hex_to_bin(__u8 ch) {
   __u8 cu = ch & 0xdf;
-  return -1 + ((ch - '0' + 1) & (__u8)((ch - '9' - 1) & ('0' - 1 - ch)) >> 8) +
-         ((cu - 'A' + 11) & (__u8)((cu - 'F' - 1) & ('A' - 1 - cu)) >> 8);
+  return -1 +
+         ((ch - '0' + 1) & (unsigned)((ch - '9' - 1) & ('0' - 1 - ch)) >> 8) +
+         ((cu - 'A' + 11) & (unsigned)((cu - 'F' - 1) & ('A' - 1 - cu)) >> 8);
 }
 
 static inline bool mac_pton(const char *s, __u8 *mac) {
@@ -355,6 +358,8 @@ static inline bool mac_pton(const char *s, __u8 *mac) {
   }
   for (i = 0; i < ETH_ALEN; i++) {
     mac[i] = (hex_to_bin(s[i * 3]) << 4) | hex_to_bin(s[i * 3 + 1]);
+    printf("s[%d]=[%c]s[%d]=[%c] mac[%d]=[%d]\n", i * 3, s[i * 3], i * 3 + 1,
+           s[i * 3 + 1], i, mac[i]);
   }
   return true;
 }
