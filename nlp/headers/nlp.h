@@ -358,8 +358,6 @@ static inline bool mac_pton(const char *s, __u8 *mac) {
   }
   for (i = 0; i < ETH_ALEN; i++) {
     mac[i] = (hex_to_bin(s[i * 3]) << 4) | hex_to_bin(s[i * 3 + 1]);
-    printf("s[%d]=[%c]s[%d]=[%c] mac[%d]=[%d]\n", i * 3, s[i * 3], i * 3 + 1,
-           s[i * 3 + 1], i, mac[i]);
   }
   return true;
 }

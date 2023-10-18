@@ -368,7 +368,6 @@ bool _internal_nl_neigh_mod(nl_neigh_mod_t *neigh, int type, int flags) {
       family = FAMILY_V6;
     }
   }
-  printf("family=[%d]\n", family);
 
   __u8 ip_data_len = 0;
   if (neigh->ip.f.v4) {
@@ -376,7 +375,6 @@ bool _internal_nl_neigh_mod(nl_neigh_mod_t *neigh, int type, int flags) {
   } else if (neigh->ip.f.v6) {
     ip_data_len = 16;
   }
-  printf("ip_data_len=[%d]\n", ip_data_len);
 
   __u8 ll_addr_data_len = 0;
   if (neigh->ll_ip_addr.f.v4) {
@@ -384,7 +382,6 @@ bool _internal_nl_neigh_mod(nl_neigh_mod_t *neigh, int type, int flags) {
   } else if (neigh->flags != NTF_PROXY || !is_zero_mac(neigh->hwaddr)) {
     ll_addr_data_len = ETH_ALEN;
   }
-  printf("ll_addr_data_len=[%d]\n", ll_addr_data_len);
 
   struct nl_sock *socket = nl_socket_alloc();
   nl_connect(socket, NETLINK_ROUTE);
@@ -402,21 +399,21 @@ bool _internal_nl_neigh_mod(nl_neigh_mod_t *neigh, int type, int flags) {
       __u16 rta_type;
       __u8 rta_val[ll_addr_data_len];
     } rta_lladr;
-    // struct {
-    //   __u16 rta_len;
-    //   __u16 rta_type;
-    //   __u16 rta_val;
-    // } rta_vlan;
-    // struct {
-    //   __u16 rta_len;
-    //   __u16 rta_type;
-    //   __u32 rta_val;
-    // } rta_vni;
-    // struct {
-    //   __u16 rta_len;
-    //   __u16 rta_type;
-    //   __u32 rta_val;
-    // } rta_master;
+    struct {
+      __u16 rta_len;
+      __u16 rta_type;
+      __u16 rta_val;
+    } rta_vlan;
+    struct {
+      __u16 rta_len;
+      __u16 rta_type;
+      __u32 rta_val;
+    } rta_vni;
+    struct {
+      __u16 rta_len;
+      __u16 rta_type;
+      __u32 rta_val;
+    } rta_master;
   } * nl_req;
 
   struct nlmsghdr *nlh = nlmsg_put(msg, NL_AUTO_PID, NL_AUTO_SEQ, type,
@@ -444,33 +441,31 @@ bool _internal_nl_neigh_mod(nl_neigh_mod_t *neigh, int type, int flags) {
     memcpy(nl_req->rta_lladr.rta_val, neigh->ll_ip_addr.v4.bytes, 4);
   } else if (neigh->flags != NTF_PROXY || !is_zero_mac(neigh->hwaddr)) {
     memcpy(nl_req->rta_lladr.rta_val, neigh->hwaddr, ETH_ALEN);
-    printf("hwaddr=[%0x]:[%0x]\n", nl_req->rta_lladr.rta_val[0],
-           nl_req->rta_lladr.rta_val[1]);
   }
 
-  // nl_req->rta_vlan.rta_len = 6;
-  // if (neigh->vlan != 0) {
-  //   nl_req->rta_vlan.rta_type = NDA_VLAN;
-  //   nl_req->rta_vlan.rta_val = (__u16)neigh->vlan;
-  // } else {
-  //   nl_req->rta_vlan.rta_type = IFA_UNSPEC;
-  // }
+  nl_req->rta_vlan.rta_len = 6;
+  if (neigh->vlan != 0) {
+    nl_req->rta_vlan.rta_type = NDA_VLAN;
+    nl_req->rta_vlan.rta_val = (__u16)neigh->vlan;
+  } else {
+    nl_req->rta_vlan.rta_type = IFA_UNSPEC;
+  }
 
-  // nl_req->rta_vni.rta_len = 8;
-  // if (neigh->vni != 0) {
-  //   nl_req->rta_vni.rta_type = NDA_VNI;
-  //   nl_req->rta_vni.rta_val = neigh->vni;
-  // } else {
-  //   nl_req->rta_vni.rta_type = IFA_UNSPEC;
-  // }
+  nl_req->rta_vni.rta_len = 8;
+  if (neigh->vni != 0) {
+    nl_req->rta_vni.rta_type = NDA_VNI;
+    nl_req->rta_vni.rta_val = neigh->vni;
+  } else {
+    nl_req->rta_vni.rta_type = IFA_UNSPEC;
+  }
 
-  // nl_req->rta_master.rta_len = 8;
-  // if (neigh->master_index != 0) {
-  //   nl_req->rta_master.rta_type = NDA_MASTER;
-  //   nl_req->rta_master.rta_val = neigh->master_index;
-  // } else {
-  //   nl_req->rta_master.rta_type = IFA_UNSPEC;
-  // }
+  nl_req->rta_master.rta_len = 8;
+  if (neigh->master_index != 0) {
+    nl_req->rta_master.rta_type = NDA_MASTER;
+    nl_req->rta_master.rta_val = neigh->master_index;
+  } else {
+    nl_req->rta_master.rta_type = IFA_UNSPEC;
+  }
 
   int ret = nl_send_auto_complete(socket, msg);
   if (ret < 0) {
@@ -504,6 +499,7 @@ bool nl_fdb_add(const char *mac_addr, const char *ifi_name) {
   if (!mac_pton(mac_addr, mac)) {
     return false;
   }
+
   nl_port_mod_t port;
   memset(&port, 0, sizeof(port));
   int ret = nl_link_get_by_name(ifi_name, &port);
@@ -527,7 +523,7 @@ bool nl_fdb_del(const char *mac_addr, const char *ifi_name) {
   if (!mac_pton(mac_addr, mac)) {
     return false;
   }
-  printf("mac=[%0x]:[%0x]\n", mac[0], mac[1]);
+
   nl_port_mod_t port;
   memset(&port, 0, sizeof(port));
   int ret = nl_link_get_by_name(ifi_name, &port);
