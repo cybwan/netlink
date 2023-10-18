@@ -253,6 +253,9 @@ bool nl_addr_add(const char *addr_str, const char *ifi_name);
 bool nl_addr_del(const char *addr_str, const char *ifi_name);
 bool nl_fdb_add(const char *mac_addr, const char *ifi_name);
 bool nl_fdb_del(const char *mac_addr, const char *ifi_name);
+bool nl_neigh_add(const char *ip_addr, const char *ifi_name,
+                  const char *mac_addr);
+bool nl_neigh_del(const char *ip_addr, const char *ifi_name);
 
 static __u8 zero_mac[ETH_ALEN] = {0};
 

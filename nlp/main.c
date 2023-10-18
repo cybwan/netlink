@@ -48,8 +48,14 @@ int main() {
   // bool ret = nl_fdb_add("11:11:11:11:11:11", "ens33");
   // printf("add success:[%d]\n", ret);
 
-  bool ret = nl_fdb_del("11:11:11:11:11:11", "ens33");
-  printf("del success:[%d]\n", ret);
+  // bool ret = nl_fdb_del("11:11:11:11:11:11", "ens33");
+  // printf("del success:[%d]\n", ret);
+
+  // bool ret = nl_neigh_add("192.168.118.1", "ens33", "11:11:11:11:11:11");
+  // printf("add success:[%d]\n", ret);
+
+  // bool ret = nl_neigh_del("192.168.118.1", "ens33");
+  // printf("add success:[%d]\n", ret);
 
   return 0;
 }

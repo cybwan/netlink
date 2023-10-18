@@ -494,9 +494,10 @@ bool _internal_nl_neigh_del(nl_neigh_mod_t *neigh) {
 }
 
 bool nl_fdb_add(const char *mac_addr, const char *ifi_name) {
-  __u8 mac[ETH_ALEN];
-  memset(&mac, 0, ETH_ALEN);
-  if (!mac_pton(mac_addr, mac)) {
+  nl_neigh_mod_t neigh;
+  memset(&neigh, 0, sizeof(neigh));
+
+  if (!mac_pton(mac_addr, neigh.hwaddr)) {
     return false;
   }
 
@@ -507,10 +508,7 @@ bool nl_fdb_add(const char *mac_addr, const char *ifi_name) {
     return false;
   }
 
-  nl_neigh_mod_t neigh;
-  memset(&neigh, 0, sizeof(neigh));
   neigh.family = AF_BRIDGE;
-  memcpy(neigh.hwaddr, mac, ETH_ALEN);
   neigh.link_index = port.index;
   neigh.state = NUD_PERMANENT;
   neigh.flags = NTF_SELF;
@@ -518,9 +516,9 @@ bool nl_fdb_add(const char *mac_addr, const char *ifi_name) {
 }
 
 bool nl_fdb_del(const char *mac_addr, const char *ifi_name) {
-  __u8 mac[ETH_ALEN];
-  memset(&mac, 0, ETH_ALEN);
-  if (!mac_pton(mac_addr, mac)) {
+  nl_neigh_mod_t neigh;
+  memset(&neigh, 0, sizeof(neigh));
+  if (!mac_pton(mac_addr, neigh.hwaddr)) {
     return false;
   }
 
@@ -531,12 +529,51 @@ bool nl_fdb_del(const char *mac_addr, const char *ifi_name) {
     return false;
   }
 
-  nl_neigh_mod_t neigh;
-  memset(&neigh, 0, sizeof(neigh));
   neigh.family = AF_BRIDGE;
-  memcpy(neigh.hwaddr, mac, ETH_ALEN);
   neigh.link_index = port.index;
   neigh.state = NUD_PERMANENT;
   neigh.flags = NTF_SELF;
+  return _internal_nl_neigh_del(&neigh);
+}
+
+bool nl_neigh_add(const char *ip_addr, const char *ifi_name,
+                  const char *mac_addr) {
+  nl_neigh_mod_t neigh;
+  memset(&neigh, 0, sizeof(neigh));
+  if (!parse_ip(ip_addr, &neigh.ip)) {
+    return false;
+  }
+
+  if (!mac_pton(mac_addr, neigh.hwaddr)) {
+    return false;
+  }
+
+  nl_port_mod_t port;
+  memset(&port, 0, sizeof(port));
+  int ret = nl_link_get_by_name(ifi_name, &port);
+  if (ret < 0 || port.index == 0) {
+    return false;
+  }
+
+  neigh.link_index = port.index;
+  neigh.state = NUD_PERMANENT;
+  return _internal_nl_neigh_append(&neigh);
+}
+
+bool nl_neigh_del(const char *ip_addr, const char *ifi_name) {
+  nl_neigh_mod_t neigh;
+  memset(&neigh, 0, sizeof(neigh));
+  if (!parse_ip(ip_addr, &neigh.ip)) {
+    return false;
+  }
+
+  nl_port_mod_t port;
+  memset(&port, 0, sizeof(port));
+  int ret = nl_link_get_by_name(ifi_name, &port);
+  if (ret < 0 || port.index == 0) {
+    return false;
+  }
+
+  neigh.link_index = port.index;
   return _internal_nl_neigh_del(&neigh);
 }
