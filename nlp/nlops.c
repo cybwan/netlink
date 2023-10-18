@@ -577,3 +577,59 @@ bool nl_neigh_del(const char *ip_addr, const char *ifi_name) {
   neigh.link_index = port.index;
   return _internal_nl_neigh_del(&neigh);
 }
+
+bool nl_vxlan_peer_add(__u32 vxlan_id, const char *peer_ip) {
+  nl_neigh_mod_t peer;
+  memset(&peer, 0, sizeof(peer));
+  if (!parse_ip(peer_ip, &peer.ip)) {
+    return false;
+  }
+
+  char *mac_addr = "00:00:00:00:00:00";
+  if (!mac_pton(mac_addr, peer.hwaddr)) {
+    return false;
+  }
+
+  char ifi_name[IF_NAMESIZE];
+  snprintf(ifi_name, IF_NAMESIZE, "vxlan%d", vxlan_id);
+  nl_port_mod_t port;
+  memset(&port, 0, sizeof(port));
+  int ret = nl_link_get_by_name(ifi_name, &port);
+  if (ret < 0 || port.index == 0) {
+    return false;
+  }
+
+  peer.family = AF_BRIDGE;
+  peer.link_index = port.index;
+  peer.state = NUD_PERMANENT;
+  peer.flags = NTF_SELF;
+  return _internal_nl_neigh_append(&peer);
+}
+
+bool nl_vxlan_peer_del(__u32 vxlan_id, const char *peer_ip) {
+  nl_neigh_mod_t peer;
+  memset(&peer, 0, sizeof(peer));
+  if (!parse_ip(peer_ip, &peer.ip)) {
+    return false;
+  }
+
+  char *mac_addr = "00:00:00:00:00:00";
+  if (!mac_pton(mac_addr, peer.hwaddr)) {
+    return false;
+  }
+
+  char ifi_name[IF_NAMESIZE];
+  snprintf(ifi_name, IF_NAMESIZE, "vxlan%d", vxlan_id);
+  nl_port_mod_t port;
+  memset(&port, 0, sizeof(port));
+  int ret = nl_link_get_by_name(ifi_name, &port);
+  if (ret < 0 || port.index == 0) {
+    return false;
+  }
+
+  peer.family = AF_BRIDGE;
+  peer.link_index = port.index;
+  peer.state = NUD_PERMANENT;
+  peer.flags = NTF_SELF;
+  return _internal_nl_neigh_del(&peer);
+}

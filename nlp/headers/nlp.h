@@ -256,6 +256,8 @@ bool nl_fdb_del(const char *mac_addr, const char *ifi_name);
 bool nl_neigh_add(const char *ip_addr, const char *ifi_name,
                   const char *mac_addr);
 bool nl_neigh_del(const char *ip_addr, const char *ifi_name);
+bool nl_vxlan_peer_add(__u32 vxlan_id, const char *peer_ip);
+bool nl_vxlan_peer_del(__u32 vxlan_id, const char *peer_ip);
 
 static __u8 zero_mac[ETH_ALEN] = {0};
 
