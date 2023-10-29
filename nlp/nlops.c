@@ -948,7 +948,8 @@ bool _internal_nl_link_mod(nl_link_t *link, int flags) {
     return false;
   }
 
-  if (link->type.vrf) {
+  if (link->type.vti) {
+  } else if (link->type.vrf) {
     struct {
       __u16 rta_len;
       __u16 rta_type;

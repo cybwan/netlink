@@ -151,6 +151,13 @@ typedef struct nl_link {
       __u32 remote;
     } iptun;
     struct {
+      __u32 ikey;
+      __u32 okey;
+      __u32 link;
+      nl_ip_t local;
+      nl_ip_t remote;
+    } vti;
+    struct {
       __u32 table;
     } vrf;
     struct {
