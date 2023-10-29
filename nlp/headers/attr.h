@@ -135,7 +135,9 @@ typedef struct nl_link {
   nl_link_type_t type;
   union {
     struct {
-
+      bool *multicast_snooping;
+      __u32 *hello_time;
+      bool *vlan_filtering;
     } bridge;
     struct {
 
@@ -148,7 +150,18 @@ typedef struct nl_link {
       __u32 local;
       __u32 remote;
     } iptun;
-
+    struct {
+      __u32 table;
+    } vrf;
+    struct {
+      __u32 fd0;
+      __u32 fd1;
+      __u32 role;
+      __u32 pdp_hash_size;
+    } gtp;
+    struct {
+      __u32 ifid;
+    } xfrm;
     struct {
       __u16 pkey;
       __u16 mode;

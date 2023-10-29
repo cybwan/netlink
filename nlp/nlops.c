@@ -948,7 +948,148 @@ bool _internal_nl_link_mod(nl_link_t *link, int flags) {
     return false;
   }
 
-  if (link->type.ipoib) {
+  if (link->type.vrf) {
+    struct {
+      __u16 rta_len;
+      __u16 rta_type;
+      struct {
+        __u16 rta_len;
+        __u16 rta_type;
+        __u32 rta_val;
+      } rta_val;
+    } rta;
+    memset(&rta, 0, sizeof(rta));
+    rta.rta_type = IFLA_INFO_DATA;
+    rta.rta_len = sizeof(rta);
+    rta.rta_val.rta_type = IFLA_VRF_TABLE;
+    rta.rta_val.rta_val = link->u.vrf.table;
+    rta.rta_val.rta_len = sizeof(rta.rta_val);
+    ret = nlmsg_append(msg, &rta, sizeof(rta), RTA_PADDING(rta));
+    if (ret < 0) {
+      nlmsg_free(msg);
+      nl_socket_free(socket);
+      return false;
+    }
+  } else if (link->type.bridge) {
+    int nested_u8_idx = -1, nested_u32_idx = -1;
+    int nested_u8 = 0, nested_u32 = 0;
+    if (link->u.bridge.multicast_snooping) {
+      nested_u8++;
+    }
+    if (link->u.bridge.hello_time) {
+      nested_u32++;
+    }
+    if (link->u.bridge.vlan_filtering) {
+      nested_u8++;
+    }
+    struct {
+      __u16 rta_len;
+      __u16 rta_type;
+      struct {
+        __u16 rta_len;
+        __u16 rta_type;
+        __u8 rta_val;
+      } rta_u8_vals[nested_u8];
+      struct {
+        __u16 rta_len;
+        __u16 rta_type;
+        __u32 rta_val;
+      } rta_u32_vals[nested_u32];
+    } rta;
+    memset(&rta, 0, sizeof(rta));
+    rta.rta_type = IFLA_INFO_DATA;
+    rta.rta_len = sizeof(rta);
+    if (link->u.bridge.multicast_snooping) {
+      nested_u8_idx++;
+      rta.rta_u8_vals[nested_u8_idx].rta_type = IFLA_BR_MCAST_SNOOPING;
+      rta.rta_u8_vals[nested_u8_idx].rta_val =
+          *link->u.bridge.multicast_snooping;
+      rta.rta_u8_vals[nested_u8_idx].rta_len =
+          sizeof(rta.rta_u8_vals[nested_u8_idx]);
+    }
+    if (link->u.bridge.hello_time) {
+      nested_u32_idx++;
+      rta.rta_u32_vals[nested_u32_idx].rta_type = IFLA_BR_MCAST_SNOOPING;
+      rta.rta_u32_vals[nested_u32_idx].rta_val = *link->u.bridge.hello_time;
+      rta.rta_u32_vals[nested_u32_idx].rta_len =
+          sizeof(rta.rta_u32_vals[nested_u32_idx]);
+    }
+    if (link->u.bridge.vlan_filtering) {
+      nested_u8_idx++;
+      rta.rta_u8_vals[nested_u8_idx].rta_type = IFLA_BR_MCAST_SNOOPING;
+      rta.rta_u8_vals[nested_u8_idx].rta_val = *link->u.bridge.vlan_filtering;
+      rta.rta_u8_vals[nested_u8_idx].rta_len =
+          sizeof(rta.rta_u8_vals[nested_u8_idx]);
+    }
+    ret = nlmsg_append(msg, &rta, sizeof(rta), RTA_PADDING(rta));
+    if (ret < 0) {
+      nlmsg_free(msg);
+      nl_socket_free(socket);
+      return false;
+    }
+  } else if (link->type.gtp) {
+    int nested_attrs = 3;
+    if (link->u.gtp.role != GTP_ROLE_GGSN) {
+      nested_attrs = 4;
+    }
+    struct {
+      __u16 rta_len;
+      __u16 rta_type;
+      struct {
+        __u16 rta_len;
+        __u16 rta_type;
+        __u32 rta_val;
+      } rta_vals[nested_attrs];
+    } rta;
+    memset(&rta, 0, sizeof(rta));
+    rta.rta_type = IFLA_INFO_DATA;
+    rta.rta_len = sizeof(rta);
+    rta.rta_vals[0].rta_type = IFLA_GTP_FD0;
+    rta.rta_vals[0].rta_val = link->u.gtp.fd0;
+    rta.rta_vals[0].rta_len = sizeof(rta.rta_vals[0]);
+    rta.rta_vals[1].rta_type = IFLA_GTP_FD1;
+    rta.rta_vals[1].rta_val = link->u.gtp.fd1;
+    rta.rta_vals[1].rta_len = sizeof(rta.rta_vals[1]);
+    rta.rta_vals[2].rta_type = IFLA_GTP_PDP_HASHSIZE;
+    rta.rta_vals[2].rta_val = (__u32)131072;
+    rta.rta_vals[2].rta_len = sizeof(rta.rta_vals[2]);
+    if (link->u.gtp.role != GTP_ROLE_GGSN) {
+      rta.rta_vals[3].rta_type = IFLA_GTP_ROLE;
+      rta.rta_vals[3].rta_val = link->u.gtp.role;
+      rta.rta_vals[3].rta_len = sizeof(rta.rta_vals[3]);
+    }
+    ret = nlmsg_append(msg, &rta, sizeof(rta), RTA_PADDING(rta));
+    if (ret < 0) {
+      nlmsg_free(msg);
+      nl_socket_free(socket);
+      return false;
+    }
+  } else if (link->type.xfrm) {
+    struct {
+      __u16 rta_len;
+      __u16 rta_type;
+      struct {
+        __u16 rta_len;
+        __u16 rta_type;
+        __u32 rta_val;
+      } rta_vals[2];
+    } rta;
+    memset(&rta, 0, sizeof(rta));
+    rta.rta_type = IFLA_INFO_DATA;
+    rta.rta_len = sizeof(rta);
+    rta.rta_vals[0].rta_type = IFLA_XFRM_LINK;
+    rta.rta_vals[0].rta_val = base.parent_index;
+    rta.rta_vals[0].rta_len = sizeof(rta.rta_vals[0]);
+    rta.rta_vals[1].rta_type = IFLA_XFRM_IF_ID;
+    rta.rta_vals[1].rta_val = link->u.xfrm.ifid;
+    rta.rta_vals[1].rta_len = sizeof(rta.rta_vals[1]);
+    ret = nlmsg_append(msg, &rta, sizeof(rta), RTA_PADDING(rta));
+    if (ret < 0) {
+      nlmsg_free(msg);
+      nl_socket_free(socket);
+      return false;
+    }
+  } else if (link->type.ipoib) {
     struct {
       __u16 rta_len;
       __u16 rta_type;
