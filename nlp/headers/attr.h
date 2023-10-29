@@ -124,7 +124,8 @@ typedef struct nl_link_type {
   __u32 xfrm : 1;
   __u32 tun : 1;
   __u32 ipoib : 1;
-  __u32 can : 1;
+  __u32 vcan : 1;
+  __u32 vxcan : 1;
 } nl_link_type_t;
 
 typedef struct nl_link {
@@ -149,10 +150,54 @@ typedef struct nl_link {
 } nl_link_t;
 
 static inline char *link_type(nl_link_type_t *type) {
-  if (type->bond) {
-    return "bond";
+  if (type->dummy) {
+    return "dummy";
+  } else if (type->ifb) {
+    return "ifb";
   } else if (type->bridge) {
     return "bridge";
+  } else if (type->vlan) {
+    return "vlan";
+  } else if (type->veth) {
+    return "veth";
+  } else if (type->vxlan) {
+    return "vxlan";
+  } else if (type->bond) {
+    return "bond";
+  } else if (type->ipvlan) {
+    return "ipvlan";
+  } else if (type->macvlan) {
+    return "macvlan";
+  } else if (type->macvtap) {
+    return "macvtap";
+  } else if (type->gretap) {
+    return "gretap";
+  } else if (type->ip6gretap) {
+    return "ip6gretap";
+  } else if (type->ipip) {
+    return "ipip";
+  } else if (type->ip6tnl) {
+    return "ip6tnl";
+  } else if (type->sit) {
+    return "sit";
+  } else if (type->gre) {
+    return "gre";
+  } else if (type->ip6gre) {
+    return "ip6gre";
+  } else if (type->vti) {
+    return "vti";
+  } else if (type->vti6) {
+    return "vti";
+  } else if (type->vrf) {
+    return "vrf";
+  } else if (type->gtp) {
+    return "gtp";
+  } else if (type->xfrm) {
+    return "xfrm";
+  } else if (type->tun) {
+    return "tun";
+  } else if (type->ipoib) {
+    return "ipoib";
   }
   return NULL;
 }
