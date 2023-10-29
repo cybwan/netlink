@@ -194,218 +194,146 @@ static inline char *link_type(nl_link_type_t *type) {
     return "gtp";
   } else if (type->xfrm) {
     return "xfrm";
-  } else if (type->tun) {
-    return "tun";
-  } else if (type->ipoib) {
-    return "ipoib";
   }
   return NULL;
 }
 
-static const char *STR_ARPHRD_GENERIC = "generic";
-static const char *STR_ARPHRD_ETHER = "ether";
-static const char *STR_ARPHRD_EETHER = "eether";
-static const char *STR_ARPHRD_AX25 = "ax25";
-static const char *STR_ARPHRD_PRONET = "pronet";
-static const char *STR_ARPHRD_CHAOS = "chaos";
-static const char *STR_ARPHRD_IEEE802 = "ieee802";
-static const char *STR_ARPHRD_ARCNET = "arcnet";
-static const char *STR_ARPHRD_APPLETLK = "atalk";
-static const char *STR_ARPHRD_DLCI = "dlci";
-static const char *STR_ARPHRD_ATM = "atm";
-static const char *STR_ARPHRD_METRICOM = "metricom";
-static const char *STR_ARPHRD_IEEE1394 = "ieee1394";
-static const char *STR_ARPHRD_INFINIBAND = "infiniband";
-static const char *STR_ARPHRD_SLIP = "slip";
-static const char *STR_ARPHRD_CSLIP = "cslip";
-static const char *STR_ARPHRD_SLIP6 = "slip6";
-static const char *STR_ARPHRD_CSLIP6 = "cslip6";
-static const char *STR_ARPHRD_RSRVD = "rsrvd";
-static const char *STR_ARPHRD_ADAPT = "adapt";
-static const char *STR_ARPHRD_ROSE = "rose";
-static const char *STR_ARPHRD_X25 = "x25";
-static const char *STR_ARPHRD_HWX25 = "hwx25";
-static const char *STR_ARPHRD_PPP = "ppp";
-static const char *STR_ARPHRD_HDLC = "hdlc";
-static const char *STR_ARPHRD_LAPB = "lapb";
-static const char *STR_ARPHRD_DDCMP = "ddcmp";
-static const char *STR_ARPHRD_RAWHDLC = "rawhdlc";
-static const char *STR_ARPHRD_TUNNEL = "ipip";
-static const char *STR_ARPHRD_TUNNEL6 = "tunnel6";
-static const char *STR_ARPHRD_FRAD = "frad";
-static const char *STR_ARPHRD_SKIP = "skip";
-static const char *STR_ARPHRD_LOOPBACK = "loopback";
-static const char *STR_ARPHRD_LOCALTLK = "ltalk";
-static const char *STR_ARPHRD_FDDI = "fddi";
-static const char *STR_ARPHRD_BIF = "bif";
-static const char *STR_ARPHRD_SIT = "sit";
-static const char *STR_ARPHRD_IPDDP = "ip/ddp";
-static const char *STR_ARPHRD_IPGRE = "gre";
-static const char *STR_ARPHRD_PIMREG = "pimreg";
-static const char *STR_ARPHRD_HIPPI = "hippi";
-static const char *STR_ARPHRD_ASH = "ash";
-static const char *STR_ARPHRD_ECONET = "econet";
-static const char *STR_ARPHRD_IRDA = "irda";
-static const char *STR_ARPHRD_FCPP = "fcpp";
-static const char *STR_ARPHRD_FCAL = "fcal";
-static const char *STR_ARPHRD_FCPL = "fcpl";
-static const char *STR_ARPHRD_FCFABRIC = "fcfb0";
-static const char *STR_ARPHRD_FCFABRIC1 = "fcfb1";
-static const char *STR_ARPHRD_FCFABRIC2 = "fcfb2";
-static const char *STR_ARPHRD_FCFABRIC3 = "fcfb3";
-static const char *STR_ARPHRD_FCFABRIC4 = "fcfb4";
-static const char *STR_ARPHRD_FCFABRIC5 = "fcfb5";
-static const char *STR_ARPHRD_FCFABRIC6 = "fcfb6";
-static const char *STR_ARPHRD_FCFABRIC7 = "fcfb7";
-static const char *STR_ARPHRD_FCFABRIC8 = "fcfb8";
-static const char *STR_ARPHRD_FCFABRIC9 = "fcfb9";
-static const char *STR_ARPHRD_FCFABRIC10 = "fcfb10";
-static const char *STR_ARPHRD_FCFABRIC11 = "fcfb11";
-static const char *STR_ARPHRD_FCFABRIC12 = "fcfb12";
-static const char *STR_ARPHRD_IEEE802_TR = "tr";
-static const char *STR_ARPHRD_IEEE80211 = "ieee802.11";
-static const char *STR_ARPHRD_IEEE80211_PRISM = "ieee802.11/prism";
-static const char *STR_ARPHRD_IEEE80211_RADIOTAP = "ieee802.11/radiotap";
-static const char *STR_ARPHRD_IEEE802154 = "ieee802.15.4";
-static const char *STR_ARPHRD_65534 = "none";
-static const char *STR_ARPHRD_65535 = "void";
-
 static inline char *encap_type(__u16 type) {
   switch (type) {
   case 0:
-    return (char *)STR_ARPHRD_GENERIC;
+    return "generic";
   case ARPHRD_ETHER:
-    return (char *)STR_ARPHRD_ETHER;
+    return "ether";
   case ARPHRD_EETHER:
-    return (char *)STR_ARPHRD_EETHER;
+    return "eether";
   case ARPHRD_AX25:
-    return (char *)STR_ARPHRD_AX25;
+    return "ax25";
   case ARPHRD_PRONET:
-    return (char *)STR_ARPHRD_PRONET;
+    return "pronet";
   case ARPHRD_CHAOS:
-    return (char *)STR_ARPHRD_CHAOS;
+    return "chaos";
   case ARPHRD_IEEE802:
-    return (char *)STR_ARPHRD_IEEE802;
+    return "ieee802";
   case ARPHRD_ARCNET:
-    return (char *)STR_ARPHRD_ARCNET;
+    return "arcnet";
   case ARPHRD_APPLETLK:
-    return (char *)STR_ARPHRD_APPLETLK;
+    return "atalk";
   case ARPHRD_DLCI:
-    return (char *)STR_ARPHRD_DLCI;
+    return "dlci";
   case ARPHRD_ATM:
-    return (char *)STR_ARPHRD_ATM;
+    return "atm";
   case ARPHRD_METRICOM:
-    return (char *)STR_ARPHRD_METRICOM;
+    return "metricom";
   case ARPHRD_IEEE1394:
-    return (char *)STR_ARPHRD_IEEE1394;
+    return "ieee1394";
   case ARPHRD_INFINIBAND:
-    return (char *)STR_ARPHRD_INFINIBAND;
+    return "infiniband";
   case ARPHRD_SLIP:
-    return (char *)STR_ARPHRD_SLIP;
+    return "slip";
   case ARPHRD_CSLIP:
-    return (char *)STR_ARPHRD_CSLIP;
+    return "cslip";
   case ARPHRD_SLIP6:
-    return (char *)STR_ARPHRD_SLIP6;
+    return "slip6";
   case ARPHRD_CSLIP6:
-    return (char *)STR_ARPHRD_CSLIP6;
+    return "cslip6";
   case ARPHRD_RSRVD:
-    return (char *)STR_ARPHRD_RSRVD;
+    return "rsrvd";
   case ARPHRD_ADAPT:
-    return (char *)STR_ARPHRD_ADAPT;
+    return "adapt";
   case ARPHRD_ROSE:
-    return (char *)STR_ARPHRD_ROSE;
+    return "rose";
   case ARPHRD_X25:
-    return (char *)STR_ARPHRD_X25;
+    return "x25";
   case ARPHRD_HWX25:
-    return (char *)STR_ARPHRD_HWX25;
+    return "hwx25";
   case ARPHRD_PPP:
-    return (char *)STR_ARPHRD_PPP;
+    return "ppp";
   case ARPHRD_HDLC:
-    return (char *)STR_ARPHRD_HDLC;
+    return "hdlc";
   case ARPHRD_LAPB:
-    return (char *)STR_ARPHRD_LAPB;
+    return "lapb";
   case ARPHRD_DDCMP:
-    return (char *)STR_ARPHRD_DDCMP;
+    return "ddcmp";
   case ARPHRD_RAWHDLC:
-    return (char *)STR_ARPHRD_RAWHDLC;
+    return "rawhdlc";
   case ARPHRD_TUNNEL:
-    return (char *)STR_ARPHRD_TUNNEL;
+    return "ipip";
   case ARPHRD_TUNNEL6:
-    return (char *)STR_ARPHRD_TUNNEL6;
+    return "tunnel6";
   case ARPHRD_FRAD:
-    return (char *)STR_ARPHRD_FRAD;
+    return "frad";
   case ARPHRD_SKIP:
-    return (char *)STR_ARPHRD_SKIP;
+    return "skip";
   case ARPHRD_LOOPBACK:
-    return (char *)STR_ARPHRD_LOOPBACK;
+    return "loopback";
   case ARPHRD_LOCALTLK:
-    return (char *)STR_ARPHRD_LOCALTLK;
+    return "ltalk";
   case ARPHRD_FDDI:
-    return (char *)STR_ARPHRD_FDDI;
+    return "fddi";
   case ARPHRD_BIF:
-    return (char *)STR_ARPHRD_BIF;
+    return "bif";
   case ARPHRD_SIT:
-    return (char *)STR_ARPHRD_SIT;
+    return "sit";
   case ARPHRD_IPDDP:
-    return (char *)STR_ARPHRD_IPDDP;
+    return "ip/ddp";
   case ARPHRD_IPGRE:
-    return (char *)STR_ARPHRD_IPGRE;
+    return "gre";
   case ARPHRD_PIMREG:
-    return (char *)STR_ARPHRD_PIMREG;
+    return "pimreg";
   case ARPHRD_HIPPI:
-    return (char *)STR_ARPHRD_HIPPI;
+    return "hippi";
   case ARPHRD_ASH:
-    return (char *)STR_ARPHRD_ASH;
+    return "ash";
   case ARPHRD_ECONET:
-    return (char *)STR_ARPHRD_ECONET;
+    return "econet";
   case ARPHRD_IRDA:
-    return (char *)STR_ARPHRD_IRDA;
+    return "irda";
   case ARPHRD_FCPP:
-    return (char *)STR_ARPHRD_FCPP;
+    return "fcpp";
   case ARPHRD_FCAL:
-    return (char *)STR_ARPHRD_FCAL;
+    return "fcal";
   case ARPHRD_FCPL:
-    return (char *)STR_ARPHRD_FCPL;
+    return "fcpl";
   case ARPHRD_FCFABRIC:
-    return (char *)STR_ARPHRD_FCFABRIC;
+    return "fcfb0";
   case ARPHRD_FCFABRIC + 1:
-    return (char *)STR_ARPHRD_FCFABRIC1;
+    return "fcfb1";
   case ARPHRD_FCFABRIC + 2:
-    return (char *)STR_ARPHRD_FCFABRIC2;
+    return "fcfb2";
   case ARPHRD_FCFABRIC + 3:
-    return (char *)STR_ARPHRD_FCFABRIC3;
+    return "fcfb3";
   case ARPHRD_FCFABRIC + 4:
-    return (char *)STR_ARPHRD_FCFABRIC4;
+    return "fcfb4";
   case ARPHRD_FCFABRIC + 5:
-    return (char *)STR_ARPHRD_FCFABRIC5;
+    return "fcfb5";
   case ARPHRD_FCFABRIC + 6:
-    return (char *)STR_ARPHRD_FCFABRIC6;
+    return "fcfb6";
   case ARPHRD_FCFABRIC + 7:
-    return (char *)STR_ARPHRD_FCFABRIC7;
+    return "fcfb7";
   case ARPHRD_FCFABRIC + 8:
-    return (char *)STR_ARPHRD_FCFABRIC8;
+    return "fcfb8";
   case ARPHRD_FCFABRIC + 9:
-    return (char *)STR_ARPHRD_FCFABRIC9;
+    return "fcfb9";
   case ARPHRD_FCFABRIC + 10:
-    return (char *)STR_ARPHRD_FCFABRIC10;
+    return "fcfb10";
   case ARPHRD_FCFABRIC + 11:
-    return (char *)STR_ARPHRD_FCFABRIC11;
+    return "fcfb11";
   case ARPHRD_FCFABRIC + 12:
-    return (char *)STR_ARPHRD_FCFABRIC12;
+    return "fcfb12";
   case ARPHRD_IEEE802_TR:
-    return (char *)STR_ARPHRD_IEEE802_TR;
+    return "tr";
   case ARPHRD_IEEE80211:
-    return (char *)STR_ARPHRD_IEEE80211;
+    return "ieee802.11";
   case ARPHRD_IEEE80211_PRISM:
-    return (char *)STR_ARPHRD_IEEE80211_PRISM;
+    return "ieee802.11/prism";
   case ARPHRD_IEEE80211_RADIOTAP:
-    return (char *)STR_ARPHRD_IEEE80211_RADIOTAP;
+    return "ieee802.11/radiotap";
   case ARPHRD_IEEE802154:
-    return (char *)STR_ARPHRD_IEEE802154;
+    return "ieee802.15.4";
   case 65534:
-    return (char *)STR_ARPHRD_65534;
+    return "none";
   case 65535:
-    return (char *)STR_ARPHRD_65535;
+    return "void";
   default:
     return NULL;
   }
