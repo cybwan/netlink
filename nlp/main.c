@@ -57,5 +57,14 @@ int main() {
   // bool ret = nl_neigh_del("192.168.118.1", "ens33");
   // printf("add success:[%d]\n", ret);
 
+  nl_link_t link;
+  memset(&link, 0, sizeof(link));
+  link.attrs.name = "testa";
+  link.attrs.mtu = 9000;
+  link.type.bridge = 1;
+  if (_internal_nl_link_mod(&link, NLM_F_CREATE | NLM_F_EXCL | NLM_F_ACK)) {
+    printf("success\n");
+  }
+
   return 0;
 }

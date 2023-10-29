@@ -20,6 +20,8 @@
 #include <netlink/genl/genl.h>
 #include <netlink/netlink.h>
 
+#include <attr.h>
+
 #define FAMILY_ALL AF_UNSPEC
 #define FAMILY_V4 AF_INET
 #define FAMILY_V6 AF_INET6
@@ -116,35 +118,7 @@ typedef struct nl_port_mod {
   __u32 mtu;
   __u8 oper_state;
   __u8 hwaddr[ETH_ALEN];
-  struct {
-    __u32 dummy : 1;
-    __u32 ifb : 1;
-    __u32 bridge : 1;
-    __u32 vlan : 1;
-    __u32 veth : 1;
-    __u32 wireguard : 1;
-    __u32 vxlan : 1;
-    __u32 bond : 1;
-    __u32 ipvlan : 1;
-    __u32 macvlan : 1;
-    __u32 macvtap : 1;
-    __u32 geneve : 1;
-    __u32 gretap : 1;
-    __u32 ip6gretap : 1;
-    __u32 ipip : 1;
-    __u32 ip6tnl : 1;
-    __u32 sit : 1;
-    __u32 gre : 1;
-    __u32 ip6gre : 1;
-    __u32 vti : 1;
-    __u32 vti6 : 1;
-    __u32 vrf : 1;
-    __u32 gtp : 1;
-    __u32 xfrm : 1;
-    __u32 tun : 1;
-    __u32 ipoib : 1;
-    __u32 can : 1;
-  } type;
+  nl_link_type_t type;
   union {
     struct {
 
@@ -258,6 +232,8 @@ bool nl_neigh_add(const char *ip_addr, const char *ifi_name,
 bool nl_neigh_del(const char *ip_addr, const char *ifi_name);
 bool nl_vxlan_peer_add(__u32 vxlan_id, const char *peer_ip);
 bool nl_vxlan_peer_del(__u32 vxlan_id, const char *peer_ip);
+
+bool _internal_nl_link_mod(nl_link_t *link, int flags);
 
 static __u8 zero_mac[ETH_ALEN] = {0};
 

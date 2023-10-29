@@ -633,3 +633,330 @@ bool nl_vxlan_peer_del(__u32 vxlan_id, const char *peer_ip) {
   peer.flags = NTF_SELF;
   return _internal_nl_neigh_del(&peer);
 }
+
+bool _internal_nl_link_mod(nl_link_t *link, int flags) {
+  nl_base_attrs_t base = link->attrs;
+  struct nl_sock *socket = nl_socket_alloc();
+  nl_connect(socket, NETLINK_ROUTE);
+  struct nl_msg *msg = nlmsg_alloc();
+  int ret = 0;
+
+  struct ifinfomsg *nl_req;
+  struct nlmsghdr *nlh = nlmsg_put(msg, NL_AUTO_PID, NL_AUTO_SEQ, RTM_NEWLINK,
+                                   sizeof(*nl_req), NLM_F_REQUEST | flags);
+
+  nl_req = nlmsg_data(nlh);
+  memset(nl_req, 0, sizeof(*nl_req));
+  nl_req->ifi_family = AF_UNSPEC;
+
+  if ((base.flags & FLAG_UP) != 0) {
+    nl_req->ifi_change = IFF_UP;
+    nl_req->ifi_flags = IFF_UP;
+  }
+
+  if ((base.flags & FLAG_BROADCAST) != 0) {
+    nl_req->ifi_change = IFF_BROADCAST;
+    nl_req->ifi_flags = IFF_BROADCAST;
+  }
+
+  if ((base.flags & FLAG_LOOPBACK) != 0) {
+    nl_req->ifi_change = IFF_LOOPBACK;
+    nl_req->ifi_flags = IFF_LOOPBACK;
+  }
+
+  if ((base.flags & FLAG_POINTTOPOINT) != 0) {
+    nl_req->ifi_change = IFF_POINTOPOINT;
+    nl_req->ifi_flags = IFF_POINTOPOINT;
+  }
+
+  if ((base.flags & FLAG_MULTICAST) != 0) {
+    nl_req->ifi_change = IFF_MULTICAST;
+    nl_req->ifi_flags = IFF_MULTICAST;
+  }
+
+  if (base.index != 0) {
+    nl_req->ifi_index = base.index;
+  }
+
+  if (base.parent_index != 0) {
+    struct {
+      __u16 rta_len;
+      __u16 rta_type;
+      __u32 rta_val;
+    } rta;
+    memset(&rta, 0, sizeof(rta));
+    rta.rta_type = IFLA_LINK;
+    rta.rta_len = sizeof(rta);
+    rta.rta_val = (__u32)base.parent_index;
+    ret = nlmsg_append(msg, &rta, sizeof(rta), 0);
+    if (ret < 0) {
+      nlmsg_free(msg);
+      nl_socket_free(socket);
+      return false;
+    }
+  } else if (link->type.ipvlan) {
+    nlmsg_free(msg);
+    nl_socket_free(socket);
+    printf("can't create ipvlan link without ParentIndex");
+    return false;
+  } else if (link->type.ipoib) {
+    nlmsg_free(msg);
+    nl_socket_free(socket);
+    printf("can't create ipoib link without ParentIndex");
+    return false;
+  }
+
+  struct {
+    __u16 rta_len;
+    __u16 rta_type;
+    __u8 rta_val[RTA_ALIGN(strlen(base.name))];
+  } rta_name;
+  memset(&rta_name, 0, sizeof(rta_name));
+  rta_name.rta_type = IFLA_IFNAME;
+  rta_name.rta_len = sizeof(rta_name);
+  memcpy(&rta_name.rta_val, base.name, strlen(base.name));
+  ret = nlmsg_append(msg, &rta_name, sizeof(rta_name), 0);
+  if (ret < 0) {
+    nlmsg_free(msg);
+    nl_socket_free(socket);
+    return false;
+  }
+
+  if (base.mtu > 0) {
+    struct {
+      __u16 rta_len;
+      __u16 rta_type;
+      __u32 rta_val;
+    } rta;
+    memset(&rta, 0, sizeof(rta));
+    rta.rta_type = IFLA_MTU;
+    rta.rta_len = sizeof(rta);
+    rta.rta_val = (__u32)base.mtu;
+    ret = nlmsg_append(msg, &rta, sizeof(rta), 0);
+    if (ret < 0) {
+      nlmsg_free(msg);
+      nl_socket_free(socket);
+      return false;
+    }
+  }
+
+  if (base.tx_q_len >= 0) {
+    struct {
+      __u16 rta_len;
+      __u16 rta_type;
+      __u32 rta_val;
+    } rta;
+    memset(&rta, 0, sizeof(rta));
+    rta.rta_type = IFLA_TXQLEN;
+    rta.rta_len = sizeof(rta);
+    rta.rta_val = (__u32)base.tx_q_len;
+    ret = nlmsg_append(msg, &rta, sizeof(rta), 0);
+    if (ret < 0) {
+      nlmsg_free(msg);
+      nl_socket_free(socket);
+      return false;
+    }
+  }
+
+  if (!is_zero_mac(base.hw_addr)) {
+    struct {
+      __u16 rta_len;
+      __u16 rta_type;
+      __u8 rta_val[ETH_ALEN];
+      __u8 padding[2];
+    } rta;
+    memset(&rta, 0, sizeof(rta));
+    rta.rta_type = IFLA_ADDRESS;
+    rta.rta_len = sizeof(rta);
+    memcpy(rta.rta_val, base.hw_addr, ETH_ALEN);
+    ret = nlmsg_append(msg, &rta, sizeof(rta), 0);
+    if (ret < 0) {
+      nlmsg_free(msg);
+      nl_socket_free(socket);
+      return false;
+    }
+  }
+
+  if (base.num_tx_queues > 0) {
+    struct {
+      __u16 rta_len;
+      __u16 rta_type;
+      __u32 rta_val;
+    } rta;
+    memset(&rta, 0, sizeof(rta));
+    rta.rta_type = IFLA_NUM_TX_QUEUES;
+    rta.rta_len = sizeof(rta);
+    rta.rta_val = (__u32)base.num_tx_queues;
+    ret = nlmsg_append(msg, &rta, sizeof(rta), 0);
+    if (ret < 0) {
+      nlmsg_free(msg);
+      nl_socket_free(socket);
+      return false;
+    }
+  }
+
+  if (base.num_rx_queues > 0) {
+    struct {
+      __u16 rta_len;
+      __u16 rta_type;
+      __u32 rta_val;
+    } rta;
+    memset(&rta, 0, sizeof(rta));
+    rta.rta_type = IFLA_NUM_RX_QUEUES;
+    rta.rta_len = sizeof(rta);
+    rta.rta_val = (__u32)base.num_rx_queues;
+    ret = nlmsg_append(msg, &rta, sizeof(rta), 0);
+    if (ret < 0) {
+      nlmsg_free(msg);
+      nl_socket_free(socket);
+      return false;
+    }
+  }
+
+  if (base.gso_max_segs > 0) {
+    struct {
+      __u16 rta_len;
+      __u16 rta_type;
+      __u32 rta_val;
+    } rta;
+    memset(&rta, 0, sizeof(rta));
+    rta.rta_type = IFLA_GSO_MAX_SEGS;
+    rta.rta_len = sizeof(rta);
+    rta.rta_val = base.gso_max_segs;
+    ret = nlmsg_append(msg, &rta, sizeof(rta), 0);
+    if (ret < 0) {
+      nlmsg_free(msg);
+      nl_socket_free(socket);
+      return false;
+    }
+  }
+
+  if (base.gso_max_size > 0) {
+    struct {
+      __u16 rta_len;
+      __u16 rta_type;
+      __u32 rta_val;
+    } rta;
+    memset(&rta, 0, sizeof(rta));
+    rta.rta_type = IFLA_GSO_MAX_SIZE;
+    rta.rta_len = sizeof(rta);
+    rta.rta_val = (__u32)base.gso_max_size;
+    ret = nlmsg_append(msg, &rta, sizeof(rta), 0);
+    if (ret < 0) {
+      nlmsg_free(msg);
+      nl_socket_free(socket);
+      return false;
+    }
+  }
+
+  if (base.group > 0) {
+    struct {
+      __u16 rta_len;
+      __u16 rta_type;
+      __u32 rta_val;
+    } rta;
+    memset(&rta, 0, sizeof(rta));
+    rta.rta_type = IFLA_GROUP;
+    rta.rta_len = sizeof(rta);
+    rta.rta_val = base.group;
+    ret = nlmsg_append(msg, &rta, sizeof(rta), 0);
+    if (ret < 0) {
+      nlmsg_free(msg);
+      nl_socket_free(socket);
+      return false;
+    }
+  }
+
+  if (base.namespace != NULL &&
+      (base.namespace->type.ns_pid || base.namespace->type.ns_fd)) {
+    struct {
+      __u16 rta_len;
+      __u16 rta_type;
+      __u32 rta_val;
+    } rta;
+    memset(&rta, 0, sizeof(rta));
+
+    if (base.namespace->type.ns_pid) {
+      rta.rta_type = IFLA_NET_NS_PID;
+    } else if (base.namespace->type.ns_fd) {
+      rta.rta_type = IFLA_NET_NS_FD;
+    }
+
+    rta.rta_len = sizeof(rta);
+    rta.rta_val = base.namespace->ns;
+    ret = nlmsg_append(msg, &rta, sizeof(rta), 0);
+    if (ret < 0) {
+      nlmsg_free(msg);
+      nl_socket_free(socket);
+      return false;
+    }
+  }
+
+  if (base.xdp) {
+    int nested_attrs = 1;
+    if (base.xdp->flags != 0) {
+      nested_attrs = 2;
+    }
+    struct {
+      __u16 rta_len;
+      __u16 rta_type;
+      struct {
+        __u16 rta_len;
+        __u16 rta_type;
+        __u32 rta_val;
+      } rta_vals[nested_attrs];
+    } rta;
+    memset(&rta, 0, sizeof(rta));
+    rta.rta_type = IFLA_XDP | NLA_F_NESTED;
+    rta.rta_len = sizeof(rta);
+    rta.rta_vals[0].rta_type = IFLA_XDP_FD;
+    rta.rta_vals[0].rta_val = (__u32)base.xdp->fd;
+    rta.rta_vals[0].rta_len = sizeof(rta.rta_vals[0]);
+    if (base.xdp->flags != 0) {
+      rta.rta_vals[1].rta_type = IFLA_XDP_FLAGS;
+      rta.rta_vals[1].rta_val = base.xdp->flags;
+      rta.rta_vals[1].rta_len = sizeof(rta.rta_vals[1]);
+    }
+    ret = nlmsg_append(msg, &rta, sizeof(rta), 0);
+    if (ret < 0) {
+      nlmsg_free(msg);
+      nl_socket_free(socket);
+      return false;
+    }
+  }
+
+  char *type = link_type(&link->type);
+  struct {
+    __u16 rta_len;
+    __u16 rta_type;
+    struct {
+      __u16 rta_len;
+      __u16 rta_type;
+      __u8 rta_val[RTA_ALIGN(strlen(type))];
+    } rta_val;
+  } rta_info;
+  memset(&rta_info, 0, sizeof(rta_info));
+  rta_info.rta_type = IFLA_LINKINFO;
+  rta_info.rta_len = sizeof(rta_info);
+  rta_info.rta_val.rta_type = IFLA_INFO_KIND;
+  rta_info.rta_val.rta_len = sizeof(rta_info.rta_val);
+  memcpy(&rta_info.rta_val.rta_val, type, strlen(type));
+  ret = nlmsg_append(msg, &rta_info, sizeof(rta_info), 0);
+  if (ret < 0) {
+    nlmsg_free(msg);
+    nl_socket_free(socket);
+    return false;
+  }
+
+  ret = nl_send_auto_complete(socket, msg);
+  if (ret < 0) {
+    nlmsg_free(msg);
+    nl_socket_free(socket);
+    return false;
+  }
+
+  nlmsg_free(msg);
+  nl_socket_free(socket);
+
+  return true;
+}
