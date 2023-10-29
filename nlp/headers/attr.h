@@ -3,6 +3,8 @@
 
 #include <linux/if_arp.h>
 
+#define RTA_PADDING(rta) RTA_ALIGN(sizeof(rta)) - sizeof(rta)
+
 typedef struct nl_link_statistics_64 {
   __u64 rx_packets;
   __u64 tx_packets;
@@ -146,6 +148,12 @@ typedef struct nl_link {
       __u32 local;
       __u32 remote;
     } iptun;
+
+    struct {
+      __u16 pkey;
+      __u16 mode;
+      __u16 umcast;
+    } ipoib;
   } u;
 } nl_link_t;
 

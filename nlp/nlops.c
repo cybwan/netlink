@@ -688,7 +688,7 @@ bool _internal_nl_link_mod(nl_link_t *link, int flags) {
     rta.rta_type = IFLA_LINK;
     rta.rta_len = sizeof(rta);
     rta.rta_val = (__u32)base.parent_index;
-    ret = nlmsg_append(msg, &rta, sizeof(rta), 0);
+    ret = nlmsg_append(msg, &rta, sizeof(rta), RTA_PADDING(rta));
     if (ret < 0) {
       nlmsg_free(msg);
       nl_socket_free(socket);
@@ -715,7 +715,7 @@ bool _internal_nl_link_mod(nl_link_t *link, int flags) {
   rta_name.rta_type = IFLA_IFNAME;
   rta_name.rta_len = sizeof(rta_name);
   memcpy(&rta_name.rta_val, base.name, strlen(base.name));
-  ret = nlmsg_append(msg, &rta_name, sizeof(rta_name), 0);
+  ret = nlmsg_append(msg, &rta_name, sizeof(rta_name), RTA_PADDING(rta_name));
   if (ret < 0) {
     nlmsg_free(msg);
     nl_socket_free(socket);
@@ -732,7 +732,7 @@ bool _internal_nl_link_mod(nl_link_t *link, int flags) {
     rta.rta_type = IFLA_MTU;
     rta.rta_len = sizeof(rta);
     rta.rta_val = (__u32)base.mtu;
-    ret = nlmsg_append(msg, &rta, sizeof(rta), 0);
+    ret = nlmsg_append(msg, &rta, sizeof(rta), RTA_PADDING(rta));
     if (ret < 0) {
       nlmsg_free(msg);
       nl_socket_free(socket);
@@ -750,7 +750,7 @@ bool _internal_nl_link_mod(nl_link_t *link, int flags) {
     rta.rta_type = IFLA_TXQLEN;
     rta.rta_len = sizeof(rta);
     rta.rta_val = (__u32)base.tx_q_len;
-    ret = nlmsg_append(msg, &rta, sizeof(rta), 0);
+    ret = nlmsg_append(msg, &rta, sizeof(rta), RTA_PADDING(rta));
     if (ret < 0) {
       nlmsg_free(msg);
       nl_socket_free(socket);
@@ -769,7 +769,7 @@ bool _internal_nl_link_mod(nl_link_t *link, int flags) {
     rta.rta_type = IFLA_ADDRESS;
     rta.rta_len = sizeof(rta);
     memcpy(rta.rta_val, base.hw_addr, ETH_ALEN);
-    ret = nlmsg_append(msg, &rta, sizeof(rta), 0);
+    ret = nlmsg_append(msg, &rta, sizeof(rta), RTA_PADDING(rta));
     if (ret < 0) {
       nlmsg_free(msg);
       nl_socket_free(socket);
@@ -787,7 +787,7 @@ bool _internal_nl_link_mod(nl_link_t *link, int flags) {
     rta.rta_type = IFLA_NUM_TX_QUEUES;
     rta.rta_len = sizeof(rta);
     rta.rta_val = (__u32)base.num_tx_queues;
-    ret = nlmsg_append(msg, &rta, sizeof(rta), 0);
+    ret = nlmsg_append(msg, &rta, sizeof(rta), RTA_PADDING(rta));
     if (ret < 0) {
       nlmsg_free(msg);
       nl_socket_free(socket);
@@ -805,7 +805,7 @@ bool _internal_nl_link_mod(nl_link_t *link, int flags) {
     rta.rta_type = IFLA_NUM_RX_QUEUES;
     rta.rta_len = sizeof(rta);
     rta.rta_val = (__u32)base.num_rx_queues;
-    ret = nlmsg_append(msg, &rta, sizeof(rta), 0);
+    ret = nlmsg_append(msg, &rta, sizeof(rta), RTA_PADDING(rta));
     if (ret < 0) {
       nlmsg_free(msg);
       nl_socket_free(socket);
@@ -823,7 +823,7 @@ bool _internal_nl_link_mod(nl_link_t *link, int flags) {
     rta.rta_type = IFLA_GSO_MAX_SEGS;
     rta.rta_len = sizeof(rta);
     rta.rta_val = base.gso_max_segs;
-    ret = nlmsg_append(msg, &rta, sizeof(rta), 0);
+    ret = nlmsg_append(msg, &rta, sizeof(rta), RTA_PADDING(rta));
     if (ret < 0) {
       nlmsg_free(msg);
       nl_socket_free(socket);
@@ -841,7 +841,7 @@ bool _internal_nl_link_mod(nl_link_t *link, int flags) {
     rta.rta_type = IFLA_GSO_MAX_SIZE;
     rta.rta_len = sizeof(rta);
     rta.rta_val = (__u32)base.gso_max_size;
-    ret = nlmsg_append(msg, &rta, sizeof(rta), 0);
+    ret = nlmsg_append(msg, &rta, sizeof(rta), RTA_PADDING(rta));
     if (ret < 0) {
       nlmsg_free(msg);
       nl_socket_free(socket);
@@ -859,7 +859,7 @@ bool _internal_nl_link_mod(nl_link_t *link, int flags) {
     rta.rta_type = IFLA_GROUP;
     rta.rta_len = sizeof(rta);
     rta.rta_val = base.group;
-    ret = nlmsg_append(msg, &rta, sizeof(rta), 0);
+    ret = nlmsg_append(msg, &rta, sizeof(rta), RTA_PADDING(rta));
     if (ret < 0) {
       nlmsg_free(msg);
       nl_socket_free(socket);
@@ -884,7 +884,7 @@ bool _internal_nl_link_mod(nl_link_t *link, int flags) {
 
     rta.rta_len = sizeof(rta);
     rta.rta_val = base.namespace->ns;
-    ret = nlmsg_append(msg, &rta, sizeof(rta), 0);
+    ret = nlmsg_append(msg, &rta, sizeof(rta), RTA_PADDING(rta));
     if (ret < 0) {
       nlmsg_free(msg);
       nl_socket_free(socket);
@@ -917,7 +917,7 @@ bool _internal_nl_link_mod(nl_link_t *link, int flags) {
       rta.rta_vals[1].rta_val = base.xdp->flags;
       rta.rta_vals[1].rta_len = sizeof(rta.rta_vals[1]);
     }
-    ret = nlmsg_append(msg, &rta, sizeof(rta), 0);
+    ret = nlmsg_append(msg, &rta, sizeof(rta), RTA_PADDING(rta));
     if (ret < 0) {
       nlmsg_free(msg);
       nl_socket_free(socket);
@@ -941,11 +941,41 @@ bool _internal_nl_link_mod(nl_link_t *link, int flags) {
   rta_info.rta_val.rta_type = IFLA_INFO_KIND;
   rta_info.rta_val.rta_len = sizeof(rta_info.rta_val);
   memcpy(&rta_info.rta_val.rta_val, type, strlen(type));
-  ret = nlmsg_append(msg, &rta_info, sizeof(rta_info), 0);
+  ret = nlmsg_append(msg, &rta_info, sizeof(rta_info), RTA_PADDING(rta_info));
   if (ret < 0) {
     nlmsg_free(msg);
     nl_socket_free(socket);
     return false;
+  }
+
+  if (link->type.ipoib) {
+    struct {
+      __u16 rta_len;
+      __u16 rta_type;
+      struct {
+        __u16 rta_len;
+        __u16 rta_type;
+        __u16 rta_val;
+      } rta_vals[3];
+    } rta;
+    memset(&rta, 0, sizeof(rta));
+    rta.rta_type = IFLA_INFO_DATA;
+    rta.rta_len = sizeof(rta);
+    rta.rta_vals[0].rta_type = IFLA_IPOIB_PKEY;
+    rta.rta_vals[0].rta_val = link->u.ipoib.pkey;
+    rta.rta_vals[0].rta_len = sizeof(rta.rta_vals[0]);
+    rta.rta_vals[1].rta_type = IFLA_IPOIB_MODE;
+    rta.rta_vals[1].rta_val = link->u.ipoib.mode;
+    rta.rta_vals[1].rta_len = sizeof(rta.rta_vals[1]);
+    rta.rta_vals[2].rta_type = IFLA_IPOIB_UMCAST;
+    rta.rta_vals[2].rta_val = link->u.ipoib.umcast;
+    rta.rta_vals[2].rta_len = sizeof(rta.rta_vals[2]);
+    ret = nlmsg_append(msg, &rta, sizeof(rta), RTA_PADDING(rta));
+    if (ret < 0) {
+      nlmsg_free(msg);
+      nl_socket_free(socket);
+      return false;
+    }
   }
 
   ret = nl_send_auto_complete(socket, msg);
