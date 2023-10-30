@@ -238,6 +238,23 @@ typedef struct nl_link {
       __u16 mode;
     } macvtap;
     struct {
+      __u32 ikey;
+      __u32 okey;
+      __u16 encap_s_port;
+      __u16 encap_d_port;
+      nl_ip_t *local;
+      nl_ip_t *remote;
+      __u16 iflags;
+      __u16 oflags;
+      __u8 p_mtu_disc;
+      __u8 ttl;
+      __u8 tos;
+      __u16 encap_type;
+      __u16 encap_flags;
+      __u32 link;
+      bool flow_based;
+    } gretap;
+    struct {
       __u32 local;
       __u32 remote;
     } iptun;
