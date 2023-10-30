@@ -948,7 +948,396 @@ bool _internal_nl_link_mod(nl_link_t *link, int flags) {
     return false;
   }
 
+  if (link->type.vlan) {
+    int nested_attrs = 1;
+    if (link->u.vlan.vlan_protocol != 0) {
+      nested_attrs = 2;
+    }
+    struct {
+      __u16 rta_len;
+      __u16 rta_type;
+      struct {
+        __u16 rta_len;
+        __u16 rta_type;
+        __u16 rta_val;
+      } rta_vals[nested_attrs];
+    } rta;
+    memset(&rta, 0, sizeof(rta));
+    rta.rta_type = IFLA_INFO_DATA;
+    rta.rta_len = sizeof(rta);
+    rta.rta_vals[0].rta_type = IFLA_VLAN_ID;
+    rta.rta_vals[0].rta_val = (__u16)link->u.vlan.vlan_id;
+    rta.rta_vals[0].rta_len = sizeof(rta.rta_vals[0]);
+    if (link->u.vlan.vlan_protocol != 0) {
+      rta.rta_vals[1].rta_type = IFLA_VLAN_PROTOCOL;
+      rta.rta_vals[1].rta_val = htons(link->u.vlan.vlan_protocol);
+      rta.rta_vals[1].rta_len = sizeof(rta.rta_vals[1]);
+    }
+    ret = nlmsg_append(msg, &rta, sizeof(rta), RTA_PADDING(rta));
+    if (ret < 0) {
+      nlmsg_free(msg);
+      nl_socket_free(socket);
+      return false;
+    }
+  } else if (link->type.veth) {
+    int nested_u8s = 0, nested_u8s_idx = -1;
+    int nested_u32 = 0, nested_u32_idx = -1;
+    if (base.tx_q_len >= 0) {
+      nested_u32++;
+    }
+    if (base.mtu > 0) {
+      nested_u32++;
+    }
+    if (!is_zero_mac(link->u.veth.peer_hw_addr)) {
+      nested_u8s++;
+    }
+    struct {
+      __u16 rta_len;
+      __u16 rta_type;
+      struct {
+        __u16 rta_len;
+        __u16 rta_type;
+        struct {
+          __u16 rta_len;
+          __u16 rta_type;
+          __u8 rta_val[IF_NAMESIZE];
+        } rta_ifi_name;
+        struct {
+          __u16 rta_len;
+          __u16 rta_type;
+          __u32 rta_val;
+        } rta_u32_vals[nested_u32];
+        struct {
+          __u16 rta_len;
+          __u16 rta_type;
+          __u8 rta_val[ETH_ALEN];
+        } rta_u8s_vals[nested_u8s];
+      } rta_val;
+    } rta;
+    memset(&rta, 0, sizeof(rta));
+    rta.rta_type = IFLA_INFO_DATA;
+    rta.rta_len = sizeof(rta);
+#define VETH_INFO_PEER 1
+    rta.rta_val.rta_type = VETH_INFO_PEER;
+    rta.rta_val.rta_len = sizeof(rta.rta_val);
+    rta.rta_val.rta_ifi_name.rta_type = IFLA_IFNAME;
+    memcpy(rta.rta_val.rta_ifi_name.rta_val, link->u.veth.peer_name,
+           strlen(link->u.veth.peer_name));
+    rta.rta_val.rta_ifi_name.rta_len = sizeof(rta.rta_val.rta_ifi_name);
+    if (base.tx_q_len >= 0) {
+      nested_u32_idx++;
+      rta.rta_val.rta_u32_vals[nested_u32_idx].rta_type = IFLA_TXQLEN;
+      rta.rta_val.rta_u32_vals[nested_u32_idx].rta_val = (__u32)base.tx_q_len;
+      rta.rta_val.rta_u32_vals[nested_u32_idx].rta_len =
+          sizeof(rta.rta_val.rta_u32_vals[nested_u32_idx]);
+    }
+    if (base.mtu > 0) {
+      nested_u32_idx++;
+      rta.rta_val.rta_u32_vals[nested_u32_idx].rta_type = IFLA_MTU;
+      rta.rta_val.rta_u32_vals[nested_u32_idx].rta_val = (__u32)base.mtu;
+      rta.rta_val.rta_u32_vals[nested_u32_idx].rta_len =
+          sizeof(rta.rta_val.rta_u32_vals[nested_u32_idx]);
+    }
+    if (!is_zero_mac(link->u.veth.peer_hw_addr)) {
+      nested_u8s_idx++;
+      rta.rta_val.rta_u8s_vals[nested_u8s_idx].rta_type = IFLA_ADDRESS;
+      memcpy(rta.rta_val.rta_u8s_vals[nested_u8s_idx].rta_val,
+             link->u.veth.peer_hw_addr, ETH_ALEN);
+      rta.rta_val.rta_u8s_vals[nested_u8s_idx].rta_len =
+          sizeof(rta.rta_val.rta_u8s_vals[nested_u8s_idx]);
+    }
+    ret = nlmsg_append(msg, &rta, sizeof(rta), RTA_PADDING(rta));
+    if (ret < 0) {
+      nlmsg_free(msg);
+      nl_socket_free(socket);
+      return false;
+    }
+  } else if (link->type.vxlan) {
+    int nested_u8 = 9, nested_u8_idx = -1;
+    int nested_u16 = 0, nested_u16_idx = -1;
+    int nested_u32 = 1, nested_u32_idx = -1;
+    int nested_ipv4 = 0, nested_ipv4_idx = -1;
+    int nested_ipv6 = 0, nested_ipv6_idx = -1;
+    int nested_ports = 0, nested_ports_idx = -1;
+    int nested_gbp = 0, nested_gbp_idx = -1;
+
+    if (link->u.vxlan.vtep_dev_index != 0) {
+      nested_u32++;
+    }
+
+    if (link->u.vxlan.src_addr) {
+      if (link->u.vxlan.src_addr->f.v4) {
+        nested_ipv4++;
+      } else if (link->u.vxlan.src_addr->f.v6) {
+        nested_ipv6++;
+      }
+    }
+
+    if (link->u.vxlan.group) {
+      if (link->u.vxlan.group->f.v4) {
+        nested_ipv4++;
+      } else if (link->u.vxlan.group->f.v6) {
+        nested_ipv6++;
+      }
+    }
+
+    if (link->u.vxlan.udp_csum) {
+      nested_u8++;
+    }
+
+    if (link->u.vxlan.flow_based) {
+      nested_u8++;
+    }
+
+    if (link->u.vxlan.no_age) {
+      nested_u32++;
+    } else if (link->u.vxlan.age > 0) {
+      nested_u32++;
+    }
+
+    if (link->u.vxlan.limit > 0) {
+      nested_u32++;
+    }
+
+    if (link->u.vxlan.port > 0) {
+      nested_u16++;
+    }
+
+    if (link->u.vxlan.port_low > 0 || link->u.vxlan.port_high > 0) {
+      nested_ports++;
+    }
+
+    if (link->u.vxlan.gbp) {
+      nested_gbp++;
+    }
+
+    struct {
+      __u16 rta_len;
+      __u16 rta_type;
+      struct {
+        __u16 rta_len;
+        __u16 rta_type;
+        __u8 rta_val;
+      } rta_u8_vals[nested_u8];
+      struct {
+        __u16 rta_len;
+        __u16 rta_type;
+        __u16 rta_val;
+      } rta_u16_vals[nested_u16];
+      struct {
+        __u16 rta_len;
+        __u16 rta_type;
+        __u32 rta_val;
+      } rta_u32_vals[nested_u32];
+      struct {
+        __u16 rta_len;
+        __u16 rta_type;
+        __u8 rta_val[4];
+      } rta_ipv4_vals[nested_ipv4];
+      struct {
+        __u16 rta_len;
+        __u16 rta_type;
+        __u8 rta_val[16];
+      } rta_ipv6_vals[nested_ipv6];
+      struct {
+        __u16 rta_len;
+        __u16 rta_type;
+        __u16 lo;
+        __u16 hi;
+      } rta_ports_vals[nested_ports];
+      struct {
+        __u16 rta_len;
+        __u16 rta_type;
+      } rta_gbp_vals[nested_gbp];
+    } rta;
+    memset(&rta, 0, sizeof(rta));
+    rta.rta_type = IFLA_INFO_DATA;
+    rta.rta_len = sizeof(rta);
+
+    nested_u32_idx++;
+    rta.rta_u32_vals[nested_u32_idx].rta_type = IFLA_VXLAN_ID;
+    if (link->u.vxlan.flow_based) {
+      rta.rta_u32_vals[nested_u32_idx].rta_val = (__u32)0;
+    } else {
+      rta.rta_u32_vals[nested_u32_idx].rta_val = (__u32)link->u.vxlan.vxlan_id;
+    }
+
+    rta.rta_u32_vals[nested_u32_idx].rta_len =
+        sizeof(rta.rta_u32_vals[nested_u32_idx]);
+
+    if (link->u.vxlan.vtep_dev_index != 0) {
+      nested_u32_idx++;
+      rta.rta_u32_vals[nested_u32_idx].rta_type = IFLA_VXLAN_LINK;
+      rta.rta_u32_vals[nested_u32_idx].rta_val =
+          (__u32)link->u.vxlan.vtep_dev_index;
+      rta.rta_u32_vals[nested_u32_idx].rta_len =
+          sizeof(rta.rta_u32_vals[nested_u32_idx]);
+    }
+
+    if (link->u.vxlan.src_addr) {
+      if (link->u.vxlan.src_addr->f.v4) {
+        nested_ipv4_idx++;
+        rta.rta_ipv4_vals[nested_ipv4_idx].rta_type = IFLA_VXLAN_LOCAL;
+        memcpy(rta.rta_ipv4_vals[nested_ipv4_idx].rta_val,
+               link->u.vxlan.src_addr->v4.bytes, 4);
+        rta.rta_ipv4_vals[nested_ipv4_idx].rta_len =
+            sizeof(rta.rta_ipv4_vals[nested_ipv4_idx]);
+      } else if (link->u.vxlan.src_addr->f.v6) {
+        nested_ipv6_idx++;
+        rta.rta_ipv6_vals[nested_ipv6_idx].rta_type = IFLA_VXLAN_LOCAL6;
+        memcpy(rta.rta_ipv6_vals[nested_ipv6_idx].rta_val,
+               link->u.vxlan.src_addr->v6.bytes, 16);
+        rta.rta_ipv6_vals[nested_ipv6_idx].rta_len =
+            sizeof(rta.rta_ipv6_vals[nested_ipv6_idx]);
+      }
+    }
+
+    if (link->u.vxlan.group) {
+      if (link->u.vxlan.group->f.v4) {
+        nested_ipv4_idx++;
+        rta.rta_ipv4_vals[nested_ipv4_idx].rta_type = IFLA_VXLAN_GROUP;
+        memcpy(rta.rta_ipv4_vals[nested_ipv4_idx].rta_val,
+               link->u.vxlan.group->v4.bytes, 4);
+        rta.rta_ipv4_vals[nested_ipv4_idx].rta_len =
+            sizeof(rta.rta_ipv4_vals[nested_ipv4_idx]);
+      } else if (link->u.vxlan.group->f.v6) {
+        nested_ipv6_idx++;
+        rta.rta_ipv6_vals[nested_ipv6_idx].rta_type = IFLA_VXLAN_GROUP6;
+        memcpy(rta.rta_ipv6_vals[nested_ipv6_idx].rta_val,
+               link->u.vxlan.group->v6.bytes, 16);
+        rta.rta_ipv6_vals[nested_ipv6_idx].rta_len =
+            sizeof(rta.rta_ipv6_vals[nested_ipv6_idx]);
+      }
+    }
+
+    nested_u8_idx++;
+    rta.rta_u8_vals[nested_u8_idx].rta_type = IFLA_VXLAN_TTL;
+    rta.rta_u8_vals[nested_u8_idx].rta_val = (__u8)link->u.vxlan.ttl;
+    rta.rta_u8_vals[nested_u8_idx].rta_len =
+        sizeof(rta.rta_u8_vals[nested_u8_idx]);
+
+    nested_u8_idx++;
+    rta.rta_u8_vals[nested_u8_idx].rta_type = IFLA_VXLAN_TOS;
+    rta.rta_u8_vals[nested_u8_idx].rta_val = (__u8)link->u.vxlan.tos;
+    rta.rta_u8_vals[nested_u8_idx].rta_len =
+        sizeof(rta.rta_u8_vals[nested_u8_idx]);
+
+    nested_u8_idx++;
+    rta.rta_u8_vals[nested_u8_idx].rta_type = IFLA_VXLAN_LEARNING;
+    rta.rta_u8_vals[nested_u8_idx].rta_val = (__u8)link->u.vxlan.learning;
+    rta.rta_u8_vals[nested_u8_idx].rta_len =
+        sizeof(rta.rta_u8_vals[nested_u8_idx]);
+
+    nested_u8_idx++;
+    rta.rta_u8_vals[nested_u8_idx].rta_type = IFLA_VXLAN_PROXY;
+    rta.rta_u8_vals[nested_u8_idx].rta_val = (__u8)link->u.vxlan.proxy;
+    rta.rta_u8_vals[nested_u8_idx].rta_len =
+        sizeof(rta.rta_u8_vals[nested_u8_idx]);
+
+    nested_u8_idx++;
+    rta.rta_u8_vals[nested_u8_idx].rta_type = IFLA_VXLAN_RSC;
+    rta.rta_u8_vals[nested_u8_idx].rta_val = (__u8)link->u.vxlan.rsc;
+    rta.rta_u8_vals[nested_u8_idx].rta_len =
+        sizeof(rta.rta_u8_vals[nested_u8_idx]);
+
+    nested_u8_idx++;
+    rta.rta_u8_vals[nested_u8_idx].rta_type = IFLA_VXLAN_L2MISS;
+    rta.rta_u8_vals[nested_u8_idx].rta_val = (__u8)link->u.vxlan.l2_miss;
+    rta.rta_u8_vals[nested_u8_idx].rta_len =
+        sizeof(rta.rta_u8_vals[nested_u8_idx]);
+
+    nested_u8_idx++;
+    rta.rta_u8_vals[nested_u8_idx].rta_type = IFLA_VXLAN_L3MISS;
+    rta.rta_u8_vals[nested_u8_idx].rta_val = (__u8)link->u.vxlan.l3_miss;
+    rta.rta_u8_vals[nested_u8_idx].rta_len =
+        sizeof(rta.rta_u8_vals[nested_u8_idx]);
+
+    nested_u8_idx++;
+    rta.rta_u8_vals[nested_u8_idx].rta_type = IFLA_VXLAN_UDP_ZERO_CSUM6_TX;
+    rta.rta_u8_vals[nested_u8_idx].rta_val =
+        (__u8)link->u.vxlan.udp6_zero_csum_tx;
+    rta.rta_u8_vals[nested_u8_idx].rta_len =
+        sizeof(rta.rta_u8_vals[nested_u8_idx]);
+
+    nested_u8_idx++;
+    rta.rta_u8_vals[nested_u8_idx].rta_type = IFLA_VXLAN_UDP_ZERO_CSUM6_RX;
+    rta.rta_u8_vals[nested_u8_idx].rta_val =
+        (__u8)link->u.vxlan.udp6_zero_csum_rx;
+    rta.rta_u8_vals[nested_u8_idx].rta_len =
+        sizeof(rta.rta_u8_vals[nested_u8_idx]);
+
+    if (link->u.vxlan.udp_csum) {
+      nested_u8_idx++;
+      rta.rta_u8_vals[nested_u8_idx].rta_type = IFLA_VXLAN_UDP_CSUM;
+      rta.rta_u8_vals[nested_u8_idx].rta_val = (__u8)link->u.vxlan.udp_csum;
+      rta.rta_u8_vals[nested_u8_idx].rta_len =
+          sizeof(rta.rta_u8_vals[nested_u8_idx]);
+    }
+
+    if (link->u.vxlan.flow_based) {
+      nested_u8_idx++;
+#define IFLA_VXLAN_FLOWBASED 25
+      rta.rta_u8_vals[nested_u8_idx].rta_type = IFLA_VXLAN_FLOWBASED;
+      rta.rta_u8_vals[nested_u8_idx].rta_val = (__u8)link->u.vxlan.flow_based;
+      rta.rta_u8_vals[nested_u8_idx].rta_len =
+          sizeof(rta.rta_u8_vals[nested_u8_idx]);
+    }
+
+    if (link->u.vxlan.no_age) {
+      nested_u32_idx++;
+      rta.rta_u32_vals[nested_u32_idx].rta_type = IFLA_VXLAN_AGEING;
+      rta.rta_u32_vals[nested_u32_idx].rta_val = (__u32)0;
+      rta.rta_u32_vals[nested_u32_idx].rta_len =
+          sizeof(rta.rta_u32_vals[nested_u32_idx]);
+    } else if (link->u.vxlan.age > 0) {
+      nested_u32_idx++;
+      rta.rta_u32_vals[nested_u32_idx].rta_type = IFLA_VXLAN_AGEING;
+      rta.rta_u32_vals[nested_u32_idx].rta_val = (__u32)link->u.vxlan.age;
+      rta.rta_u32_vals[nested_u32_idx].rta_len =
+          sizeof(rta.rta_u32_vals[nested_u32_idx]);
+    }
+
+    if (link->u.vxlan.limit > 0) {
+      nested_u32_idx++;
+      rta.rta_u32_vals[nested_u32_idx].rta_type = IFLA_VXLAN_LIMIT;
+      rta.rta_u32_vals[nested_u32_idx].rta_val = (__u32)link->u.vxlan.limit;
+      rta.rta_u32_vals[nested_u32_idx].rta_len =
+          sizeof(rta.rta_u32_vals[nested_u32_idx]);
+    }
+
+    if (link->u.vxlan.port > 0) {
+      nested_u16_idx++;
+      rta.rta_u16_vals[nested_u16_idx].rta_type = IFLA_VXLAN_PORT;
+      rta.rta_u16_vals[nested_u16_idx].rta_val = htons(link->u.vxlan.port);
+      rta.rta_u16_vals[nested_u16_idx].rta_len =
+          sizeof(rta.rta_u16_vals[nested_u16_idx]);
+    }
+
+    if (link->u.vxlan.port_low > 0 || link->u.vxlan.port_high > 0) {
+      nested_ports_idx++;
+      rta.rta_ports_vals[nested_ports_idx].rta_type = IFLA_VXLAN_PORT_RANGE;
+      rta.rta_ports_vals[nested_ports_idx].lo = htons(link->u.vxlan.port_low);
+      rta.rta_ports_vals[nested_ports_idx].hi = htons(link->u.vxlan.port_high);
+      rta.rta_ports_vals[nested_ports_idx].rta_len =
+          sizeof(rta.rta_ports_vals[nested_ports_idx]);
+    }
+
+    if (link->u.vxlan.gbp) {
+      nested_gbp_idx++;
+      rta.rta_gbp_vals[nested_gbp_idx].rta_type = IFLA_VXLAN_GBP;
+      rta.rta_gbp_vals[nested_gbp_idx].rta_len =
+          sizeof(rta.rta_gbp_vals[nested_gbp_idx]);
+    }
+
+    ret = nlmsg_append(msg, &rta, sizeof(rta), RTA_PADDING(rta));
+    if (ret < 0) {
+      nlmsg_free(msg);
+      nl_socket_free(socket);
+      return false;
+    }
+  }
   if (link->type.vti) {
+    // TODO benne
   } else if (link->type.vrf) {
     struct {
       __u16 rta_len;
@@ -972,8 +1361,8 @@ bool _internal_nl_link_mod(nl_link_t *link, int flags) {
       return false;
     }
   } else if (link->type.bridge) {
-    int nested_u8_idx = -1, nested_u32_idx = -1;
-    int nested_u8 = 0, nested_u32 = 0;
+    int nested_u8 = 0, nested_u8_idx = -1;
+    int nested_u32 = 0, nested_u32_idx = -1;
     if (link->u.bridge.multicast_snooping) {
       nested_u8++;
     }

@@ -66,28 +66,6 @@ enum {
   FDB_VLAN, // fdb of a vlan dev
 };
 
-#ifndef _NL_IP_T_
-#define _NL_IP_T_
-typedef struct nl_ip {
-  struct {
-    __u8 v4 : 1;
-    __u8 v6 : 1;
-  } f;
-  union {
-    union {
-      __u8 bytes[16];
-    } v6;
-    union {
-      __u8 _pad[12];
-      union {
-        __u8 bytes[4];
-        __u32 ip;
-      };
-    } v4;
-  };
-} nl_ip_t;
-#endif
-
 #ifndef _NL_IP_NET_T_
 #define _NL_IP_NET_T_
 typedef struct nl_ip_net {

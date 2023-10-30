@@ -5,6 +5,25 @@
 
 #define RTA_PADDING(rta) RTA_ALIGN(sizeof(rta)) - sizeof(rta)
 
+typedef struct nl_ip {
+  struct {
+    __u8 v4 : 1;
+    __u8 v6 : 1;
+  } f;
+  union {
+    union {
+      __u8 bytes[16];
+    } v6;
+    union {
+      __u8 _pad[12];
+      union {
+        __u8 bytes[4];
+        __u32 ip;
+      };
+    } v4;
+  };
+} nl_ip_t;
+
 typedef struct nl_link_statistics_64 {
   __u64 rx_packets;
   __u64 tx_packets;
@@ -143,8 +162,36 @@ typedef struct nl_link {
 
     } bond;
     struct {
-      __u32 vxlan_id;
-      __u32 vtep_dev_index;
+      char *peer_name;
+      __u8 peer_hw_addr[ETH_ALEN];
+    } veth;
+    struct {
+      __s32 vlan_id;
+      __s32 vlan_protocol;
+    } vlan;
+    struct {
+      __s32 vxlan_id;
+      __s32 vtep_dev_index;
+      nl_ip_t *src_addr;
+      nl_ip_t *group;
+      __s32 ttl;
+      __s32 tos;
+      bool learning;
+      bool proxy;
+      bool rsc;
+      bool l2_miss;
+      bool l3_miss;
+      bool udp_csum;
+      bool udp6_zero_csum_tx;
+      bool udp6_zero_csum_rx;
+      bool no_age;
+      bool gbp;
+      bool flow_based;
+      __s32 age;
+      __s32 limit;
+      __s32 port;
+      __s32 port_low;
+      __s32 port_high;
     } vxlan;
     struct {
       __u32 local;
@@ -154,8 +201,8 @@ typedef struct nl_link {
       __u32 ikey;
       __u32 okey;
       __u32 link;
-      nl_ip_t local;
-      nl_ip_t remote;
+      __u32 local;
+      __u32 remote;
     } vti;
     struct {
       __u32 table;
