@@ -1335,7 +1335,358 @@ bool _internal_nl_link_mod(nl_link_t *link, int flags) {
       nl_socket_free(socket);
       return false;
     }
+  } else if (link->type.bond) {
+    int nested_u8 = 9, nested_u8_idx = -1;
+    int nested_u8s = 9, nested_u8s_idx = -1;
+    int nested_u16 = 1, nested_u16_idx = -1;
+    int nested_u32 = 1, nested_u32_idx = -1;
+    int nested_ipv4 = 0, nested_ipv4_idx = -1;
+    int nested_ipv6 = 0, nested_ipv6_idx = -1;
+
+    if (link->u.bond.mode >= 0) {
+      nested_u8++;
+    }
+    if (link->u.bond.activeslave >= 0) {
+      nested_u32++;
+    }
+    if (link->u.bond.miimon >= 0) {
+      nested_u32++;
+    }
+    if (link->u.bond.up_delay >= 0) {
+      nested_u32++;
+    }
+    if (link->u.bond.down_delay >= 0) {
+      nested_u32++;
+    }
+    if (link->u.bond.use_carrier >= 0) {
+      nested_u8++;
+    }
+    if (link->u.bond.arp_interval >= 0) {
+      nested_u32++;
+    }
+    if (link->u.bond.arp_validate >= 0) {
+      nested_u32++;
+    }
+    if (link->u.bond.arp_all_targets >= 0) {
+      nested_u32++;
+    }
+    if (link->u.bond.primary >= 0) {
+      nested_u32++;
+    }
+    if (link->u.bond.primary_reselect >= 0) {
+      nested_u8++;
+    }
+    if (link->u.bond.failover_mac >= 0) {
+      nested_u8++;
+    }
+    if (link->u.bond.xmit_hash_policy >= 0) {
+      nested_u8++;
+    }
+    if (link->u.bond.resend_igmp >= 0) {
+      nested_u32++;
+    }
+    if (link->u.bond.num_peer_notif >= 0) {
+      nested_u8++;
+    }
+    if (link->u.bond.all_slaves_active >= 0) {
+      nested_u8++;
+    }
+    if (link->u.bond.min_links >= 0) {
+      nested_u32++;
+    }
+    if (link->u.bond.lp_interval >= 0) {
+      nested_u32++;
+    }
+    if (link->u.bond.packers_per_slave >= 0) {
+      nested_u32++;
+    }
+    if (link->u.bond.lacp_rate >= 0) {
+      nested_u8++;
+    }
+    if (link->u.bond.ad_select >= 0) {
+      nested_u8++;
+    }
+    if (link->u.bond.ad_actor_sys_prio >= 0) {
+      nested_u16++;
+    }
+    if (link->u.bond.ad_user_port_key >= 0) {
+      nested_u16++;
+    }
+    if (link->u.bond.tlb_dynamic_lb >= 0) {
+      nested_u8++;
+    }
+    if (!is_zero_mac(link->u.bond.ad_actor_system)) {
+      nested_u8s++;
+    }
+    if (link->u.bond.arp_ip_targets) {
+      int num = sizeof(*link->u.bond.arp_ip_targets) / sizeof(nl_ip_t);
+      for (int i = 0; i < num; i++) {
+        if (link->u.bond.arp_ip_targets[i].f.v4) {
+          nested_ipv4++;
+        } else if (link->u.bond.arp_ip_targets[i].f.v6) {
+          nested_ipv6++;
+        }
+      }
+    }
+
+    struct {
+      __u16 rta_len;
+      __u16 rta_type;
+      struct {
+        __u16 rta_len;
+        __u16 rta_type;
+        __u8 rta_val;
+      } rta_u8_vals[nested_u8];
+      struct {
+        __u16 rta_len;
+        __u16 rta_type;
+        __u16 rta_val;
+      } rta_u16_vals[nested_u16];
+      struct {
+        __u16 rta_len;
+        __u16 rta_type;
+        __u32 rta_val;
+      } rta_u32_vals[nested_u32];
+      struct {
+        __u16 rta_len;
+        __u16 rta_type;
+        __u8 rta_val[ETH_ALEN];
+      } rta_u8s_vals[nested_u8s];
+      struct {
+        __u16 rta_len;
+        __u16 rta_type;
+        __u8 rta_val[4];
+      } rta_ipv4_vals[nested_ipv4];
+      struct {
+        __u16 rta_len;
+        __u16 rta_type;
+        __u8 rta_val[16];
+      } rta_ipv6_vals[nested_ipv6];
+    } rta;
+    memset(&rta, 0, sizeof(rta));
+    rta.rta_type = IFLA_INFO_DATA;
+    rta.rta_len = sizeof(rta);
+
+    if (link->u.bond.mode >= 0) {
+      nested_u8_idx++;
+      rta.rta_u8_vals[nested_u8_idx].rta_type = IFLA_BOND_MODE;
+      rta.rta_u8_vals[nested_u8_idx].rta_val = (__u8)link->u.bond.mode;
+      rta.rta_u8_vals[nested_u8_idx].rta_len =
+          sizeof(rta.rta_u8_vals[nested_u8_idx]);
+    }
+    if (link->u.bond.activeslave >= 0) {
+      nested_u32_idx++;
+      rta.rta_u32_vals[nested_u32_idx].rta_type = IFLA_BOND_ACTIVE_SLAVE;
+      rta.rta_u32_vals[nested_u32_idx].rta_val =
+          (__u32)link->u.bond.activeslave;
+      rta.rta_u32_vals[nested_u32_idx].rta_len =
+          sizeof(rta.rta_u32_vals[nested_u32_idx]);
+    }
+    if (link->u.bond.miimon >= 0) {
+      nested_u32_idx++;
+      rta.rta_u32_vals[nested_u32_idx].rta_type = IFLA_BOND_MIIMON;
+      rta.rta_u32_vals[nested_u32_idx].rta_val = (__u32)link->u.bond.miimon;
+      rta.rta_u32_vals[nested_u32_idx].rta_len =
+          sizeof(rta.rta_u32_vals[nested_u32_idx]);
+    }
+    if (link->u.bond.up_delay >= 0) {
+      nested_u32_idx++;
+      rta.rta_u32_vals[nested_u32_idx].rta_type = IFLA_BOND_UPDELAY;
+      rta.rta_u32_vals[nested_u32_idx].rta_val = (__u32)link->u.bond.up_delay;
+      rta.rta_u32_vals[nested_u32_idx].rta_len =
+          sizeof(rta.rta_u32_vals[nested_u32_idx]);
+    }
+    if (link->u.bond.down_delay >= 0) {
+      nested_u32_idx++;
+      rta.rta_u32_vals[nested_u32_idx].rta_type = IFLA_BOND_DOWNDELAY;
+      rta.rta_u32_vals[nested_u32_idx].rta_val = (__u32)link->u.bond.down_delay;
+      rta.rta_u32_vals[nested_u32_idx].rta_len =
+          sizeof(rta.rta_u32_vals[nested_u32_idx]);
+    }
+    if (link->u.bond.use_carrier >= 0) {
+      nested_u8_idx++;
+      rta.rta_u8_vals[nested_u8_idx].rta_type = IFLA_BOND_USE_CARRIER;
+      rta.rta_u8_vals[nested_u8_idx].rta_val = (__u8)link->u.bond.use_carrier;
+      rta.rta_u8_vals[nested_u8_idx].rta_len =
+          sizeof(rta.rta_u8_vals[nested_u8_idx]);
+    }
+    if (link->u.bond.arp_interval >= 0) {
+      nested_u32_idx++;
+      rta.rta_u32_vals[nested_u32_idx].rta_type = IFLA_BOND_ARP_INTERVAL;
+      rta.rta_u32_vals[nested_u32_idx].rta_val =
+          (__u32)link->u.bond.arp_interval;
+      rta.rta_u32_vals[nested_u32_idx].rta_len =
+          sizeof(rta.rta_u32_vals[nested_u32_idx]);
+    }
+    if (link->u.bond.arp_validate >= 0) {
+      nested_u32_idx++;
+      rta.rta_u32_vals[nested_u32_idx].rta_type = IFLA_BOND_ARP_VALIDATE;
+      rta.rta_u32_vals[nested_u32_idx].rta_val =
+          (__u32)link->u.bond.arp_validate;
+      rta.rta_u32_vals[nested_u32_idx].rta_len =
+          sizeof(rta.rta_u32_vals[nested_u32_idx]);
+    }
+    if (link->u.bond.arp_all_targets >= 0) {
+      nested_u32_idx++;
+      rta.rta_u32_vals[nested_u32_idx].rta_type = IFLA_BOND_ARP_ALL_TARGETS;
+      rta.rta_u32_vals[nested_u32_idx].rta_val =
+          (__u32)link->u.bond.arp_all_targets;
+      rta.rta_u32_vals[nested_u32_idx].rta_len =
+          sizeof(rta.rta_u32_vals[nested_u32_idx]);
+    }
+    if (link->u.bond.primary >= 0) {
+      nested_u32_idx++;
+      rta.rta_u32_vals[nested_u32_idx].rta_type = IFLA_BOND_PRIMARY;
+      rta.rta_u32_vals[nested_u32_idx].rta_val = (__u32)link->u.bond.primary;
+      rta.rta_u32_vals[nested_u32_idx].rta_len =
+          sizeof(rta.rta_u32_vals[nested_u32_idx]);
+    }
+    if (link->u.bond.primary_reselect >= 0) {
+      nested_u8_idx++;
+      rta.rta_u8_vals[nested_u8_idx].rta_type = IFLA_BOND_PRIMARY_RESELECT;
+      rta.rta_u8_vals[nested_u8_idx].rta_val =
+          (__u8)link->u.bond.primary_reselect;
+      rta.rta_u8_vals[nested_u8_idx].rta_len =
+          sizeof(rta.rta_u8_vals[nested_u8_idx]);
+    }
+    if (link->u.bond.failover_mac >= 0) {
+      nested_u8_idx++;
+      rta.rta_u8_vals[nested_u8_idx].rta_type = IFLA_BOND_FAIL_OVER_MAC;
+      rta.rta_u8_vals[nested_u8_idx].rta_val = (__u8)link->u.bond.failover_mac;
+      rta.rta_u8_vals[nested_u8_idx].rta_len =
+          sizeof(rta.rta_u8_vals[nested_u8_idx]);
+    }
+    if (link->u.bond.xmit_hash_policy >= 0) {
+      nested_u8_idx++;
+      rta.rta_u8_vals[nested_u8_idx].rta_type = IFLA_BOND_XMIT_HASH_POLICY;
+      rta.rta_u8_vals[nested_u8_idx].rta_val =
+          (__u8)link->u.bond.xmit_hash_policy;
+      rta.rta_u8_vals[nested_u8_idx].rta_len =
+          sizeof(rta.rta_u8_vals[nested_u8_idx]);
+    }
+    if (link->u.bond.resend_igmp >= 0) {
+      nested_u32_idx++;
+      rta.rta_u32_vals[nested_u32_idx].rta_type = IFLA_BOND_RESEND_IGMP;
+      rta.rta_u32_vals[nested_u32_idx].rta_val =
+          (__u32)link->u.bond.resend_igmp;
+      rta.rta_u32_vals[nested_u32_idx].rta_len =
+          sizeof(rta.rta_u32_vals[nested_u32_idx]);
+    }
+    if (link->u.bond.num_peer_notif >= 0) {
+      nested_u8_idx++;
+      rta.rta_u8_vals[nested_u8_idx].rta_type = IFLA_BOND_NUM_PEER_NOTIF;
+      rta.rta_u8_vals[nested_u8_idx].rta_val =
+          (__u8)link->u.bond.num_peer_notif;
+      rta.rta_u8_vals[nested_u8_idx].rta_len =
+          sizeof(rta.rta_u8_vals[nested_u8_idx]);
+    }
+    if (link->u.bond.all_slaves_active >= 0) {
+      nested_u8_idx++;
+      rta.rta_u8_vals[nested_u8_idx].rta_type = IFLA_BOND_ALL_SLAVES_ACTIVE;
+      rta.rta_u8_vals[nested_u8_idx].rta_val =
+          (__u8)link->u.bond.all_slaves_active;
+      rta.rta_u8_vals[nested_u8_idx].rta_len =
+          sizeof(rta.rta_u8_vals[nested_u8_idx]);
+    }
+    if (link->u.bond.min_links >= 0) {
+      nested_u32_idx++;
+      rta.rta_u32_vals[nested_u32_idx].rta_type = IFLA_BOND_MIN_LINKS;
+      rta.rta_u32_vals[nested_u32_idx].rta_val = (__u32)link->u.bond.min_links;
+      rta.rta_u32_vals[nested_u32_idx].rta_len =
+          sizeof(rta.rta_u32_vals[nested_u32_idx]);
+    }
+    if (link->u.bond.lp_interval >= 0) {
+      nested_u32_idx++;
+      rta.rta_u32_vals[nested_u32_idx].rta_type = IFLA_BOND_LP_INTERVAL;
+      rta.rta_u32_vals[nested_u32_idx].rta_val =
+          (__u32)link->u.bond.lp_interval;
+      rta.rta_u32_vals[nested_u32_idx].rta_len =
+          sizeof(rta.rta_u32_vals[nested_u32_idx]);
+    }
+    if (link->u.bond.packers_per_slave >= 0) {
+      nested_u32_idx++;
+      rta.rta_u32_vals[nested_u32_idx].rta_type = IFLA_BOND_PACKETS_PER_SLAVE;
+      rta.rta_u32_vals[nested_u32_idx].rta_val =
+          (__u32)link->u.bond.packers_per_slave;
+      rta.rta_u32_vals[nested_u32_idx].rta_len =
+          sizeof(rta.rta_u32_vals[nested_u32_idx]);
+    }
+    if (link->u.bond.lacp_rate >= 0) {
+      nested_u8_idx++;
+      rta.rta_u8_vals[nested_u8_idx].rta_type = IFLA_BOND_AD_LACP_RATE;
+      rta.rta_u8_vals[nested_u8_idx].rta_val = (__u8)link->u.bond.lacp_rate;
+      rta.rta_u8_vals[nested_u8_idx].rta_len =
+          sizeof(rta.rta_u8_vals[nested_u8_idx]);
+    }
+    if (link->u.bond.ad_select >= 0) {
+      nested_u8_idx++;
+      rta.rta_u8_vals[nested_u8_idx].rta_type = IFLA_BOND_AD_SELECT;
+      rta.rta_u8_vals[nested_u8_idx].rta_val = (__u8)link->u.bond.ad_select;
+      rta.rta_u8_vals[nested_u8_idx].rta_len =
+          sizeof(rta.rta_u8_vals[nested_u8_idx]);
+    }
+    if (link->u.bond.ad_actor_sys_prio >= 0) {
+      nested_u16_idx++;
+      rta.rta_u16_vals[nested_u16_idx].rta_type = IFLA_BOND_AD_ACTOR_SYS_PRIO;
+      rta.rta_u16_vals[nested_u16_idx].rta_val =
+          (__u16)link->u.bond.ad_actor_sys_prio;
+      rta.rta_u16_vals[nested_u16_idx].rta_len =
+          sizeof(rta.rta_u16_vals[nested_u16_idx]);
+    }
+    if (link->u.bond.ad_user_port_key >= 0) {
+      nested_u16_idx++;
+      rta.rta_u16_vals[nested_u16_idx].rta_type = IFLA_BOND_AD_USER_PORT_KEY;
+      rta.rta_u16_vals[nested_u16_idx].rta_val =
+          (__u16)link->u.bond.ad_user_port_key;
+      rta.rta_u16_vals[nested_u16_idx].rta_len =
+          sizeof(rta.rta_u16_vals[nested_u16_idx]);
+    }
+    if (link->u.bond.tlb_dynamic_lb >= 0) {
+      nested_u8_idx++;
+      rta.rta_u8_vals[nested_u8_idx].rta_type = IFLA_BOND_TLB_DYNAMIC_LB;
+      rta.rta_u8_vals[nested_u8_idx].rta_val =
+          (__u8)link->u.bond.tlb_dynamic_lb;
+      rta.rta_u8_vals[nested_u8_idx].rta_len =
+          sizeof(rta.rta_u8_vals[nested_u8_idx]);
+    }
+    if (!is_zero_mac(link->u.bond.ad_actor_system)) {
+      nested_u8s_idx++;
+      rta.rta_u8s_vals[nested_u8s_idx].rta_type = IFLA_BOND_AD_ACTOR_SYSTEM;
+      memcpy(rta.rta_u8s_vals[nested_u8s_idx].rta_val,
+             link->u.bond.ad_actor_system, ETH_ALEN);
+      rta.rta_u8s_vals[nested_u8s_idx].rta_len =
+          sizeof(rta.rta_u8s_vals[nested_u8s_idx]);
+    }
+
+    if (link->u.bond.arp_ip_targets) {
+      int num = sizeof(*link->u.bond.arp_ip_targets) / sizeof(nl_ip_t);
+      for (int i = 0; i < num; i++) {
+        if (link->u.bond.arp_ip_targets[i].f.v4) {
+          nested_ipv4_idx++;
+          rta.rta_ipv4_vals[nested_ipv4_idx].rta_type = IFLA_BOND_ARP_IP_TARGET;
+          memcpy(rta.rta_ipv4_vals[nested_ipv4_idx].rta_val,
+                 link->u.bond.arp_ip_targets[i].v4.bytes, 4);
+          rta.rta_ipv4_vals[nested_ipv4_idx].rta_len =
+              sizeof(rta.rta_ipv4_vals[nested_ipv4_idx]);
+        } else if (link->u.bond.arp_ip_targets[i].f.v6) {
+          nested_ipv6_idx++;
+          rta.rta_ipv6_vals[nested_ipv6_idx].rta_type = IFLA_BOND_ARP_IP_TARGET;
+          memcpy(rta.rta_ipv6_vals[nested_ipv6_idx].rta_val,
+                 link->u.bond.arp_ip_targets[i].v6.bytes, 16);
+          rta.rta_ipv6_vals[nested_ipv6_idx].rta_len =
+              sizeof(rta.rta_ipv6_vals[nested_ipv6_idx]);
+        }
+      }
+    }
+
+    ret = nlmsg_append(msg, &rta, sizeof(rta), RTA_PADDING(rta));
+    if (ret < 0) {
+      nlmsg_free(msg);
+      nl_socket_free(socket);
+      return false;
+    }
   }
+
   if (link->type.vti) {
     // TODO benne
   } else if (link->type.vrf) {

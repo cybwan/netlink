@@ -149,6 +149,14 @@ typedef struct nl_link_type {
   __u32 vxcan : 1;
 } nl_link_type_t;
 
+typedef struct nl_bond_ad_info {
+  __s32 aggregator_id;
+  __s32 num_ports;
+  __s32 actor_key;
+  __s32 partner_key;
+  __u8 partner_mac[ETH_ALEN];
+} nl_bond_ad_info_t;
+
 typedef struct nl_link {
   nl_base_attrs_t attrs;
   nl_link_type_t type;
@@ -159,7 +167,33 @@ typedef struct nl_link {
       bool *vlan_filtering;
     } bridge;
     struct {
-
+      __s32 mode;
+      __s32 activeslave;
+      __s32 miimon;
+      __s32 up_delay;
+      __s32 down_delay;
+      __s32 use_carrier;
+      __s32 arp_interval;
+      nl_ip_t *arp_ip_targets;
+      __s32 arp_validate;
+      __s32 arp_all_targets;
+      __s32 primary;
+      __s32 primary_reselect;
+      __s32 failover_mac;
+      __s32 xmit_hash_policy;
+      __s32 resend_igmp;
+      __s32 num_peer_notif;
+      __s32 all_slaves_active;
+      __s32 min_links;
+      __s32 lp_interval;
+      __s32 packers_per_slave;
+      __s32 lacp_rate;
+      __s32 ad_select;
+      nl_bond_ad_info_t *bond_ad_info;
+      __s32 ad_actor_sys_prio;
+      __s32 ad_user_port_key;
+      __u8 ad_actor_system[ETH_ALEN];
+      __s32 tlb_dynamic_lb;
     } bond;
     struct {
       char *peer_name;
