@@ -228,6 +228,16 @@ typedef struct nl_link {
       __s32 port_high;
     } vxlan;
     struct {
+      __u16 mode;
+      __u16 flag;
+    } ipvlan;
+    struct {
+      __u16 mode;
+    } macvlan;
+    struct {
+      __u16 mode;
+    } macvtap;
+    struct {
       __u32 local;
       __u32 remote;
     } iptun;

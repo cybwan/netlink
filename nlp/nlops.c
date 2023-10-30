@@ -1685,6 +1685,84 @@ bool _internal_nl_link_mod(nl_link_t *link, int flags) {
       nl_socket_free(socket);
       return false;
     }
+  } else if (link->type.ipvlan) {
+    struct {
+      __u16 rta_len;
+      __u16 rta_type;
+      struct {
+        __u16 rta_len;
+        __u16 rta_type;
+        __u16 rta_val;
+      } rta_mode;
+      struct {
+        __u16 rta_len;
+        __u16 rta_type;
+        __u16 rta_val;
+      } rta_flag;
+    } rta;
+    memset(&rta, 0, sizeof(rta));
+    rta.rta_type = IFLA_INFO_DATA;
+    rta.rta_len = sizeof(rta);
+    rta.rta_mode.rta_type = IFLA_IPVLAN_MODE;
+    rta.rta_mode.rta_val = link->u.ipvlan.mode;
+    rta.rta_mode.rta_len = sizeof(rta.rta_mode.rta_val);
+    rta.rta_flag.rta_type = IFLA_IPVLAN_FLAGS;
+    rta.rta_flag.rta_val = link->u.ipvlan.flag;
+    rta.rta_flag.rta_len = sizeof(rta.rta_flag.rta_val);
+    ret = nlmsg_append(msg, &rta, sizeof(rta), RTA_PADDING(rta));
+    if (ret < 0) {
+      nlmsg_free(msg);
+      nl_socket_free(socket);
+      return false;
+    }
+  } else if (link->type.macvlan) {
+    if (link->u.macvlan.mode != 0) {
+      struct {
+        __u16 rta_len;
+        __u16 rta_type;
+        struct {
+          __u16 rta_len;
+          __u16 rta_type;
+          __u32 rta_val;
+        } rta_val;
+      } rta;
+      memset(&rta, 0, sizeof(rta));
+      rta.rta_type = IFLA_INFO_DATA;
+      rta.rta_len = sizeof(rta);
+      rta.rta_val.rta_type = IFLA_MACVLAN_MODE;
+      rta.rta_val.rta_val = (__u32)link->u.macvlan.mode;
+      rta.rta_val.rta_len = sizeof(rta.rta_val.rta_val);
+      ret = nlmsg_append(msg, &rta, sizeof(rta), RTA_PADDING(rta));
+      if (ret < 0) {
+        nlmsg_free(msg);
+        nl_socket_free(socket);
+        return false;
+      }
+    }
+  } else if (link->type.macvtap) {
+    if (link->u.macvtap.mode != 0) {
+      struct {
+        __u16 rta_len;
+        __u16 rta_type;
+        struct {
+          __u16 rta_len;
+          __u16 rta_type;
+          __u32 rta_val;
+        } rta_val;
+      } rta;
+      memset(&rta, 0, sizeof(rta));
+      rta.rta_type = IFLA_INFO_DATA;
+      rta.rta_len = sizeof(rta);
+      rta.rta_val.rta_type = IFLA_MACVLAN_MODE;
+      rta.rta_val.rta_val = (__u32)link->u.macvtap.mode;
+      rta.rta_val.rta_len = sizeof(rta.rta_val.rta_val);
+      ret = nlmsg_append(msg, &rta, sizeof(rta), RTA_PADDING(rta));
+      if (ret < 0) {
+        nlmsg_free(msg);
+        nl_socket_free(socket);
+        return false;
+      }
+    }
   }
 
   if (link->type.vti) {
