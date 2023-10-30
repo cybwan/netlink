@@ -1991,8 +1991,6 @@ bool _internal_nl_link_mod(nl_link_t *link, int flags) {
       } rta_ipv4_vals[nested_ipv4];
     } rta;
     memset(&rta, 0, sizeof(rta));
-    rta.rta_type = IFLA_INFO_DATA;
-    rta.rta_len = sizeof(rta);
 
     if (link->u.iptun.flow_based) {
       direct_u8_idx++;
