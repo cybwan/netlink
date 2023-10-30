@@ -208,10 +208,17 @@ bool nl_neigh_del(const char *ip_addr, const char *ifi_name);
 bool nl_vxlan_peer_add(__u32 vxlan_id, const char *peer_ip);
 bool nl_vxlan_peer_del(__u32 vxlan_id, const char *peer_ip);
 
+bool nl_vlan_add(int vlan_id);
+bool nl_vlan_del(int vlan_id);
+bool nl_vlan_member_add(int vlan_id, const char *ifi_name, bool tagged);
+bool nl_vlan_member_del(int vlan_id, const char *ifi_name, bool tagged);
+
 bool nl_link_add(nl_link_t *link, int flags);
 bool nl_link_up(int ifi_index);
 bool nl_link_down(int ifi_index);
 bool nl_link_del(int ifi_index);
+bool nl_link_master(int ifi_index, int master_ifi_index);
+bool nl_link_no_master(int ifi_index);
 
 int nl_link_get_by_index(int ifi_index, nl_port_mod_t *port);
 int nl_link_get_by_name(const char *ifi_name, nl_port_mod_t *port);

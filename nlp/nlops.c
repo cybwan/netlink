@@ -634,6 +634,91 @@ bool nl_vxlan_peer_del(__u32 vxlan_id, const char *peer_ip) {
   return _internal_nl_neigh_del(&peer);
 }
 
+bool nl_vlan_add(int vlan_id) {
+  char vlan_name[IF_NAMESIZE];
+  memset(vlan_name, 0, IF_NAMESIZE);
+  snprintf(vlan_name, IF_NAMESIZE, "vlan%d", vlan_id);
+  nl_port_mod_t port;
+  memset(&port, 0, sizeof(port));
+  nl_link_get_by_name(vlan_name, &port);
+  if (port.index == 0) {
+    nl_link_t link;
+    memset(&link, 0, sizeof(link));
+    link.attrs.name = vlan_name;
+    link.attrs.mtu = 9000;
+    link.type.bridge = 1;
+    return nl_link_add(&link, NLM_F_CREATE | NLM_F_EXCL | NLM_F_ACK);
+  }
+  return false;
+}
+
+bool nl_vlan_del(int vlan_id) {
+  char vlan_name[IF_NAMESIZE];
+  memset(vlan_name, 0, IF_NAMESIZE);
+  snprintf(vlan_name, IF_NAMESIZE, "vlan%d", vlan_id);
+  nl_port_mod_t port;
+  memset(&port, 0, sizeof(port));
+  nl_link_get_by_name(vlan_name, &port);
+  if (port.index == 0) {
+    return false;
+  }
+  if (!nl_link_down(port.index)) {
+    return false;
+  }
+  return nl_link_del(port.index);
+}
+
+bool nl_vlan_member_add(int vlan_id, const char *ifi_name, bool tagged) {
+  char vlan_bridge_name[IF_NAMESIZE];
+  memset(vlan_bridge_name, 0, IF_NAMESIZE);
+  snprintf(vlan_bridge_name, IF_NAMESIZE, "vlan%d", vlan_id);
+  nl_port_mod_t vlan_bridge;
+  memset(&vlan_bridge, 0, sizeof(vlan_bridge));
+  nl_link_get_by_name(vlan_bridge_name, &vlan_bridge);
+  if (vlan_bridge.index == 0) {
+    return false;
+  }
+  nl_port_mod_t parent_link;
+  memset(&parent_link, 0, sizeof(parent_link));
+  nl_link_get_by_name(ifi_name, &parent_link);
+  if (parent_link.index == 0) {
+    return false;
+  }
+
+  char vlan_dev_name[IF_NAMESIZE];
+  memset(vlan_dev_name, 0, IF_NAMESIZE);
+  if (tagged) {
+    // snprintf(vlan_dev_name, IF_NAMESIZE, "%s.%d", ifi_name, vlan_id);
+    snprintf(vlan_dev_name, IF_NAMESIZE, "%s", "aaa");
+    nl_link_t vlan_link;
+    memset(&vlan_link, 0, sizeof(vlan_link));
+    vlan_link.attrs.name = vlan_dev_name;
+    vlan_link.attrs.parent_index = (__s32)parent_link.index;
+    vlan_link.type.vlan = 1;
+    vlan_link.u.vlan.vlan_id = vlan_id;
+    if (!nl_link_add(&vlan_link, NLM_F_CREATE | NLM_F_EXCL | NLM_F_ACK)) {
+      return false;
+    }
+  } else {
+    snprintf(vlan_dev_name, IF_NAMESIZE, "%s", ifi_name);
+  }
+
+  nl_port_mod_t vlan_dev_link;
+  memset(&vlan_dev_link, 0, sizeof(vlan_dev_link));
+  nl_link_get_by_name(vlan_dev_name, &vlan_dev_link);
+  if (vlan_dev_link.index == 0) {
+    printf("A3 ifi_name=[%s] vlan_dev_name=[%s]\n", ifi_name, vlan_dev_name);
+    return false;
+  }
+  nl_link_up(vlan_dev_link.index);
+  return nl_link_master(vlan_dev_link.index, vlan_bridge.index);
+}
+
+#define IFF_TUN 0x1
+#define IFF_TAP 0x2
+#define VETH_INFO_PEER 1
+#define IFLA_VXLAN_FLOWBASED 25
+
 bool nl_link_add(nl_link_t *link, int flags) {
   nl_base_attrs_t base = link->attrs;
 
@@ -642,8 +727,6 @@ bool nl_link_add(nl_link_t *link, int flags) {
   }
 
   if (link->type.tun) {
-#define IFF_TUN 0x1
-#define IFF_TAP 0x2
     if (link->u.tuntap.mode < IFF_TUN || link->u.tuntap.mode > IFF_TAP) {
       return false;
     }
@@ -964,10 +1047,10 @@ bool nl_link_add(nl_link_t *link, int flags) {
   }
 
   if (link->type.vlan) {
-    int nested_attrs = 1;
-    if (link->u.vlan.vlan_protocol != 0) {
-      nested_attrs = 2;
-    }
+    // int nested_attrs = 1;
+    // if (link->u.vlan.vlan_protocol != 0) {
+    //   nested_attrs = 2;
+    // }
     struct {
       __u16 rta_len;
       __u16 rta_type;
@@ -975,20 +1058,26 @@ bool nl_link_add(nl_link_t *link, int flags) {
         __u16 rta_len;
         __u16 rta_type;
         __u16 rta_val;
-      } rta_vals[nested_attrs];
+        __u16 rta_val1;
+      } rta_val;
     } rta;
     memset(&rta, 0, sizeof(rta));
     rta.rta_type = IFLA_INFO_DATA;
-    rta.rta_len = sizeof(rta);
-    rta.rta_vals[0].rta_type = IFLA_VLAN_ID;
-    rta.rta_vals[0].rta_val = (__u16)link->u.vlan.vlan_id;
-    rta.rta_vals[0].rta_len = sizeof(rta.rta_vals[0]);
-    if (link->u.vlan.vlan_protocol != 0) {
-      rta.rta_vals[1].rta_type = IFLA_VLAN_PROTOCOL;
-      rta.rta_vals[1].rta_val = htons(link->u.vlan.vlan_protocol);
-      rta.rta_vals[1].rta_len = sizeof(rta.rta_vals[1]);
-    }
-    ret = nlmsg_append(msg, &rta, sizeof(rta), RTA_PADDING(rta));
+    rta.rta_len = 12;
+    rta.rta_val.rta_type = IFLA_VLAN_ID;
+    rta.rta_val.rta_val = (__u16)link->u.vlan.vlan_id;
+    rta.rta_val.rta_len = 8;
+    // printf("nested_attrs=[%d] vlanid=[%d]\n",nested_attrs,rta.rta_vals[0].rta_val);
+    // printf("rta.rta_len=[%d] rta.rta_vals[0].rta_len=[%d] RTA_PADDING(rta)=[%ld]\n",rta.rta_len,rta.rta_vals[0].rta_len,RTA_PADDING(rta));
+    // if (link->u.vlan.vlan_protocol != 0) {
+    //   rta.rta_vals[1].rta_type = IFLA_VLAN_PROTOCOL;
+    //   rta.rta_vals[1].rta_val = htons(link->u.vlan.vlan_protocol);
+    //   rta.rta_vals[1].rta_len = sizeof(rta.rta_vals[1]);
+    //   printf("AAA2\n");
+    // }
+    printf("sizeof(rta)=[%ld]\n",sizeof(rta));
+    ret = nlmsg_append(msg, &rta, sizeof(rta), 0);
+    printf("ret=[%d]\n",ret);
     if (ret < 0) {
       nlmsg_free(msg);
       nl_socket_free(socket);
@@ -1032,7 +1121,6 @@ bool nl_link_add(nl_link_t *link, int flags) {
     memset(&rta, 0, sizeof(rta));
     rta.rta_type = IFLA_INFO_DATA;
     rta.rta_len = sizeof(rta);
-#define VETH_INFO_PEER 1
     rta.rta_val.rta_type = VETH_INFO_PEER;
     rta.rta_val.rta_len = sizeof(rta.rta_val);
     rta.rta_val.rta_ifi_name.rta_type = IFLA_IFNAME;
@@ -1291,7 +1379,6 @@ bool nl_link_add(nl_link_t *link, int flags) {
 
     if (link->u.vxlan.flow_based) {
       nested_u8_idx++;
-#define IFLA_VXLAN_FLOWBASED 25
       rta.rta_u8_vals[nested_u8_idx].rta_type = IFLA_VXLAN_FLOWBASED;
       rta.rta_u8_vals[nested_u8_idx].rta_val = (__u8)link->u.vxlan.flow_based;
       rta.rta_u8_vals[nested_u8_idx].rta_len =
@@ -2779,6 +2866,7 @@ bool nl_link_add(nl_link_t *link, int flags) {
   }
 
   ret = nl_send_auto_complete(socket, msg);
+  printf("AAAAret=[%d]\n",ret);
   if (ret < 0) {
     nlmsg_free(msg);
     nl_socket_free(socket);
@@ -2869,4 +2957,52 @@ bool nl_link_del(int ifi_index) {
   nl_socket_free(socket);
 
   return true;
+}
+
+bool nl_link_master(int ifi_index, int master_ifi_index) {
+  int ret;
+  struct nl_sock *socket = nl_socket_alloc();
+  nl_connect(socket, NETLINK_ROUTE);
+  struct nl_msg *msg = nlmsg_alloc();
+
+  struct ifinfomsg *nl_req;
+  struct nlmsghdr *nlh = nlmsg_put(msg, NL_AUTO_PID, NL_AUTO_SEQ, RTM_SETLINK,
+                                   sizeof(*nl_req), NLM_F_REQUEST | NLM_F_ACK);
+
+  nl_req = nlmsg_data(nlh);
+  memset(nl_req, 0, sizeof(*nl_req));
+  nl_req->ifi_index = ifi_index;
+
+  struct {
+    __u16 rta_len;
+    __u16 rta_type;
+    __u32 rta_val;
+  } rta;
+  memset(&rta, 0, sizeof(rta));
+  rta.rta_type = IFLA_MASTER;
+  rta.rta_len = sizeof(rta);
+  rta.rta_val = (__u32)master_ifi_index;
+  ret = nlmsg_append(msg, &rta, sizeof(rta), RTA_PADDING(rta));
+  if (ret < 0) {
+    nlmsg_free(msg);
+    nl_socket_free(socket);
+    return false;
+  }
+
+  ret = nl_send_auto_complete(socket, msg);
+  if (ret < 0) {
+    nlmsg_free(msg);
+    nl_socket_free(socket);
+    return false;
+  }
+
+  nlmsg_free(msg);
+  nl_socket_free(socket);
+
+  return true;
+}
+
+bool nl_link_no_master(int ifi_index) {
+  int master_ifi_index = 0;
+  return nl_link_master(ifi_index, master_ifi_index);
 }
