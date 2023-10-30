@@ -255,8 +255,17 @@ typedef struct nl_link {
       bool flow_based;
     } gretap;
     struct {
-      __u32 local;
-      __u32 remote;
+      __u8 ttl;
+      __u8 tos;
+      __u8 p_mtu_disc;
+      __u32 link;
+      nl_ip_t *local;
+      nl_ip_t *remote;
+      __u16 encap_s_port;
+      __u16 encap_d_port;
+      __u16 encap_type;
+      __u16 encap_flags;
+      bool flow_based;
     } iptun;
     struct {
       __u32 ikey;
