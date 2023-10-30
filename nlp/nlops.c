@@ -1047,10 +1047,10 @@ bool nl_link_add(nl_link_t *link, int flags) {
   }
 
   if (link->type.vlan) {
-    // int nested_attrs = 1;
-    // if (link->u.vlan.vlan_protocol != 0) {
-    //   nested_attrs = 2;
-    // }
+    int nested_attrs = 1;
+    if (link->u.vlan.vlan_protocol != 0) {
+      nested_attrs = 2;
+    }
     struct {
       __u16 rta_len;
       __u16 rta_type;
@@ -1058,26 +1058,20 @@ bool nl_link_add(nl_link_t *link, int flags) {
         __u16 rta_len;
         __u16 rta_type;
         __u16 rta_val;
-        __u16 rta_val1;
-      } rta_val;
+      } rta_vals[nested_attrs];
     } rta;
     memset(&rta, 0, sizeof(rta));
     rta.rta_type = IFLA_INFO_DATA;
-    rta.rta_len = 12;
-    rta.rta_val.rta_type = IFLA_VLAN_ID;
-    rta.rta_val.rta_val = (__u16)link->u.vlan.vlan_id;
-    rta.rta_val.rta_len = 8;
-    // printf("nested_attrs=[%d] vlanid=[%d]\n",nested_attrs,rta.rta_vals[0].rta_val);
-    // printf("rta.rta_len=[%d] rta.rta_vals[0].rta_len=[%d] RTA_PADDING(rta)=[%ld]\n",rta.rta_len,rta.rta_vals[0].rta_len,RTA_PADDING(rta));
-    // if (link->u.vlan.vlan_protocol != 0) {
-    //   rta.rta_vals[1].rta_type = IFLA_VLAN_PROTOCOL;
-    //   rta.rta_vals[1].rta_val = htons(link->u.vlan.vlan_protocol);
-    //   rta.rta_vals[1].rta_len = sizeof(rta.rta_vals[1]);
-    //   printf("AAA2\n");
-    // }
-    printf("sizeof(rta)=[%ld]\n",sizeof(rta));
-    ret = nlmsg_append(msg, &rta, sizeof(rta), 0);
-    printf("ret=[%d]\n",ret);
+    rta.rta_len = sizeof(rta);
+    rta.rta_vals[0].rta_type = IFLA_VLAN_ID;
+    rta.rta_vals[0].rta_val = (__u16)link->u.vlan.vlan_id;
+    rta.rta_vals[0].rta_len = sizeof(rta.rta_vals[0]);
+    if (link->u.vlan.vlan_protocol != 0) {
+      rta.rta_vals[1].rta_type = IFLA_VLAN_PROTOCOL;
+      rta.rta_vals[1].rta_val = htons(link->u.vlan.vlan_protocol);
+      rta.rta_vals[1].rta_len = sizeof(rta.rta_vals[1]);
+    }
+    ret = nlmsg_append(msg, &rta, sizeof(rta), RTA_PADDING(rta));
     if (ret < 0) {
       nlmsg_free(msg);
       nl_socket_free(socket);
