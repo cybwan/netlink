@@ -636,6 +636,21 @@ bool nl_vxlan_peer_del(__u32 vxlan_id, const char *peer_ip) {
 
 bool nl_link_add(nl_link_t *link, int flags) {
   nl_base_attrs_t base = link->attrs;
+
+  if ((!base.name || strlen(base.name) == 0) && !link->type.tun) {
+    return false;
+  }
+
+  if (link->type.tun) {
+#define IFF_TUN 0x1
+#define IFF_TAP 0x2
+    if (link->u.tuntap.mode < IFF_TUN || link->u.tuntap.mode > IFF_TAP) {
+      return false;
+    }
+    // TODO benne
+    return false;
+  }
+
   struct nl_sock *socket = nl_socket_alloc();
   nl_connect(socket, NETLINK_ROUTE);
   struct nl_msg *msg = nlmsg_alloc();
@@ -2764,6 +2779,86 @@ bool nl_link_add(nl_link_t *link, int flags) {
   }
 
   ret = nl_send_auto_complete(socket, msg);
+  if (ret < 0) {
+    nlmsg_free(msg);
+    nl_socket_free(socket);
+    return false;
+  }
+
+  nlmsg_free(msg);
+  nl_socket_free(socket);
+
+  return true;
+}
+
+bool nl_link_up(int ifi_index) {
+  struct nl_sock *socket = nl_socket_alloc();
+  nl_connect(socket, NETLINK_ROUTE);
+  struct nl_msg *msg = nlmsg_alloc();
+
+  struct ifinfomsg *nl_req;
+  struct nlmsghdr *nlh = nlmsg_put(msg, NL_AUTO_PID, NL_AUTO_SEQ, RTM_NEWLINK,
+                                   sizeof(*nl_req), NLM_F_REQUEST | NLM_F_ACK);
+
+  nl_req = nlmsg_data(nlh);
+  memset(nl_req, 0, sizeof(*nl_req));
+  nl_req->ifi_family = AF_UNSPEC;
+  nl_req->ifi_change = IFF_UP;
+  nl_req->ifi_flags = IFF_UP;
+  nl_req->ifi_index = ifi_index;
+  int ret = nl_send_auto_complete(socket, msg);
+  if (ret < 0) {
+    nlmsg_free(msg);
+    nl_socket_free(socket);
+    return false;
+  }
+
+  nlmsg_free(msg);
+  nl_socket_free(socket);
+
+  return true;
+}
+
+bool nl_link_down(int ifi_index) {
+  struct nl_sock *socket = nl_socket_alloc();
+  nl_connect(socket, NETLINK_ROUTE);
+  struct nl_msg *msg = nlmsg_alloc();
+
+  struct ifinfomsg *nl_req;
+  struct nlmsghdr *nlh = nlmsg_put(msg, NL_AUTO_PID, NL_AUTO_SEQ, RTM_NEWLINK,
+                                   sizeof(*nl_req), NLM_F_REQUEST | NLM_F_ACK);
+
+  nl_req = nlmsg_data(nlh);
+  memset(nl_req, 0, sizeof(*nl_req));
+  nl_req->ifi_family = AF_UNSPEC;
+  nl_req->ifi_change = IFF_UP;
+  nl_req->ifi_index = ifi_index;
+  int ret = nl_send_auto_complete(socket, msg);
+  if (ret < 0) {
+    nlmsg_free(msg);
+    nl_socket_free(socket);
+    return false;
+  }
+
+  nlmsg_free(msg);
+  nl_socket_free(socket);
+
+  return true;
+}
+
+bool nl_link_del(int ifi_index) {
+  struct nl_sock *socket = nl_socket_alloc();
+  nl_connect(socket, NETLINK_ROUTE);
+  struct nl_msg *msg = nlmsg_alloc();
+
+  struct ifinfomsg *nl_req;
+  struct nlmsghdr *nlh = nlmsg_put(msg, NL_AUTO_PID, NL_AUTO_SEQ, RTM_DELLINK,
+                                   sizeof(*nl_req), NLM_F_REQUEST | NLM_F_ACK);
+
+  nl_req = nlmsg_data(nlh);
+  memset(nl_req, 0, sizeof(*nl_req));
+  nl_req->ifi_index = ifi_index;
+  int ret = nl_send_auto_complete(socket, msg);
   if (ret < 0) {
     nlmsg_free(msg);
     nl_socket_free(socket);

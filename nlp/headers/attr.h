@@ -330,6 +330,15 @@ typedef struct nl_link {
       __u16 mode;
       __u16 umcast;
     } ipoib;
+    struct {
+      __u16 mode;
+      __u16 flags;
+      bool non_persist;
+      __s32 queues;
+      __s32 *fds;
+      __u32 owner;
+      __u32 group;
+    } tuntap;
   } u;
 } nl_link_t;
 

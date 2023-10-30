@@ -183,9 +183,6 @@ typedef struct nl_filter_mod {
   } u;
 } nl_filter_mod_t;
 
-int nl_link_get_by_index(int ifi_index, nl_port_mod_t *port);
-int nl_link_get_by_name(const char *ifi_name, nl_port_mod_t *port);
-
 int nl_addr_list(nl_port_mod_t *port, __u8 family);
 int nl_neigh_list(nl_port_mod_t *port, __u8 family);
 int nl_route_list(nl_port_mod_t *port, __u8 family);
@@ -212,6 +209,12 @@ bool nl_vxlan_peer_add(__u32 vxlan_id, const char *peer_ip);
 bool nl_vxlan_peer_del(__u32 vxlan_id, const char *peer_ip);
 
 bool nl_link_add(nl_link_t *link, int flags);
+bool nl_link_up(int ifi_index);
+bool nl_link_down(int ifi_index);
+bool nl_link_del(int ifi_index);
+
+int nl_link_get_by_index(int ifi_index, nl_port_mod_t *port);
+int nl_link_get_by_name(const char *ifi_name, nl_port_mod_t *port);
 
 static __u8 zero_mac[ETH_ALEN] = {0};
 
