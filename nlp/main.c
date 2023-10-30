@@ -62,7 +62,7 @@ int main() {
   link.attrs.name = "testa";
   link.attrs.mtu = 9000;
   link.type.bridge = 1;
-  if (_internal_nl_link_mod(&link, NLM_F_CREATE | NLM_F_EXCL | NLM_F_ACK)) {
+  if (nl_link_add(&link, NLM_F_CREATE | NLM_F_EXCL | NLM_F_ACK)) {
     printf("success\n");
   }
 

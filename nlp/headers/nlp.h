@@ -211,7 +211,7 @@ bool nl_neigh_del(const char *ip_addr, const char *ifi_name);
 bool nl_vxlan_peer_add(__u32 vxlan_id, const char *peer_ip);
 bool nl_vxlan_peer_del(__u32 vxlan_id, const char *peer_ip);
 
-bool _internal_nl_link_mod(nl_link_t *link, int flags);
+bool nl_link_add(nl_link_t *link, int flags);
 
 static __u8 zero_mac[ETH_ALEN] = {0};
 

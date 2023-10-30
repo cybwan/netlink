@@ -634,7 +634,7 @@ bool nl_vxlan_peer_del(__u32 vxlan_id, const char *peer_ip) {
   return _internal_nl_neigh_del(&peer);
 }
 
-bool _internal_nl_link_mod(nl_link_t *link, int flags) {
+bool nl_link_add(nl_link_t *link, int flags) {
   nl_base_attrs_t base = link->attrs;
   struct nl_sock *socket = nl_socket_alloc();
   nl_connect(socket, NETLINK_ROUTE);
