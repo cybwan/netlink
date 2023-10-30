@@ -268,6 +268,17 @@ typedef struct nl_link {
       bool flow_based;
     } iptun;
     struct {
+      __u32 link;
+      nl_ip_t *local;
+      nl_ip_t *remote;
+      __u8 ttl;
+      __u8 tos;
+      __u8 encap_limit;
+      __u32 flags;
+      __u8 proto;
+      __u32 flow_info;
+    } ip6tnl;
+    struct {
       __u32 ikey;
       __u32 okey;
       __u32 link;
