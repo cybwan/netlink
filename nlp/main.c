@@ -4,7 +4,7 @@
 #include <stdlib.h>
 
 int main() {
-  nl_debug = 0;
+  //nl_debug = 0;
   // nl_rtattr_t *info = nl_rtattr_new(1, 0, NULL);
 
   // nl_rtattr_t *info_kind = nl_rtattr_alloc();
@@ -119,6 +119,7 @@ int main() {
     printf("failed\n");
     return 0;
   }
+
   printf("success\n");
 
   return 0;

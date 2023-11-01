@@ -15,10 +15,14 @@
 #include <linux/if_ether.h>
 #include <linux/if_tunnel.h>
 #include <linux/neighbour.h>
+#include <linux/rtnetlink.h>
 
-#include <netlink/genl/ctrl.h>
-#include <netlink/genl/genl.h>
-#include <netlink/netlink.h>
+//#include <netlink/genl/ctrl.h>
+//#include <netlink/genl/genl.h>
+//#include <netlink/netlink.h>
+
+#include <netlink-types.h>
+#include <netlink-generic.h>
 
 #include <attr.h>
 //#include <list.h>
@@ -331,20 +335,5 @@ static inline bool mac_pton(const char *s, __u8 *mac) {
   }
   return true;
 }
-
-#define NL_DEBUG 1
-
-#ifdef NL_DEBUG
-#define NL_DBG(LVL, FMT, ARG...)                                               \
-  do {                                                                         \
-    if (LVL <= nl_debug)                                                       \
-      fprintf(stderr, "DBG<" #LVL ">%20s:%-4u %s: " FMT, __FILE__, __LINE__,   \
-              __PRETTY_FUNCTION__, ##ARG);                                     \
-  } while (0)
-#else /* NL_DEBUG */
-#define NL_DBG(LVL, FMT, ARG...)                                               \
-  do {                                                                         \
-  } while (0)
-#endif /* NL_DEBUG */
 
 #endif /* __FLB_NLP_H__ */

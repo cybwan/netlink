@@ -1,4 +1,3 @@
-#include <linux/rtnetlink.h>
 #include <nlp.h>
 #include <unistd.h>
 

@@ -1,24 +1,5 @@
-#include <linux/rtnetlink.h>
 #include <nlp.h>
 #include <unistd.h>
-
-enum {
-  TCA_BPF_UNSPEC,
-  TCA_BPF_ACT,
-  TCA_BPF_POLICE,
-  TCA_BPF_CLASSID,
-  TCA_BPF_OPS_LEN,
-  TCA_BPF_OPS,
-  TCA_BPF_FD,
-  TCA_BPF_NAME,
-  TCA_BPF_FLAGS,
-  TCA_BPF_FLAGS_GEN,
-  TCA_BPF_TAG,
-  TCA_BPF_ID,
-  __TCA_BPF_MAX,
-};
-
-#define TCA_BPF_MAX (__TCA_BPF_MAX - 1)
 
 int nl_filter_list_res(struct nl_msg *msg, void *arg) {
   struct nlmsghdr *nlh = nlmsg_hdr(msg);

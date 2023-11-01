@@ -1,4 +1,3 @@
-#include <linux/rtnetlink.h>
 #include <net_api.h>
 #include <nlp.h>
 #include <regex.h>
