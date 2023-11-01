@@ -156,6 +156,21 @@ int nl_addr_list_res(struct nl_msg *msg, void *arg) {
       memcpy(addr.broadcast.v6.bytes, rta_val, 16);
     }
   }
+  if (attrs[IFA_LABEL]) {
+    struct rtattr *ifa_label = attrs[IFA_LABEL];
+    __u8 *rta_val = (__u8 *)RTA_DATA(ifa_label);
+    memcpy(addr.label, rta_val, ifa_label->rta_len - 4);
+  }
+  if (attrs[IFA_FLAGS]) {
+    struct rtattr *ifa_flags = attrs[IFA_FLAGS];
+    addr.flags = *(__u32 *)RTA_DATA(ifa_flags);
+  }
+  if (attrs[IFA_CACHEINFO]) {
+    struct rtattr *ifa_cache_info = attrs[IFA_CACHEINFO];
+    __u32 *cache_info = (__u32 *)RTA_DATA(ifa_cache_info);
+    addr.prefered_lft = cache_info[0];
+    addr.valid_lft = cache_info[1];
+  }
 
   if (has_local) {
     if (family == FAMILY_V4 &&
