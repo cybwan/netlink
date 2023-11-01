@@ -21,6 +21,7 @@
 #include <netlink/netlink.h>
 
 #include <attr.h>
+//#include <list.h>
 
 #define FAMILY_ALL AF_UNSPEC
 #define FAMILY_V4 AF_INET
@@ -330,5 +331,20 @@ static inline bool mac_pton(const char *s, __u8 *mac) {
   }
   return true;
 }
+
+#define NL_DEBUG 1
+
+#ifdef NL_DEBUG
+#define NL_DBG(LVL, FMT, ARG...)                                               \
+  do {                                                                         \
+    if (LVL <= nl_debug)                                                       \
+      fprintf(stderr, "DBG<" #LVL ">%20s:%-4u %s: " FMT, __FILE__, __LINE__,   \
+              __PRETTY_FUNCTION__, ##ARG);                                     \
+  } while (0)
+#else /* NL_DEBUG */
+#define NL_DBG(LVL, FMT, ARG...)                                               \
+  do {                                                                         \
+  } while (0)
+#endif /* NL_DEBUG */
 
 #endif /* __FLB_NLP_H__ */

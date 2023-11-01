@@ -2,7 +2,40 @@
 #include <nlp.h>
 #include <stdio.h>
 #include <stdlib.h>
+
 int main() {
+  nl_debug = 0;
+  // nl_rtattr_t *info = nl_rtattr_new(1, 0, NULL);
+
+  // nl_rtattr_t *info_kind = nl_rtattr_alloc();
+  // info_kind->rta_type = 2;
+
+  // nl_rtattr_t *info_data = nl_rtattr_alloc();
+  // info_data->rta_type = 3;
+
+  // nl_rtattr_add_child(info, info_data);
+  // nl_rtattr_add_child(info, info_kind);
+
+  // nl_rtattr_t *tm;
+
+  // nl_list_for_each_entry(tm, &info->children, nl_list) {
+  //   printf("%d\n", tm->rta_type);
+  // }
+
+  // printf("info len=[%d]\n", nl_rtattr_len(info));
+
+  // __u16 len = 0;
+  // __u8 *data = nl_rtattr_serialize(info, &len);
+  // for (int i = 0; i < len; i++) {
+  //   printf("%d ", data[i]);
+  // }
+  // printf("\n");
+
+  // // nl_rtattr_free(info_kind);
+  // nl_rtattr_free(info);
+  // // nl_rtattr_free(info_data);
+  // // nl_rtattr_free_child(&info->children);
+
   // nl_bridge_list();
   // nl_link_list();
   // nl_link_subscribe();
@@ -69,20 +102,24 @@ int main() {
   // nl_vlan_add(1);
   // nl_vlan_member_add(1, "vlan2", true);
 
+  int vlan_id = 1;
   char vlan_dev_name[IF_NAMESIZE];
   memset(vlan_dev_name, 0, IF_NAMESIZE);
-  // snprintf(vlan_dev_name, IF_NAMESIZE, "%s.%d", ifi_name, vlan_id);
-  snprintf(vlan_dev_name, IF_NAMESIZE, "%s", "demo");
+  snprintf(vlan_dev_name, IF_NAMESIZE, "%s.%d", "demo", vlan_id);
+  // snprintf(vlan_dev_name, IF_NAMESIZE, "%s", "demo");
   nl_link_t vlan_link;
   memset(&vlan_link, 0, sizeof(vlan_link));
   vlan_link.attrs.name = vlan_dev_name;
-  //vlan_link.attrs.parent_index = (__s32)5;
-  vlan_link.type.vlan = 1;
-  vlan_link.u.vlan.vlan_id = 12;
+  vlan_link.attrs.parent_index = (__s32)3;
+  // vlan_link.type.bridge = 1;
+  vlan_link.type.veth = 1;
+  vlan_link.attrs.mtu = 1340;
+  vlan_link.u.veth.peer_name = "veth";
   if (!nl_link_add(&vlan_link, NLM_F_CREATE | NLM_F_EXCL | NLM_F_ACK)) {
     printf("failed\n");
     return 0;
   }
-printf("success\n");
+  printf("success\n");
+
   return 0;
 }

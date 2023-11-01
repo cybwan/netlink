@@ -5,6 +5,26 @@
 
 #define RTA_PADDING(rta) RTA_ALIGN(sizeof(rta)) - sizeof(rta)
 
+typedef struct nl_rtattr {
+  struct nl_list_head nl_list;
+  struct nl_list_head children;
+
+  __u16 rta_type;
+  __u16 rta_val_len;
+  __u8 *rta_val;
+
+} nl_rtattr_t;
+
+nl_rtattr_t *nl_rtattr_alloc(void);
+void nl_rtattr_unlink(nl_rtattr_t *e);
+void nl_rtattr_free(nl_rtattr_t *e);
+void nl_rtattr_add_child(nl_rtattr_t *parent, nl_rtattr_t *child);
+void nl_rtattr_free_child(struct nl_list_head *head);
+__u16 nl_rtattr_len(nl_rtattr_t *e);
+__u8 *nl_rtattr_serialize(nl_rtattr_t *e, __u16 *length);
+
+nl_rtattr_t *nl_rtattr_new(__u16 rta_type, __u16 rta_val_len, __u8 *rta_val);
+
 typedef struct nl_ip {
   struct {
     __u8 v4 : 1;
@@ -128,6 +148,7 @@ typedef struct nl_link_type {
   __u32 vxlan : 1;
   __u32 bond : 1;
   __u32 ipvlan : 1;
+  __u32 ipvtap : 1;
   __u32 macvlan : 1;
   __u32 macvtap : 1;
   __u32 geneve : 1;
@@ -147,6 +168,7 @@ typedef struct nl_link_type {
   __u32 ipoib : 1;
   __u32 vcan : 1;
   __u32 vxcan : 1;
+  __u32 bareudp : 1;
 } nl_link_type_t;
 
 typedef struct nl_bond_ad_info {
@@ -163,6 +185,7 @@ typedef struct nl_link {
   union {
     struct {
       bool *multicast_snooping;
+      __u32 *age_time;
       __u32 *hello_time;
       bool *vlan_filtering;
     } bridge;
@@ -233,10 +256,26 @@ typedef struct nl_link {
     } ipvlan;
     struct {
       __u16 mode;
+      __u16 flag;
+    } ipvtap;
+    struct {
+      __u16 mode;
     } macvlan;
     struct {
       __u16 mode;
     } macvtap;
+    struct {
+      __u32 id;
+      nl_ip_t *remote;
+      __u8 ttl;
+      __u8 tos;
+      __u16 d_port;
+      __u8 udp_csum;
+      __u8 udp_zero_csum6_tx;
+      __u8 udp_zero_csum6_rx;
+      __u32 link;
+      bool flow_based;
+    } geneve;
     struct {
       __u32 ikey;
       __u32 okey;
@@ -339,6 +378,12 @@ typedef struct nl_link {
       __u32 owner;
       __u32 group;
     } tuntap;
+    struct {
+      __u16 port;
+      __u16 ether_type;
+      __u16 src_port_min;
+      bool multi_proto;
+    } bareudp;
   } u;
 } nl_link_t;
 
@@ -359,10 +404,14 @@ static inline char *link_type(nl_link_type_t *type) {
     return "bond";
   } else if (type->ipvlan) {
     return "ipvlan";
+  } else if (type->ipvtap) {
+    return "ipvtap";
   } else if (type->macvlan) {
     return "macvlan";
   } else if (type->macvtap) {
     return "macvtap";
+  } else if (type->geneve) {
+    return "geneve";
   } else if (type->gretap) {
     return "gretap";
   } else if (type->ip6gretap) {
@@ -387,6 +436,8 @@ static inline char *link_type(nl_link_type_t *type) {
     return "gtp";
   } else if (type->xfrm) {
     return "xfrm";
+  } else if (type->bareudp) {
+    return "bareudp";
   }
   return NULL;
 }
