@@ -21,8 +21,8 @@
 //#include <netlink/genl/genl.h>
 //#include <netlink/netlink.h>
 
-#include <netlink-types.h>
 #include <netlink-generic.h>
+#include <netlink-types.h>
 
 #include <attr.h>
 //#include <list.h>

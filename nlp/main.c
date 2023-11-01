@@ -4,7 +4,7 @@
 #include <stdlib.h>
 
 int main() {
-  //nl_debug = 0;
+  // nl_debug = 0;
   // nl_rtattr_t *info = nl_rtattr_new(1, 0, NULL);
 
   // nl_rtattr_t *info_kind = nl_rtattr_alloc();
@@ -100,25 +100,29 @@ int main() {
   // }
 
   // nl_vlan_add(1);
-  // nl_vlan_member_add(1, "vlan2", true);
+  // nl_vlan_member_add(1, "ens36", true);
+  // nl_vlan_member_del(1, "ens36", true);
+  // nl_vlan_del(1);
 
-  int vlan_id = 1;
-  char vlan_dev_name[IF_NAMESIZE];
-  memset(vlan_dev_name, 0, IF_NAMESIZE);
-  snprintf(vlan_dev_name, IF_NAMESIZE, "%s.%d", "demo", vlan_id);
-  // snprintf(vlan_dev_name, IF_NAMESIZE, "%s", "demo");
-  nl_link_t vlan_link;
-  memset(&vlan_link, 0, sizeof(vlan_link));
-  vlan_link.attrs.name = vlan_dev_name;
-  vlan_link.attrs.parent_index = (__s32)3;
-  // vlan_link.type.bridge = 1;
-  vlan_link.type.veth = 1;
-  vlan_link.attrs.mtu = 1340;
-  vlan_link.u.veth.peer_name = "veth";
-  if (!nl_link_add(&vlan_link, NLM_F_CREATE | NLM_F_EXCL | NLM_F_ACK)) {
-    printf("failed\n");
-    return 0;
-  }
+  // int vlan_id = 1;
+  // char vlan_dev_name[IF_NAMESIZE];
+  // memset(vlan_dev_name, 0, IF_NAMESIZE);
+  // snprintf(vlan_dev_name, IF_NAMESIZE, "%s.%d", "demo", vlan_id);
+  // // snprintf(vlan_dev_name, IF_NAMESIZE, "%s", "demo");
+  // nl_link_t vlan_link;
+  // memset(&vlan_link, 0, sizeof(vlan_link));
+  // vlan_link.attrs.name = vlan_dev_name;
+  // vlan_link.attrs.parent_index = (__s32)3;
+  // // vlan_link.type.bridge = 1;
+  // // vlan_link.type.veth = 1;
+  // // vlan_link.attrs.mtu = 1340;
+  // // vlan_link.u.veth.peer_name = "veth";
+  // vlan_link.type.vlan = 1;
+  // vlan_link.u.vlan.vlan_id = 2;
+  // if (!nl_link_add(&vlan_link, NLM_F_CREATE | NLM_F_EXCL | NLM_F_ACK)) {
+  //   printf("failed\n");
+  //   return 0;
+  // }
 
   printf("success\n");
 

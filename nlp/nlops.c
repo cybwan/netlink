@@ -805,8 +805,7 @@ bool nl_vlan_member_add(int vlan_id, const char *ifi_name, bool tagged) {
   char vlan_dev_name[IF_NAMESIZE];
   memset(vlan_dev_name, 0, IF_NAMESIZE);
   if (tagged) {
-    // snprintf(vlan_dev_name, IF_NAMESIZE, "%s.%d", ifi_name, vlan_id);
-    snprintf(vlan_dev_name, IF_NAMESIZE, "%s", "aaa");
+    snprintf(vlan_dev_name, IF_NAMESIZE, "%s.%d", ifi_name, vlan_id);
     nl_link_t vlan_link;
     memset(&vlan_link, 0, sizeof(vlan_link));
     vlan_link.attrs.name = vlan_dev_name;
@@ -824,11 +823,95 @@ bool nl_vlan_member_add(int vlan_id, const char *ifi_name, bool tagged) {
   memset(&vlan_dev_link, 0, sizeof(vlan_dev_link));
   nl_link_get_by_name(vlan_dev_name, &vlan_dev_link);
   if (vlan_dev_link.index == 0) {
-    printf("A3 ifi_name=[%s] vlan_dev_name=[%s]\n", ifi_name, vlan_dev_name);
     return false;
   }
   nl_link_up(vlan_dev_link.index);
   return nl_link_master(vlan_dev_link.index, vlan_bridge.index);
+}
+
+bool nl_vlan_member_del(int vlan_id, const char *ifi_name, bool tagged) {
+  char vlan_bridge_name[IF_NAMESIZE];
+  memset(vlan_bridge_name, 0, IF_NAMESIZE);
+  snprintf(vlan_bridge_name, IF_NAMESIZE, "vlan%d", vlan_id);
+  nl_port_mod_t vlan_bridge;
+  memset(&vlan_bridge, 0, sizeof(vlan_bridge));
+  nl_link_get_by_name(vlan_bridge_name, &vlan_bridge);
+  if (vlan_bridge.index == 0) {
+    return false;
+  }
+  nl_port_mod_t parent_link;
+  memset(&parent_link, 0, sizeof(parent_link));
+  nl_link_get_by_name(ifi_name, &parent_link);
+  if (parent_link.index == 0) {
+    return false;
+  }
+
+  char vlan_dev_name[IF_NAMESIZE];
+  memset(vlan_dev_name, 0, IF_NAMESIZE);
+  if (tagged) {
+    snprintf(vlan_dev_name, IF_NAMESIZE, "%s.%d", ifi_name, vlan_id);
+  } else {
+    snprintf(vlan_dev_name, IF_NAMESIZE, "%s", ifi_name);
+  }
+
+  nl_port_mod_t vlan_dev_link;
+  memset(&vlan_dev_link, 0, sizeof(vlan_dev_link));
+  nl_link_get_by_name(vlan_dev_name, &vlan_dev_link);
+  if (vlan_dev_link.index == 0) {
+    return false;
+  }
+  
+  bool ret = nl_link_no_master(vlan_dev_link.index);
+  if (ret && tagged){
+    return nl_link_del(vlan_dev_link.index);
+  }
+  return ret;
+}
+
+bool nl_vxlan_bridge_add(int vxlan_id, const char *ep_ifi_name) {
+  char vxlan_bridge_name[IF_NAMESIZE];
+  memset(vxlan_bridge_name, 0, IF_NAMESIZE);
+  snprintf(vxlan_bridge_name, IF_NAMESIZE, "vxlan%d", vxlan_id);
+  nl_port_mod_t vxlan_bridge;
+  memset(&vxlan_bridge, 0, sizeof(vxlan_bridge));
+  nl_link_get_by_name(vxlan_bridge_name, &vxlan_bridge);
+  if (vxlan_bridge.index > 0) {
+    return false;
+  }
+  nl_port_mod_t endpoint_link;
+  memset(&endpoint_link, 0, sizeof(endpoint_link));
+  nl_link_get_by_name(ep_ifi_name, &endpoint_link);
+  if (endpoint_link.index == 0) {
+    return false;
+  }
+
+  return true;
+
+  // char vlan_dev_name[IF_NAMESIZE];
+  // memset(vlan_dev_name, 0, IF_NAMESIZE);
+  // if (tagged) {
+  //   snprintf(vlan_dev_name, IF_NAMESIZE, "%s.%d", ifi_name, vlan_id);
+  //   nl_link_t vlan_link;
+  //   memset(&vlan_link, 0, sizeof(vlan_link));
+  //   vlan_link.attrs.name = vlan_dev_name;
+  //   vlan_link.attrs.parent_index = (__s32)parent_link.index;
+  //   vlan_link.type.vlan = 1;
+  //   vlan_link.u.vlan.vlan_id = vlan_id;
+  //   if (!nl_link_add(&vlan_link, NLM_F_CREATE | NLM_F_EXCL | NLM_F_ACK)) {
+  //     return false;
+  //   }
+  // } else {
+  //   snprintf(vlan_dev_name, IF_NAMESIZE, "%s", ifi_name);
+  // }
+
+  // nl_port_mod_t vlan_dev_link;
+  // memset(&vlan_dev_link, 0, sizeof(vlan_dev_link));
+  // nl_link_get_by_name(vlan_dev_name, &vlan_dev_link);
+  // if (vlan_dev_link.index == 0) {
+  //   return false;
+  // }
+  // nl_link_up(vlan_dev_link.index);
+  // return nl_link_master(vlan_dev_link.index, vlan_bridge.index);
 }
 
 #define IFF_TUN 0x1
