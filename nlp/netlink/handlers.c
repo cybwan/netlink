@@ -24,10 +24,10 @@
  */
 
 #include <netlink-local.h>
+#include <netlink/handlers.h>
+#include <netlink/msg.h>
 #include <netlink/netlink.h>
 #include <netlink/utils.h>
-#include <netlink/msg.h>
-#include <netlink/handlers.h>
 
 /**
  * @name Callback Handle Management
@@ -39,26 +39,25 @@
  * @arg kind		callback kind to be used for initialization
  * @return Newly allocated callback handle or NULL
  */
-struct nl_cb *nl_cb_alloc(enum nl_cb_kind kind)
-{
-	int i;
-	struct nl_cb *cb;
+struct nl_cb *nl_cb_alloc(enum nl_cb_kind kind) {
+  int i;
+  struct nl_cb *cb;
 
-	if (kind < 0 || kind > NL_CB_KIND_MAX)
-		return NULL;
+  if (kind < 0 || kind > NL_CB_KIND_MAX)
+    return NULL;
 
-	cb = calloc(1, sizeof(*cb));
-	if (!cb)
-		return NULL;
+  cb = calloc(1, sizeof(*cb));
+  if (!cb)
+    return NULL;
 
-	cb->cb_refcnt = 1;
+  cb->cb_refcnt = 1;
 
-	for (i = 0; i <= NL_CB_TYPE_MAX; i++)
-		nl_cb_set(cb, i, kind, NULL, NULL);
+  for (i = 0; i <= NL_CB_TYPE_MAX; i++)
+    nl_cb_set(cb, i, kind, NULL, NULL);
 
-	nl_cb_err(cb, kind, NULL, NULL);
+  nl_cb_err(cb, kind, NULL, NULL);
 
-	return cb;
+  return cb;
 }
 
 /**
@@ -67,32 +66,30 @@ struct nl_cb *nl_cb_alloc(enum nl_cb_kind kind)
  * @return Newly allocated callback handle being a duplicate of
  *         orig or NULL
  */
-struct nl_cb *nl_cb_clone(struct nl_cb *orig)
-{
-	struct nl_cb *cb;
-	
-	cb = nl_cb_alloc(NL_CB_DEFAULT);
-	if (!cb)
-		return NULL;
+struct nl_cb *nl_cb_clone(struct nl_cb *orig) {
+  struct nl_cb *cb;
 
-	memcpy(cb, orig, sizeof(*orig));
-	cb->cb_refcnt = 1;
+  cb = nl_cb_alloc(NL_CB_DEFAULT);
+  if (!cb)
+    return NULL;
 
-	return cb;
+  memcpy(cb, orig, sizeof(*orig));
+  cb->cb_refcnt = 1;
+
+  return cb;
 }
 
-void nl_cb_put(struct nl_cb *cb)
-{
-	if (!cb)
-		return;
+void nl_cb_put(struct nl_cb *cb) {
+  if (!cb)
+    return;
 
-	cb->cb_refcnt--;
+  cb->cb_refcnt--;
 
-	if (cb->cb_refcnt < 0)
-		BUG();
+  if (cb->cb_refcnt < 0)
+    BUG();
 
-	if (cb->cb_refcnt <= 0)
-		free(cb);
+  if (cb->cb_refcnt <= 0)
+    free(cb);
 }
 
 /** @} */
@@ -103,7 +100,7 @@ void nl_cb_put(struct nl_cb *cb)
  */
 
 /**
- * Set up a callback 
+ * Set up a callback
  * @arg cb		callback set
  * @arg type		callback to modify
  * @arg kind		kind of implementation
@@ -113,20 +110,19 @@ void nl_cb_put(struct nl_cb *cb)
  * @return 0 on success or a negative error code
  */
 int nl_cb_set(struct nl_cb *cb, enum nl_cb_type type, enum nl_cb_kind kind,
-	      nl_recvmsg_msg_cb_t func, void *arg)
-{
-	if (type < 0 || type > NL_CB_TYPE_MAX)
-		return -NLE_RANGE;
+              nl_recvmsg_msg_cb_t func, void *arg) {
+  if (type < 0 || type > NL_CB_TYPE_MAX)
+    return -NLE_RANGE;
 
-	if (kind < 0 || kind > NL_CB_KIND_MAX)
-		return -NLE_RANGE;
+  if (kind < 0 || kind > NL_CB_KIND_MAX)
+    return -NLE_RANGE;
 
-	if (kind == NL_CB_CUSTOM) {
-		cb->cb_set[type] = func;
-		cb->cb_args[type] = arg;
-	}
+  if (kind == NL_CB_CUSTOM) {
+    cb->cb_set[type] = func;
+    cb->cb_args[type] = arg;
+  }
 
-	return 0;
+  return 0;
 }
 
 /**
@@ -136,18 +132,17 @@ int nl_cb_set(struct nl_cb *cb, enum nl_cb_type type, enum nl_cb_kind kind,
  * @arg func		callback function
  * @arg arg		argument to be passed to callback function
  */
-int nl_cb_err(struct nl_cb *cb, enum nl_cb_kind kind,
-	      nl_recvmsg_err_cb_t func, void *arg)
-{
-	if (kind < 0 || kind > NL_CB_KIND_MAX)
-		return -NLE_RANGE;
+int nl_cb_err(struct nl_cb *cb, enum nl_cb_kind kind, nl_recvmsg_err_cb_t func,
+              void *arg) {
+  if (kind < 0 || kind > NL_CB_KIND_MAX)
+    return -NLE_RANGE;
 
-	if (kind == NL_CB_CUSTOM) {
-		cb->cb_err = func;
-		cb->cb_err_arg = arg;
-	}
+  if (kind == NL_CB_CUSTOM) {
+    cb->cb_err = func;
+    cb->cb_err_arg = arg;
+  }
 
-	return 0;
+  return 0;
 }
 
 /** @} */

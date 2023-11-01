@@ -70,16 +70,16 @@
  * // Close the socket first to release kernel memory
  * nl_close(sk);
  * @endcode
- * 
+ *
  * @{
  */
 
 #include <netlink-local.h>
-#include <netlink/netlink.h>
-#include <netlink/utils.h>
+#include <netlink/attr.h>
 #include <netlink/handlers.h>
 #include <netlink/msg.h>
-#include <netlink/attr.h>
+#include <netlink/netlink.h>
+#include <netlink/utils.h>
 
 /**
  * @name Connection Management
@@ -96,75 +96,71 @@
  *
  * @return 0 on success or a negative error code.
  */
-int nl_connect(struct nl_sock *sk, int protocol)
-{
-	int err;
-	int flags = 0;
-	socklen_t addrlen;
+int nl_connect(struct nl_sock *sk, int protocol) {
+  int err;
+  int flags = 0;
+  socklen_t addrlen;
 
 #ifdef SOCK_CLOEXEC
-	flags = SOCK_CLOEXEC;
+  flags = SOCK_CLOEXEC;
 #endif
 
-	sk->s_fd = socket(AF_NETLINK, SOCK_RAW | flags, protocol);
-	if (sk->s_fd < 0) {
-		err = -nl_syserr2nlerr(errno);
-		goto errout;
-	}
+  sk->s_fd = socket(AF_NETLINK, SOCK_RAW | flags, protocol);
+  if (sk->s_fd < 0) {
+    err = -nl_syserr2nlerr(errno);
+    goto errout;
+  }
 
-	if (!(sk->s_flags & NL_SOCK_BUFSIZE_SET)) {
-		err = nl_socket_set_buffer_size(sk, 0, 0);
-		if (err < 0)
-			goto errout;
-	}
+  if (!(sk->s_flags & NL_SOCK_BUFSIZE_SET)) {
+    err = nl_socket_set_buffer_size(sk, 0, 0);
+    if (err < 0)
+      goto errout;
+  }
 
-	err = bind(sk->s_fd, (struct sockaddr*) &sk->s_local,
-		   sizeof(sk->s_local));
-	if (err < 0) {
-		err = -nl_syserr2nlerr(errno);
-		goto errout;
-	}
+  err = bind(sk->s_fd, (struct sockaddr *)&sk->s_local, sizeof(sk->s_local));
+  if (err < 0) {
+    err = -nl_syserr2nlerr(errno);
+    goto errout;
+  }
 
-	addrlen = sizeof(sk->s_local);
-	err = getsockname(sk->s_fd, (struct sockaddr *) &sk->s_local,
-			  &addrlen);
-	if (err < 0) {
-		err = -nl_syserr2nlerr(errno);
-		goto errout;
-	}
+  addrlen = sizeof(sk->s_local);
+  err = getsockname(sk->s_fd, (struct sockaddr *)&sk->s_local, &addrlen);
+  if (err < 0) {
+    err = -nl_syserr2nlerr(errno);
+    goto errout;
+  }
 
-	if (addrlen != sizeof(sk->s_local)) {
-		err = -NLE_NOADDR;
-		goto errout;
-	}
+  if (addrlen != sizeof(sk->s_local)) {
+    err = -NLE_NOADDR;
+    goto errout;
+  }
 
-	if (sk->s_local.nl_family != AF_NETLINK) {
-		err = -NLE_AF_NOSUPPORT;
-		goto errout;
-	}
+  if (sk->s_local.nl_family != AF_NETLINK) {
+    err = -NLE_AF_NOSUPPORT;
+    goto errout;
+  }
 
-	sk->s_proto = protocol;
+  sk->s_proto = protocol;
 
-	return 0;
+  return 0;
 errout:
-	close(sk->s_fd);
-	sk->s_fd = -1;
+  close(sk->s_fd);
+  sk->s_fd = -1;
 
-	return err;
+  return err;
 }
 
 /**
  * Close/Disconnect netlink socket.
  * @arg sk		Netlink socket.
  */
-void nl_close(struct nl_sock *sk)
-{
-	if (sk->s_fd >= 0) {
-		close(sk->s_fd);
-		sk->s_fd = -1;
-	}
+void nl_close(struct nl_sock *sk) {
+  if (sk->s_fd >= 0) {
+    close(sk->s_fd);
+    sk->s_fd = -1;
+  }
 
-	sk->s_proto = 0;
+  sk->s_proto = 0;
 }
 
 /** @} */
@@ -181,16 +177,15 @@ void nl_close(struct nl_sock *sk)
  * @arg size		Size of data buffer.
  * @return Number of characters written on success or a negative error code.
  */
-int nl_sendto(struct nl_sock *sk, void *buf, size_t size)
-{
-	int ret;
+int nl_sendto(struct nl_sock *sk, void *buf, size_t size) {
+  int ret;
 
-	ret = sendto(sk->s_fd, buf, size, 0, (struct sockaddr *)
-		     &sk->s_peer, sizeof(sk->s_peer));
-	if (ret < 0)
-		return -nl_syserr2nlerr(errno);
+  ret = sendto(sk->s_fd, buf, size, 0, (struct sockaddr *)&sk->s_peer,
+               sizeof(sk->s_peer));
+  if (ret < 0)
+    return -nl_syserr2nlerr(errno);
 
-	return ret;
+  return ret;
 }
 
 /**
@@ -200,33 +195,31 @@ int nl_sendto(struct nl_sock *sk, void *buf, size_t size)
  * @arg hdr		Sendmsg() message header.
  * @return Number of characters sent on sucess or a negative error code.
  */
-int nl_sendmsg(struct nl_sock *sk, struct nl_msg *msg, struct msghdr *hdr)
-{
-	struct nl_cb *cb;
-	int ret;
+int nl_sendmsg(struct nl_sock *sk, struct nl_msg *msg, struct msghdr *hdr) {
+  struct nl_cb *cb;
+  int ret;
 
-	struct iovec iov = {
-		.iov_base = (void *) nlmsg_hdr(msg),
-		.iov_len = nlmsg_hdr(msg)->nlmsg_len,
-	};
+  struct iovec iov = {
+      .iov_base = (void *)nlmsg_hdr(msg),
+      .iov_len = nlmsg_hdr(msg)->nlmsg_len,
+  };
 
-	hdr->msg_iov = &iov;
-	hdr->msg_iovlen = 1;
+  hdr->msg_iov = &iov;
+  hdr->msg_iovlen = 1;
 
-	nlmsg_set_src(msg, &sk->s_local);
+  nlmsg_set_src(msg, &sk->s_local);
 
-	cb = sk->s_cb;
-	if (cb->cb_set[NL_CB_MSG_OUT])
-		if (nl_cb_call(cb, NL_CB_MSG_OUT, msg) != NL_OK)
-			return 0;
+  cb = sk->s_cb;
+  if (cb->cb_set[NL_CB_MSG_OUT])
+    if (nl_cb_call(cb, NL_CB_MSG_OUT, msg) != NL_OK)
+      return 0;
 
-	ret = sendmsg(sk->s_fd, hdr, 0);
-	if (ret < 0)
-		return -nl_syserr2nlerr(errno);
+  ret = sendmsg(sk->s_fd, hdr, 0);
+  if (ret < 0)
+    return -nl_syserr2nlerr(errno);
 
-	return ret;
+  return ret;
 }
-
 
 /**
  * Send netlink message.
@@ -235,40 +228,39 @@ int nl_sendmsg(struct nl_sock *sk, struct nl_msg *msg, struct msghdr *hdr)
  * @see nl_sendmsg()
  * @return Number of characters sent on success or a negative error code.
  */
-int nl_send(struct nl_sock *sk, struct nl_msg *msg)
-{
-	struct sockaddr_nl *dst;
-	struct ucred *creds;
-	
-	struct msghdr hdr = {
-		.msg_name = (void *) &sk->s_peer,
-		.msg_namelen = sizeof(struct sockaddr_nl),
-	};
+int nl_send(struct nl_sock *sk, struct nl_msg *msg) {
+  struct sockaddr_nl *dst;
+  struct ucred *creds;
 
-	/* Overwrite destination if specified in the message itself, defaults
-	 * to the peer address of the socket.
-	 */
-	dst = nlmsg_get_dst(msg);
-	if (dst->nl_family == AF_NETLINK)
-		hdr.msg_name = dst;
+  struct msghdr hdr = {
+      .msg_name = (void *)&sk->s_peer,
+      .msg_namelen = sizeof(struct sockaddr_nl),
+  };
 
-	/* Add credentials if present. */
-	creds = nlmsg_get_creds(msg);
-	if (creds != NULL) {
-		char buf[CMSG_SPACE(sizeof(struct ucred))];
-		struct cmsghdr *cmsg;
+  /* Overwrite destination if specified in the message itself, defaults
+   * to the peer address of the socket.
+   */
+  dst = nlmsg_get_dst(msg);
+  if (dst->nl_family == AF_NETLINK)
+    hdr.msg_name = dst;
 
-		hdr.msg_control = buf;
-		hdr.msg_controllen = sizeof(buf);
+  /* Add credentials if present. */
+  creds = nlmsg_get_creds(msg);
+  if (creds != NULL) {
+    char buf[CMSG_SPACE(sizeof(struct ucred))];
+    struct cmsghdr *cmsg;
 
-		cmsg = CMSG_FIRSTHDR(&hdr);
-		cmsg->cmsg_level = SOL_SOCKET;
-		cmsg->cmsg_type = SCM_CREDENTIALS;
-		cmsg->cmsg_len = CMSG_LEN(sizeof(struct ucred));
-		memcpy(CMSG_DATA(cmsg), creds, sizeof(struct ucred));
-	}
+    hdr.msg_control = buf;
+    hdr.msg_controllen = sizeof(buf);
 
-	return nl_sendmsg(sk, msg, &hdr);
+    cmsg = CMSG_FIRSTHDR(&hdr);
+    cmsg->cmsg_level = SOL_SOCKET;
+    cmsg->cmsg_type = SCM_CREDENTIALS;
+    cmsg->cmsg_len = CMSG_LEN(sizeof(struct ucred));
+    memcpy(CMSG_DATA(cmsg), creds, sizeof(struct ucred));
+  }
+
+  return nl_sendmsg(sk, msg, &hdr);
 }
 
 /**
@@ -283,30 +275,29 @@ int nl_send(struct nl_sock *sk, struct nl_msg *msg)
  * @see nl_send()
  * @return Number of characters sent or a negative error code.
  */
-int nl_send_auto_complete(struct nl_sock *sk, struct nl_msg *msg)
-{
-	struct nlmsghdr *nlh;
-	struct nl_cb *cb = sk->s_cb;
+int nl_send_auto_complete(struct nl_sock *sk, struct nl_msg *msg) {
+  struct nlmsghdr *nlh;
+  struct nl_cb *cb = sk->s_cb;
 
-	nlh = nlmsg_hdr(msg);
-	if (nlh->nlmsg_pid == 0)
-		nlh->nlmsg_pid = sk->s_local.nl_pid;
+  nlh = nlmsg_hdr(msg);
+  if (nlh->nlmsg_pid == 0)
+    nlh->nlmsg_pid = sk->s_local.nl_pid;
 
-	if (nlh->nlmsg_seq == 0)
-		nlh->nlmsg_seq = sk->s_seq_next++;
+  if (nlh->nlmsg_seq == 0)
+    nlh->nlmsg_seq = sk->s_seq_next++;
 
-	if (msg->nm_protocol == -1)
-		msg->nm_protocol = sk->s_proto;
-	
-	nlh->nlmsg_flags |= NLM_F_REQUEST;
+  if (msg->nm_protocol == -1)
+    msg->nm_protocol = sk->s_proto;
 
-	if (!(sk->s_flags & NL_NO_AUTO_ACK))
-		nlh->nlmsg_flags |= NLM_F_ACK;
+  nlh->nlmsg_flags |= NLM_F_REQUEST;
 
-	if (cb->cb_send_ow)
-		return cb->cb_send_ow(sk, msg);
-	else
-		return nl_send(sk, msg);
+  if (!(sk->s_flags & NL_NO_AUTO_ACK))
+    nlh->nlmsg_flags |= NLM_F_ACK;
+
+  if (cb->cb_send_ow)
+    return cb->cb_send_ow(sk, msg);
+  else
+    return nl_send(sk, msg);
 }
 
 /**
@@ -324,27 +315,25 @@ int nl_send_auto_complete(struct nl_sock *sk, struct nl_msg *msg)
  * @return Number of characters sent on success or a negative error code.
  */
 int nl_send_simple(struct nl_sock *sk, int type, int flags, void *buf,
-		   size_t size)
-{
-	int err;
-	struct nl_msg *msg;
+                   size_t size) {
+  int err;
+  struct nl_msg *msg;
 
-	msg = nlmsg_alloc_simple(type, flags);
-	if (!msg)
-		return -NLE_NOMEM;
+  msg = nlmsg_alloc_simple(type, flags);
+  if (!msg)
+    return -NLE_NOMEM;
 
-	if (buf && size) {
-		err = nlmsg_append(msg, buf, size, NLMSG_ALIGNTO);
-		if (err < 0)
-			goto errout;
-	}
-	
+  if (buf && size) {
+    err = nlmsg_append(msg, buf, size, NLMSG_ALIGNTO);
+    if (err < 0)
+      goto errout;
+  }
 
-	err = nl_send_auto_complete(sk, msg);
+  err = nl_send_auto_complete(sk, msg);
 errout:
-	nlmsg_free(msg);
+  nlmsg_free(msg);
 
-	return err;
+  return err;
 }
 
 /** @} */
@@ -373,298 +362,292 @@ errout:
  *
  * @return Number of octets read, 0 on EOF or a negative error code.
  */
-int nl_recv(struct nl_sock *sk, struct sockaddr_nl *nla,
-	    unsigned char **buf, struct ucred **creds)
-{
-	int n;
-	int flags = 0;
-	static int page_size = 0;
-	struct iovec iov;
-	struct msghdr msg = {
-		.msg_name = (void *) nla,
-		.msg_namelen = sizeof(struct sockaddr_nl),
-		.msg_iov = &iov,
-		.msg_iovlen = 1,
-		.msg_control = NULL,
-		.msg_controllen = 0,
-		.msg_flags = 0,
-	};
-	struct cmsghdr *cmsg;
+int nl_recv(struct nl_sock *sk, struct sockaddr_nl *nla, unsigned char **buf,
+            struct ucred **creds) {
+  int n;
+  int flags = 0;
+  static int page_size = 0;
+  struct iovec iov;
+  struct msghdr msg = {
+      .msg_name = (void *)nla,
+      .msg_namelen = sizeof(struct sockaddr_nl),
+      .msg_iov = &iov,
+      .msg_iovlen = 1,
+      .msg_control = NULL,
+      .msg_controllen = 0,
+      .msg_flags = 0,
+  };
+  struct cmsghdr *cmsg;
 
-	if (sk->s_flags & NL_MSG_PEEK)
-		flags |= MSG_PEEK;
+  if (sk->s_flags & NL_MSG_PEEK)
+    flags |= MSG_PEEK;
 
-	if (page_size == 0)
-		page_size = getpagesize() * 4;
+  if (page_size == 0)
+    page_size = getpagesize() * 4;
 
-	iov.iov_len = page_size;
-	iov.iov_base = *buf = calloc(1, iov.iov_len);
-	if (!*buf)
-		return -nl_syserr2nlerr(errno);
+  iov.iov_len = page_size;
+  iov.iov_base = *buf = calloc(1, iov.iov_len);
+  if (!*buf)
+    return -nl_syserr2nlerr(errno);
 
-	if (sk->s_flags & NL_SOCK_PASSCRED) {
-		msg.msg_controllen = CMSG_SPACE(sizeof(struct ucred));
-		msg.msg_control = calloc(1, msg.msg_controllen);
-	}
+  if (sk->s_flags & NL_SOCK_PASSCRED) {
+    msg.msg_controllen = CMSG_SPACE(sizeof(struct ucred));
+    msg.msg_control = calloc(1, msg.msg_controllen);
+  }
 retry:
 
-	n = recvmsg(sk->s_fd, &msg, flags);
-	if (!n)
-		goto abort;
-	else if (n < 0) {
-		if (errno == EINTR) {
-			NL_DBG(3, "recvmsg() returned EINTR, retrying\n");
-			goto retry;
-		} else if (errno == EAGAIN) {
-			NL_DBG(3, "recvmsg() returned EAGAIN, aborting\n");
-			goto abort;
-		} else {
-			free(msg.msg_control);
-			free(*buf);
-			*buf = NULL;
-			return -nl_syserr2nlerr(errno);
-		}
-	}
+  n = recvmsg(sk->s_fd, &msg, flags);
+  if (!n)
+    goto abort;
+  else if (n < 0) {
+    if (errno == EINTR) {
+      NL_DBG(3, "recvmsg() returned EINTR, retrying\n");
+      goto retry;
+    } else if (errno == EAGAIN) {
+      NL_DBG(3, "recvmsg() returned EAGAIN, aborting\n");
+      goto abort;
+    } else {
+      free(msg.msg_control);
+      free(*buf);
+      *buf = NULL;
+      return -nl_syserr2nlerr(errno);
+    }
+  }
 
-	if (iov.iov_len < (size_t) n ||
-	    msg.msg_flags & MSG_TRUNC) {
-		/* Provided buffer is not long enough, enlarge it
-		 * and try again. */
-		iov.iov_len *= 2;
-		iov.iov_base = *buf = realloc(*buf, iov.iov_len);
-		goto retry;
-	} else if (msg.msg_flags & MSG_CTRUNC) {
-		msg.msg_controllen *= 2;
-		msg.msg_control = realloc(msg.msg_control, msg.msg_controllen);
-		goto retry;
-	} else if (flags != 0) {
-		/* Buffer is big enough, do the actual reading */
-		flags = 0;
-		goto retry;
-	}
+  if (iov.iov_len < (size_t)n || msg.msg_flags & MSG_TRUNC) {
+    /* Provided buffer is not long enough, enlarge it
+     * and try again. */
+    iov.iov_len *= 2;
+    iov.iov_base = *buf = realloc(*buf, iov.iov_len);
+    goto retry;
+  } else if (msg.msg_flags & MSG_CTRUNC) {
+    msg.msg_controllen *= 2;
+    msg.msg_control = realloc(msg.msg_control, msg.msg_controllen);
+    goto retry;
+  } else if (flags != 0) {
+    /* Buffer is big enough, do the actual reading */
+    flags = 0;
+    goto retry;
+  }
 
-	if (msg.msg_namelen != sizeof(struct sockaddr_nl)) {
-		free(msg.msg_control);
-		free(*buf);
-		*buf = NULL;
-		return -NLE_NOADDR;
-	}
+  if (msg.msg_namelen != sizeof(struct sockaddr_nl)) {
+    free(msg.msg_control);
+    free(*buf);
+    *buf = NULL;
+    return -NLE_NOADDR;
+  }
 
-	for (cmsg = CMSG_FIRSTHDR(&msg); cmsg; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
-		if (cmsg->cmsg_level == SOL_SOCKET &&
-		    cmsg->cmsg_type == SCM_CREDENTIALS) {
-			*creds = calloc(1, sizeof(struct ucred));
-			memcpy(*creds, CMSG_DATA(cmsg), sizeof(struct ucred));
-			break;
-		}
-	}
+  for (cmsg = CMSG_FIRSTHDR(&msg); cmsg; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
+    if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SCM_CREDENTIALS) {
+      *creds = calloc(1, sizeof(struct ucred));
+      memcpy(*creds, CMSG_DATA(cmsg), sizeof(struct ucred));
+      break;
+    }
+  }
 
-	free(msg.msg_control);
-	return n;
+  free(msg.msg_control);
+  return n;
 
 abort:
-	free(msg.msg_control);
-	free(*buf);
-	*buf = NULL;
-	return 0;
+  free(msg.msg_control);
+  free(*buf);
+  *buf = NULL;
+  return 0;
 }
 
-#define NL_CB_CALL(cb, type, msg) \
-do { \
-	err = nl_cb_call(cb, type, msg); \
-	switch (err) { \
-	case NL_OK: \
-		err = 0; \
-		break; \
-	case NL_SKIP: \
-		goto skip; \
-	case NL_STOP: \
-		goto stop; \
-	default: \
-		goto out; \
-	} \
-} while (0)
+#define NL_CB_CALL(cb, type, msg)                                              \
+  do {                                                                         \
+    err = nl_cb_call(cb, type, msg);                                           \
+    switch (err) {                                                             \
+    case NL_OK:                                                                \
+      err = 0;                                                                 \
+      break;                                                                   \
+    case NL_SKIP:                                                              \
+      goto skip;                                                               \
+    case NL_STOP:                                                              \
+      goto stop;                                                               \
+    default:                                                                   \
+      goto out;                                                                \
+    }                                                                          \
+  } while (0)
 
-static int recvmsgs(struct nl_sock *sk, struct nl_cb *cb)
-{
-	int n, err = 0, multipart = 0;
-	unsigned char *buf = NULL;
-	struct nlmsghdr *hdr;
-	struct sockaddr_nl nla = {0};
-	struct nl_msg *msg = NULL;
-	struct ucred *creds = NULL;
+static int recvmsgs(struct nl_sock *sk, struct nl_cb *cb) {
+  int n, err = 0, multipart = 0;
+  unsigned char *buf = NULL;
+  struct nlmsghdr *hdr;
+  struct sockaddr_nl nla = {0};
+  struct nl_msg *msg = NULL;
+  struct ucred *creds = NULL;
 
 continue_reading:
-	NL_DBG(3, "Attempting to read from %p\n", sk);
-	if (cb->cb_recv_ow)
-		n = cb->cb_recv_ow(sk, &nla, &buf, &creds);
-	else
-		n = nl_recv(sk, &nla, &buf, &creds);
+  NL_DBG(3, "Attempting to read from %p\n", sk);
+  if (cb->cb_recv_ow)
+    n = cb->cb_recv_ow(sk, &nla, &buf, &creds);
+  else
+    n = nl_recv(sk, &nla, &buf, &creds);
 
-	if (n <= 0)
-		return n;
+  if (n <= 0)
+    return n;
 
-	/* make clang analyzer happy */
-	assert(n > 0 && buf);
+  /* make clang analyzer happy */
+  assert(n > 0 && buf);
 
-	NL_DBG(3, "recvmsgs(%p): Read %d bytes\n", sk, n);
+  NL_DBG(3, "recvmsgs(%p): Read %d bytes\n", sk, n);
 
-	hdr = (struct nlmsghdr *) buf;
-	while (nlmsg_ok(hdr, n)) {
-		NL_DBG(3, "recgmsgs(%p): Processing valid message...\n", sk);
+  hdr = (struct nlmsghdr *)buf;
+  while (nlmsg_ok(hdr, n)) {
+    NL_DBG(3, "recgmsgs(%p): Processing valid message...\n", sk);
 
-		nlmsg_free(msg);
-		msg = nlmsg_convert(hdr);
-		if (!msg) {
-			err = -NLE_NOMEM;
-			goto out;
-		}
+    nlmsg_free(msg);
+    msg = nlmsg_convert(hdr);
+    if (!msg) {
+      err = -NLE_NOMEM;
+      goto out;
+    }
 
-		nlmsg_set_proto(msg, sk->s_proto);
-		nlmsg_set_src(msg, &nla);
-		if (creds)
-			nlmsg_set_creds(msg, creds);
+    nlmsg_set_proto(msg, sk->s_proto);
+    nlmsg_set_src(msg, &nla);
+    if (creds)
+      nlmsg_set_creds(msg, creds);
 
-		/* Raw callback is the first, it gives the most control
-		 * to the user and he can do his very own parsing. */
-		if (cb->cb_set[NL_CB_MSG_IN])
-			NL_CB_CALL(cb, NL_CB_MSG_IN, msg);
+    /* Raw callback is the first, it gives the most control
+     * to the user and he can do his very own parsing. */
+    if (cb->cb_set[NL_CB_MSG_IN])
+      NL_CB_CALL(cb, NL_CB_MSG_IN, msg);
 
-		/* Sequence number checking. The check may be done by
-		 * the user, otherwise a very simple check is applied
-		 * enforcing strict ordering */
-		if (cb->cb_set[NL_CB_SEQ_CHECK])
-			NL_CB_CALL(cb, NL_CB_SEQ_CHECK, msg);
-		else if (hdr->nlmsg_seq != sk->s_seq_expect) {
-			if (cb->cb_set[NL_CB_INVALID])
-				NL_CB_CALL(cb, NL_CB_INVALID, msg);
-			else {
-				err = -NLE_SEQ_MISMATCH;
-				goto out;
-			}
-		}
+    /* Sequence number checking. The check may be done by
+     * the user, otherwise a very simple check is applied
+     * enforcing strict ordering */
+    if (cb->cb_set[NL_CB_SEQ_CHECK])
+      NL_CB_CALL(cb, NL_CB_SEQ_CHECK, msg);
+    else if (hdr->nlmsg_seq != sk->s_seq_expect) {
+      if (cb->cb_set[NL_CB_INVALID])
+        NL_CB_CALL(cb, NL_CB_INVALID, msg);
+      else {
+        err = -NLE_SEQ_MISMATCH;
+        goto out;
+      }
+    }
 
-		if (hdr->nlmsg_type == NLMSG_DONE ||
-		    hdr->nlmsg_type == NLMSG_ERROR ||
-		    hdr->nlmsg_type == NLMSG_NOOP ||
-		    hdr->nlmsg_type == NLMSG_OVERRUN) {
-			/* We can't check for !NLM_F_MULTI since some netlink
-			 * users in the kernel are broken. */
-			sk->s_seq_expect++;
-			NL_DBG(3, "recvmsgs(%p): Increased expected " \
-			       "sequence number to %d\n",
-			       sk, sk->s_seq_expect);
-		}
+    if (hdr->nlmsg_type == NLMSG_DONE || hdr->nlmsg_type == NLMSG_ERROR ||
+        hdr->nlmsg_type == NLMSG_NOOP || hdr->nlmsg_type == NLMSG_OVERRUN) {
+      /* We can't check for !NLM_F_MULTI since some netlink
+       * users in the kernel are broken. */
+      sk->s_seq_expect++;
+      NL_DBG(3,
+             "recvmsgs(%p): Increased expected "
+             "sequence number to %d\n",
+             sk, sk->s_seq_expect);
+    }
 
-		if (hdr->nlmsg_flags & NLM_F_MULTI)
-			multipart = 1;
-	
-		/* Other side wishes to see an ack for this message */
-		if (hdr->nlmsg_flags & NLM_F_ACK) {
-			if (cb->cb_set[NL_CB_SEND_ACK])
-				NL_CB_CALL(cb, NL_CB_SEND_ACK, msg);
-			else {
-				/* FIXME: implement */
-			}
-		}
+    if (hdr->nlmsg_flags & NLM_F_MULTI)
+      multipart = 1;
 
-		/* messages terminates a multpart message, this is
-		 * usually the end of a message and therefore we slip
-		 * out of the loop by default. the user may overrule
-		 * this action by skipping this packet. */
-		if (hdr->nlmsg_type == NLMSG_DONE) {
-			multipart = 0;
-			if (cb->cb_set[NL_CB_FINISH])
-				NL_CB_CALL(cb, NL_CB_FINISH, msg);
-		}
+    /* Other side wishes to see an ack for this message */
+    if (hdr->nlmsg_flags & NLM_F_ACK) {
+      if (cb->cb_set[NL_CB_SEND_ACK])
+        NL_CB_CALL(cb, NL_CB_SEND_ACK, msg);
+      else {
+        /* FIXME: implement */
+      }
+    }
 
-		/* Message to be ignored, the default action is to
-		 * skip this message if no callback is specified. The
-		 * user may overrule this action by returning
-		 * NL_PROCEED. */
-		else if (hdr->nlmsg_type == NLMSG_NOOP) {
-			if (cb->cb_set[NL_CB_SKIPPED])
-				NL_CB_CALL(cb, NL_CB_SKIPPED, msg);
-			else
-				goto skip;
-		}
+    /* messages terminates a multpart message, this is
+     * usually the end of a message and therefore we slip
+     * out of the loop by default. the user may overrule
+     * this action by skipping this packet. */
+    if (hdr->nlmsg_type == NLMSG_DONE) {
+      multipart = 0;
+      if (cb->cb_set[NL_CB_FINISH])
+        NL_CB_CALL(cb, NL_CB_FINISH, msg);
+    }
 
-		/* Data got lost, report back to user. The default action is to
-		 * quit parsing. The user may overrule this action by retuning
-		 * NL_SKIP or NL_PROCEED (dangerous) */
-		else if (hdr->nlmsg_type == NLMSG_OVERRUN) {
-			if (cb->cb_set[NL_CB_OVERRUN])
-				NL_CB_CALL(cb, NL_CB_OVERRUN, msg);
-			else {
-				err = -NLE_MSG_OVERFLOW;
-				goto out;
-			}
-		}
+    /* Message to be ignored, the default action is to
+     * skip this message if no callback is specified. The
+     * user may overrule this action by returning
+     * NL_PROCEED. */
+    else if (hdr->nlmsg_type == NLMSG_NOOP) {
+      if (cb->cb_set[NL_CB_SKIPPED])
+        NL_CB_CALL(cb, NL_CB_SKIPPED, msg);
+      else
+        goto skip;
+    }
 
-		/* Message carries a nlmsgerr */
-		else if (hdr->nlmsg_type == NLMSG_ERROR) {
-			struct nlmsgerr *e = nlmsg_data(hdr);
+    /* Data got lost, report back to user. The default action is to
+     * quit parsing. The user may overrule this action by retuning
+     * NL_SKIP or NL_PROCEED (dangerous) */
+    else if (hdr->nlmsg_type == NLMSG_OVERRUN) {
+      if (cb->cb_set[NL_CB_OVERRUN])
+        NL_CB_CALL(cb, NL_CB_OVERRUN, msg);
+      else {
+        err = -NLE_MSG_OVERFLOW;
+        goto out;
+      }
+    }
 
-			if (hdr->nlmsg_len < (unsigned) nlmsg_msg_size(sizeof(*e))) {
-				/* Truncated error message, the default action
-				 * is to stop parsing. The user may overrule
-				 * this action by returning NL_SKIP or
-				 * NL_PROCEED (dangerous) */
-				if (cb->cb_set[NL_CB_INVALID])
-					NL_CB_CALL(cb, NL_CB_INVALID, msg);
-				else {
-					err = -NLE_MSG_TRUNC;
-					goto out;
-				}
-			} else if (e->error) {
-				/* Error message reported back from kernel. */
-				if (cb->cb_err) {
-					err = cb->cb_err(&nla, e,
-							   cb->cb_err_arg);
-					if (err < 0)
-						goto out;
-					else if (err == NL_SKIP)
-						goto skip;
-					else if (err == NL_STOP) {
-						err = -nl_syserr2nlerr(e->error);
-						goto out;
-					}
-				} else {
-					err = -nl_syserr2nlerr(e->error);
-					goto out;
-				}
-			} else if (cb->cb_set[NL_CB_ACK])
-				NL_CB_CALL(cb, NL_CB_ACK, msg);
-		} else {
-			/* Valid message (not checking for MULTIPART bit to
-			 * get along with broken kernels. NL_SKIP has no
-			 * effect on this.  */
-			if (cb->cb_set[NL_CB_VALID])
-				NL_CB_CALL(cb, NL_CB_VALID, msg);
-		}
-skip:
-		hdr = nlmsg_next(hdr, &n);
-	}
-	
-	nlmsg_free(msg);
-	free(buf);
-	free(creds);
-	buf = NULL;
-	msg = NULL;
-	creds = NULL;
+    /* Message carries a nlmsgerr */
+    else if (hdr->nlmsg_type == NLMSG_ERROR) {
+      struct nlmsgerr *e = nlmsg_data(hdr);
 
-	if (multipart) {
-		/* Multipart message not yet complete, continue reading */
-		goto continue_reading;
-	}
+      if (hdr->nlmsg_len < (unsigned)nlmsg_msg_size(sizeof(*e))) {
+        /* Truncated error message, the default action
+         * is to stop parsing. The user may overrule
+         * this action by returning NL_SKIP or
+         * NL_PROCEED (dangerous) */
+        if (cb->cb_set[NL_CB_INVALID])
+          NL_CB_CALL(cb, NL_CB_INVALID, msg);
+        else {
+          err = -NLE_MSG_TRUNC;
+          goto out;
+        }
+      } else if (e->error) {
+        /* Error message reported back from kernel. */
+        if (cb->cb_err) {
+          err = cb->cb_err(&nla, e, cb->cb_err_arg);
+          if (err < 0)
+            goto out;
+          else if (err == NL_SKIP)
+            goto skip;
+          else if (err == NL_STOP) {
+            err = -nl_syserr2nlerr(e->error);
+            goto out;
+          }
+        } else {
+          err = -nl_syserr2nlerr(e->error);
+          goto out;
+        }
+      } else if (cb->cb_set[NL_CB_ACK])
+        NL_CB_CALL(cb, NL_CB_ACK, msg);
+    } else {
+      /* Valid message (not checking for MULTIPART bit to
+       * get along with broken kernels. NL_SKIP has no
+       * effect on this.  */
+      if (cb->cb_set[NL_CB_VALID])
+        NL_CB_CALL(cb, NL_CB_VALID, msg);
+    }
+  skip:
+    hdr = nlmsg_next(hdr, &n);
+  }
+
+  nlmsg_free(msg);
+  free(buf);
+  free(creds);
+  buf = NULL;
+  msg = NULL;
+  creds = NULL;
+
+  if (multipart) {
+    /* Multipart message not yet complete, continue reading */
+    goto continue_reading;
+  }
 stop:
-	err = 0;
+  err = 0;
 out:
-	nlmsg_free(msg);
-	free(buf);
-	free(creds);
+  nlmsg_free(msg);
+  free(buf);
+  free(creds);
 
-	return err;
+  return err;
 }
 
 /**
@@ -675,26 +658,22 @@ out:
  * Repeatedly calls nl_recv() or the respective replacement if provided
  * by the application (see nl_cb_overwrite_recv()) and parses the
  * received data as netlink messages. Stops reading if one of the
- * callbacks returns NL_STOP or nl_recv returns either 0 or a negative error code.
+ * callbacks returns NL_STOP or nl_recv returns either 0 or a negative error
+ * code.
  *
  * A non-blocking sockets causes the function to return immediately if
  * no data is available.
  *
  * @return 0 on success or a negative error code from nl_recv().
  */
-int nl_recvmsgs(struct nl_sock *sk, struct nl_cb *cb)
-{
-	if (cb->cb_recvmsgs_ow)
-		return cb->cb_recvmsgs_ow(sk, cb);
-	else
-		return recvmsgs(sk, cb);
+int nl_recvmsgs(struct nl_sock *sk, struct nl_cb *cb) {
+  if (cb->cb_recvmsgs_ow)
+    return cb->cb_recvmsgs_ow(sk, cb);
+  else
+    return recvmsgs(sk, cb);
 }
 
-
-static int ack_wait_handler(struct nl_msg *msg, void *arg)
-{
-	return NL_STOP;
-}
+static int ack_wait_handler(struct nl_msg *msg, void *arg) { return NL_STOP; }
 
 /**
  * Wait for ACK.
@@ -704,20 +683,19 @@ static int ack_wait_handler(struct nl_msg *msg, void *arg)
  * Waits until an ACK is received for the latest not yet acknowledged
  * netlink message.
  */
-int nl_wait_for_ack(struct nl_sock *sk)
-{
-	int err;
-	struct nl_cb *cb;
+int nl_wait_for_ack(struct nl_sock *sk) {
+  int err;
+  struct nl_cb *cb;
 
-	cb = nl_cb_clone(sk->s_cb);
-	if (cb == NULL)
-		return -NLE_NOMEM;
+  cb = nl_cb_clone(sk->s_cb);
+  if (cb == NULL)
+    return -NLE_NOMEM;
 
-	nl_cb_set(cb, NL_CB_ACK, NL_CB_CUSTOM, ack_wait_handler, NULL);
-	err = nl_recvmsgs(sk, cb);
-	nl_cb_put(cb);
+  nl_cb_set(cb, NL_CB_ACK, NL_CB_CUSTOM, ack_wait_handler, NULL);
+  err = nl_recvmsgs(sk, cb);
+  nl_cb_put(cb);
 
-	return err;
+  return err;
 }
 
 /** @} */

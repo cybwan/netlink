@@ -6,6 +6,7 @@
 #define NETLINK_CACHE_API_H_
 
 #include <netlink/netlink.h>
+#include <netlink/object.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -26,7 +27,7 @@ extern "C" {
  * };
  * @endcode
  *
- * @par 2) 
+ * @par 2)
  * @code
  * // The simplest way to fill a cache is by providing a request-update
  * // function which must trigger a complete dump on the kernel-side of
@@ -102,85 +103,82 @@ extern "C" {
  */
 
 enum {
-	NL_ACT_UNSPEC,
-	NL_ACT_NEW,
-	NL_ACT_DEL,
-	NL_ACT_GET,
-	NL_ACT_SET,
-	NL_ACT_CHANGE,
-	__NL_ACT_MAX,
+  NL_ACT_UNSPEC,
+  NL_ACT_NEW,
+  NL_ACT_DEL,
+  NL_ACT_GET,
+  NL_ACT_SET,
+  NL_ACT_CHANGE,
+  __NL_ACT_MAX,
 };
 
 #define NL_ACT_MAX (__NL_ACT_MAX - 1)
 
-#define END_OF_MSGTYPES_LIST	{ -1, -1, NULL }
+#define END_OF_MSGTYPES_LIST                                                   \
+  { -1, -1, NULL }
 
 /**
  * Message type to cache action association
  */
-struct nl_msgtype
-{
-	/** Netlink message type */
-	int			mt_id;
+struct nl_msgtype {
+  /** Netlink message type */
+  int mt_id;
 
-	/** Cache action to take */
-	int			mt_act;
+  /** Cache action to take */
+  int mt_act;
 
-	/** Name of operation for human-readable printing */
-	char *			mt_name;
+  /** Name of operation for human-readable printing */
+  char *mt_name;
 };
 
 /**
  * Address family to netlink group association
  */
-struct nl_af_group
-{
-	/** Address family */
-	int			ag_family;
+struct nl_af_group {
+  /** Address family */
+  int ag_family;
 
-	/** Netlink group identifier */
-	int			ag_group;
+  /** Netlink group identifier */
+  int ag_group;
 };
 
 #define END_OF_GROUP_LIST AF_UNSPEC, 0
 
-struct nl_parser_param
-{
-	int             (*pp_cb)(struct nl_object *, struct nl_parser_param *);
-	void *            pp_arg;
+struct nl_parser_param {
+  int (*pp_cb)(struct nl_object *, struct nl_parser_param *);
+  void *pp_arg;
 };
 
 /**
  * Cache Operations
  */
-struct nl_cache_ops
-{
-	char  *			co_name;
+struct nl_cache_ops {
+  char *co_name;
 
-	int			co_hdrsize;
-	int			co_protocol;
-	struct nl_af_group *	co_groups;
-	
-	/**
-	 * Called whenever an update of the cache is required. Must send
-	 * a request message to the kernel requesting a complete dump.
-	 */
-	int   (*co_request_update)(struct nl_cache *, struct nl_sock *);
+  int co_hdrsize;
+  int co_protocol;
+  struct nl_af_group *co_groups;
 
-	/**
-	 * Called whenever a message was received that needs to be parsed.
-	 * Must parse the message and call the paser callback function
-	 * (nl_parser_param) provided via the argument.
-	 */
-	int   (*co_msg_parser)(struct nl_cache_ops *, struct sockaddr_nl *,
-			       struct nlmsghdr *, struct nl_parser_param *);
+  /**
+   * Called whenever an update of the cache is required. Must send
+   * a request message to the kernel requesting a complete dump.
+   */
+  int (*co_request_update)(struct nl_cache *, struct nl_sock *);
 
-	struct nl_object_ops *	co_obj_ops;
+  /**
+   * Called whenever a message was received that needs to be parsed.
+   * Must parse the message and call the paser callback function
+   * (nl_parser_param) provided via the argument.
+   */
+  int (*co_msg_parser)(struct nl_cache_ops *, struct sockaddr_nl *,
+                       struct nlmsghdr *, struct nl_parser_param *);
 
-	struct nl_cache_ops *co_next;
-	struct nl_cache *co_major_cache;
-	struct genl_ops *	co_genl;
-	struct nl_msgtype	co_msgtypes[];
+  struct nl_object_ops *co_obj_ops;
+
+  struct nl_cache_ops *co_next;
+  struct nl_cache *co_major_cache;
+  struct genl_ops *co_genl;
+  struct nl_msgtype co_msgtypes[];
 };
 
 /** @} */

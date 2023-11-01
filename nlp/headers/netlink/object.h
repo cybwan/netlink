@@ -6,75 +6,61 @@
 #define NETLINK_OBJECT_H_
 
 #include <netlink/netlink.h>
-#include <netlink/utils.h>
 #include <netlink/object-api.h>
+#include <netlink/utils.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define NL_OBJ_MARK		1
+#define NL_OBJ_MARK 1
 
 struct nl_cache;
 struct nl_object;
 struct nl_object_ops;
 
-struct nl_object
-{
-	NLHDR_COMMON
+struct nl_object {
+  NLHDR_COMMON
 };
 
-#define OBJ_CAST(ptr)		((struct nl_object *) (ptr))
+#define OBJ_CAST(ptr) ((struct nl_object *)(ptr))
 
 /* General */
-extern struct nl_object *	nl_object_alloc(struct nl_object_ops *);
-extern void			nl_object_free(struct nl_object *);
-extern struct nl_object *	nl_object_clone(struct nl_object *obj);
+extern struct nl_object *nl_object_alloc(struct nl_object_ops *);
+extern void nl_object_free(struct nl_object *);
+extern struct nl_object *nl_object_clone(struct nl_object *obj);
 
 #ifdef disabled
 
-extern int			nl_object_alloc_name(const char *,
-						     struct nl_object **);
-extern void			nl_object_dump(struct nl_object *,
-					       struct nl_dump_params *);
+extern int nl_object_alloc_name(const char *, struct nl_object **);
+extern void nl_object_dump(struct nl_object *, struct nl_dump_params *);
 
-extern uint32_t			nl_object_diff(struct nl_object *,
-					       struct nl_object *);
-extern int			nl_object_match_filter(struct nl_object *,
-						       struct nl_object *);
-extern int			nl_object_identical(struct nl_object *,
-						    struct nl_object *);
-extern char *			nl_object_attrs2str(struct nl_object *,
-						    uint32_t attrs, char *buf,
-						    size_t);
+extern uint32_t nl_object_diff(struct nl_object *, struct nl_object *);
+extern int nl_object_match_filter(struct nl_object *, struct nl_object *);
+extern int nl_object_identical(struct nl_object *, struct nl_object *);
+extern char *nl_object_attrs2str(struct nl_object *, uint32_t attrs, char *buf,
+                                 size_t);
 #endif
 /**
  * Check whether this object is used by multiple users
  * @arg obj		object to check
  * @return true or false
  */
-static inline int nl_object_shared(struct nl_object *obj)
-{
-	return obj->ce_refcnt > 1;
+static inline int nl_object_shared(struct nl_object *obj) {
+  return obj->ce_refcnt > 1;
 }
 
+static inline void nl_object_get(struct nl_object *obj) { obj->ce_refcnt++; }
 
-static inline void nl_object_get(struct nl_object *obj)
-{
-	obj->ce_refcnt++;
+static inline void nl_object_put(struct nl_object *obj) {
+  if (!obj)
+    return;
+
+  obj->ce_refcnt--;
+
+  if (obj->ce_refcnt <= 0)
+    nl_object_free(obj);
 }
-
-static inline void nl_object_put(struct nl_object *obj)
-{
-	if (!obj)
-		return;
-
-	obj->ce_refcnt--;
-
-	if (obj->ce_refcnt <= 0)
-		nl_object_free(obj);
-}
-
 
 /**
  * @name Marks
@@ -85,18 +71,16 @@ static inline void nl_object_put(struct nl_object *obj)
  * Add mark to object
  * @arg obj		Object to mark
  */
-static inline void nl_object_mark(struct nl_object *obj)
-{
-	obj->ce_flags |= NL_OBJ_MARK;
+static inline void nl_object_mark(struct nl_object *obj) {
+  obj->ce_flags |= NL_OBJ_MARK;
 }
 
 /**
  * Remove mark from object
  * @arg obj		Object to unmark
  */
-static inline void nl_object_unmark(struct nl_object *obj)
-{
-	obj->ce_flags &= ~NL_OBJ_MARK;
+static inline void nl_object_unmark(struct nl_object *obj) {
+  obj->ce_flags &= ~NL_OBJ_MARK;
 }
 
 /**
@@ -104,9 +88,8 @@ static inline void nl_object_unmark(struct nl_object *obj)
  * @arg obj		Object to check
  * @return true if object is marked, otherwise false
  */
-static inline int nl_object_is_marked(struct nl_object *obj)
-{
-	return (obj->ce_flags & NL_OBJ_MARK);
+static inline int nl_object_is_marked(struct nl_object *obj) {
+  return (obj->ce_flags & NL_OBJ_MARK);
 }
 
 /** @} */
@@ -120,9 +103,9 @@ static inline int nl_object_is_marked(struct nl_object *obj)
  *
  * @return destination buffer.
  */
-static inline char *nl_object_attr_list(struct nl_object *obj, char *buf, size_t len)
-{
-	return nl_object_attrs2str(obj, obj->ce_mask, buf, len);
+static inline char *nl_object_attr_list(struct nl_object *obj, char *buf,
+                                        size_t len) {
+  return nl_object_attrs2str(obj, obj->ce_mask, buf, len);
 }
 #endif
 
@@ -131,24 +114,17 @@ static inline char *nl_object_attr_list(struct nl_object *obj, char *buf, size_t
  * @{
  */
 
-static inline int nl_object_get_refcnt(struct nl_object *obj)
-{
-	return obj->ce_refcnt;
+static inline int nl_object_get_refcnt(struct nl_object *obj) {
+  return obj->ce_refcnt;
 }
 
-static inline struct nl_cache *nl_object_get_cache(struct nl_object *obj)
-{
-	return obj->ce_cache;
+static inline struct nl_cache *nl_object_get_cache(struct nl_object *obj) {
+  return obj->ce_cache;
 }
 
-static inline void *		nl_object_priv(struct nl_object *obj)
-{
-	return obj;
-}
-
+static inline void *nl_object_priv(struct nl_object *obj) { return obj; }
 
 /** @} */
-
 
 #ifdef __cplusplus
 }

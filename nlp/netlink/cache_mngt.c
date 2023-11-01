@@ -9,8 +9,8 @@
  */
 
 #include <netlink-local.h>
-#include <netlink/netlink.h>
 #include <netlink/cache.h>
+#include <netlink/netlink.h>
 #include <netlink/utils.h>
 
 static struct nl_cache_ops *cache_ops;
@@ -27,15 +27,14 @@ static struct nl_cache_ops *cache_ops;
  * @return The cache operations or NULL if no operations
  *         have been registered under the specified name.
  */
-struct nl_cache_ops *nl_cache_ops_lookup(const char *name)
-{
-	struct nl_cache_ops *ops;
+struct nl_cache_ops *nl_cache_ops_lookup(const char *name) {
+  struct nl_cache_ops *ops;
 
-	for (ops = cache_ops; ops; ops = ops->co_next)
-		if (!strcmp(ops->co_name, name))
-			return ops;
+  for (ops = cache_ops; ops; ops = ops->co_next)
+    if (!strcmp(ops->co_name, name))
+      return ops;
 
-	return NULL;
+  return NULL;
 }
 
 /**
@@ -49,21 +48,20 @@ struct nl_cache_ops *nl_cache_ops_lookup(const char *name)
  * @return The cache operations or NULL if no association
  *         could be made.
  */
-struct nl_cache_ops *nl_cache_ops_associate(int protocol, int msgtype)
-{
-	int i;
-	struct nl_cache_ops *ops;
+struct nl_cache_ops *nl_cache_ops_associate(int protocol, int msgtype) {
+  int i;
+  struct nl_cache_ops *ops;
 
-	for (ops = cache_ops; ops; ops = ops->co_next) {
-		if (ops->co_protocol != protocol)
-			continue;
+  for (ops = cache_ops; ops; ops = ops->co_next) {
+    if (ops->co_protocol != protocol)
+      continue;
 
-		for (i = 0; ops->co_msgtypes[i].mt_id >= 0; i++)
-			if (ops->co_msgtypes[i].mt_id == msgtype)
-				return ops;
-	}
+    for (i = 0; ops->co_msgtypes[i].mt_id >= 0; i++)
+      if (ops->co_msgtypes[i].mt_id == msgtype)
+        return ops;
+  }
 
-	return NULL;
+  return NULL;
 }
 
 /**
@@ -75,20 +73,19 @@ struct nl_cache_ops *nl_cache_ops_associate(int protocol, int msgtype)
  *
  * @return 0 on success or a negative error code.
  */
-int nl_cache_mngt_register(struct nl_cache_ops *ops)
-{
-	if (!ops->co_name || !ops->co_obj_ops)
-		return -NLE_INVAL;
+int nl_cache_mngt_register(struct nl_cache_ops *ops) {
+  if (!ops->co_name || !ops->co_obj_ops)
+    return -NLE_INVAL;
 
-	if (nl_cache_ops_lookup(ops->co_name))
-		return -NLE_EXIST;
+  if (nl_cache_ops_lookup(ops->co_name))
+    return -NLE_EXIST;
 
-	ops->co_next = cache_ops;
-	cache_ops = ops;
+  ops->co_next = cache_ops;
+  cache_ops = ops;
 
-	NL_DBG(1, "Registered cache operations %s\n", ops->co_name);
+  NL_DBG(1, "Registered cache operations %s\n", ops->co_name);
 
-	return 0;
+  return 0;
 }
 
 /**
@@ -102,21 +99,20 @@ int nl_cache_mngt_register(struct nl_cache_ops *ops)
  *
  * @return 0 on success or a negative error code
  */
-int nl_cache_mngt_unregister(struct nl_cache_ops *ops)
-{
-	struct nl_cache_ops *t, **tp;
+int nl_cache_mngt_unregister(struct nl_cache_ops *ops) {
+  struct nl_cache_ops *t, **tp;
 
-	for (tp = &cache_ops; (t=*tp) != NULL; tp = &t->co_next)
-		if (t == ops)
-			break;
+  for (tp = &cache_ops; (t = *tp) != NULL; tp = &t->co_next)
+    if (t == ops)
+      break;
 
-	if (!t)
-		return -NLE_NOCACHE;
+  if (!t)
+    return -NLE_NOCACHE;
 
-	NL_DBG(1, "Unregistered cache operations %s\n", ops->co_name);
+  NL_DBG(1, "Unregistered cache operations %s\n", ops->co_name);
 
-	*tp = t->co_next;
-	return 0;
+  *tp = t->co_next;
+  return 0;
 }
 
 /** @} */

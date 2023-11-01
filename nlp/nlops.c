@@ -860,9 +860,9 @@ bool nl_vlan_member_del(int vlan_id, const char *ifi_name, bool tagged) {
   if (vlan_dev_link.index == 0) {
     return false;
   }
-  
+
   bool ret = nl_link_no_master(vlan_dev_link.index);
-  if (ret && tagged){
+  if (ret && tagged) {
     return nl_link_del(vlan_dev_link.index);
   }
   return ret;

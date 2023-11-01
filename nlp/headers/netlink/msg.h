@@ -14,7 +14,7 @@ extern "C" {
 
 struct nla_policy;
 
-#define NL_DONTPAD	0
+#define NL_DONTPAD 0
 
 /**
  * @ingroup msg
@@ -23,7 +23,7 @@ struct nla_policy;
  * the netlink handle (socket) just before sending the message off.
  * @note Requires the use of nl_send_auto_complete()!
  */
-#define NL_AUTO_PID	0
+#define NL_AUTO_PID 0
 
 /**
  * @ingroup msg
@@ -32,102 +32,91 @@ struct nla_policy;
  * automatically set just before sending the message off.
  * @note Requires the use of nl_send_auto_complete()!
  */
-#define NL_AUTO_SEQ	0
+#define NL_AUTO_SEQ 0
 
 #define NL_MSG_CRED_PRESENT 1
 
-struct nl_msg
-{
-	int			nm_protocol;
-	int			nm_flags;
-	struct sockaddr_nl	nm_src;
-	struct sockaddr_nl	nm_dst;
-	struct ucred		nm_creds;
-	struct nlmsghdr *	nm_nlh;
-	size_t			nm_size;
-	int			nm_refcnt;
+struct nl_msg {
+  int nm_protocol;
+  int nm_flags;
+  struct sockaddr_nl nm_src;
+  struct sockaddr_nl nm_dst;
+  struct ucred nm_creds;
+  struct nlmsghdr *nm_nlh;
+  size_t nm_size;
+  int nm_refcnt;
 };
-
 
 struct nl_msg;
 struct nl_tree;
 struct ucred;
 
 /* message parsing */
-extern int		  nlmsg_ok(const struct nlmsghdr *, int);
-extern struct nlmsghdr *  nlmsg_next(struct nlmsghdr *, int *);
-extern int		  nlmsg_parse(struct nlmsghdr *, int, struct nlattr **,
-				      int, const struct nla_policy *);
-extern int		  nlmsg_validate(const struct nlmsghdr *, int, int,
-					 const struct nla_policy *);
+extern int nlmsg_ok(const struct nlmsghdr *, int);
+extern struct nlmsghdr *nlmsg_next(struct nlmsghdr *, int *);
+extern int nlmsg_parse(struct nlmsghdr *, int, struct nlattr **, int,
+                       const struct nla_policy *);
+extern int nlmsg_validate(const struct nlmsghdr *, int, int,
+                          const struct nla_policy *);
 
-extern struct nl_msg *	  nlmsg_alloc(void);
-extern struct nl_msg *	  nlmsg_alloc_size(size_t);
-extern struct nl_msg *	  nlmsg_alloc_simple(int, int);
-extern void		  nlmsg_set_default_size(size_t);
-extern struct nl_msg *	  nlmsg_inherit(struct nlmsghdr *);
-extern struct nl_msg *	  nlmsg_convert(struct nlmsghdr *);
-extern void *		  nlmsg_reserve(struct nl_msg *, size_t, int);
-extern int		  nlmsg_append(struct nl_msg *, void *, size_t, int);
+extern struct nl_msg *nlmsg_alloc(void);
+extern struct nl_msg *nlmsg_alloc_size(size_t);
+extern struct nl_msg *nlmsg_alloc_simple(int, int);
+extern void nlmsg_set_default_size(size_t);
+extern struct nl_msg *nlmsg_inherit(struct nlmsghdr *);
+extern struct nl_msg *nlmsg_convert(struct nlmsghdr *);
+extern void *nlmsg_reserve(struct nl_msg *, size_t, int);
+extern int nlmsg_append(struct nl_msg *, void *, size_t, int);
 
-extern struct nlmsghdr *  nlmsg_put(struct nl_msg *, uint32_t, uint32_t,
-				    int, int, int);
-extern void		  nlmsg_free(struct nl_msg *);
+extern struct nlmsghdr *nlmsg_put(struct nl_msg *, uint32_t, uint32_t, int, int,
+                                  int);
+extern void nlmsg_free(struct nl_msg *);
 
-extern int		  nl_msg_parse(struct nl_msg *,
-				       void (*cb)(struct nl_object *, void *),
-				       void *);
+extern int nl_msg_parse(struct nl_msg *, void (*cb)(struct nl_object *, void *),
+                        void *);
 
-extern void		nl_msg_dump(struct nl_msg *, FILE *);
+extern void nl_msg_dump(struct nl_msg *, FILE *);
 
 /**
  * length of netlink message not including padding
  * @arg payload		length of message payload
  */
-static inline int nlmsg_msg_size(int payload)
-{
-	return NLMSG_HDRLEN + payload;
-}
+static inline int nlmsg_msg_size(int payload) { return NLMSG_HDRLEN + payload; }
 
 /**
  * length of netlink message including padding
  * @arg payload		length of message payload
  */
-static inline int nlmsg_total_size(int payload)
-{
-	return NLMSG_ALIGN(nlmsg_msg_size(payload));
+static inline int nlmsg_total_size(int payload) {
+  return NLMSG_ALIGN(nlmsg_msg_size(payload));
 }
 
 /**
  * length of padding at the message's tail
  * @arg payload		length of message payload
  */
-static inline int nlmsg_padlen(int payload)
-{
-	return nlmsg_total_size(payload) - nlmsg_msg_size(payload);
+static inline int nlmsg_padlen(int payload) {
+  return nlmsg_total_size(payload) - nlmsg_msg_size(payload);
 }
 
 /**
  * head of message payload
  * @arg nlh		netlink messsage header
  */
-static inline void *nlmsg_data(const struct nlmsghdr *nlh)
-{
-	return (unsigned char *) nlh + NLMSG_HDRLEN;
+static inline void *nlmsg_data(const struct nlmsghdr *nlh) {
+  return (unsigned char *)nlh + NLMSG_HDRLEN;
 }
 
-static inline void *nlmsg_tail(const struct nlmsghdr *nlh)
-{
-	return (unsigned char *) nlh + NLMSG_ALIGN(nlh->nlmsg_len);
+static inline void *nlmsg_tail(const struct nlmsghdr *nlh) {
+  return (unsigned char *)nlh + NLMSG_ALIGN(nlh->nlmsg_len);
 }
 
 /**
  * length of message payload
  * @arg nlh		netlink message header
  */
-static inline int nlmsg_len(const struct nlmsghdr *nlh)
-{
-	return nlh->nlmsg_len - NLMSG_HDRLEN;
+static inline int nlmsg_len(const struct nlmsghdr *nlh) {
+  return nlh->nlmsg_len - NLMSG_HDRLEN;
 }
 
 /**
@@ -135,10 +124,10 @@ static inline int nlmsg_len(const struct nlmsghdr *nlh)
  * @arg nlh		netlink message header
  * @arg hdrlen		length of family specific header
  */
-static inline struct nlattr *nlmsg_attrdata(const struct nlmsghdr *nlh, int hdrlen)
-{
-	unsigned char *data = (unsigned char*)nlmsg_data(nlh);
-	return (struct nlattr *) (data + NLMSG_ALIGN(hdrlen));
+static inline struct nlattr *nlmsg_attrdata(const struct nlmsghdr *nlh,
+                                            int hdrlen) {
+  unsigned char *data = (unsigned char *)nlmsg_data(nlh);
+  return (struct nlattr *)(data + NLMSG_ALIGN(hdrlen));
 }
 
 /**
@@ -146,90 +135,72 @@ static inline struct nlattr *nlmsg_attrdata(const struct nlmsghdr *nlh, int hdrl
  * @arg nlh		netlink message header
  * @arg hdrlen		length of family specific header
  */
-static inline int nlmsg_attrlen(const struct nlmsghdr *nlh, int hdrlen)
-{
-	return nlmsg_len(nlh) - NLMSG_ALIGN(hdrlen);
+static inline int nlmsg_attrlen(const struct nlmsghdr *nlh, int hdrlen) {
+  return nlmsg_len(nlh) - NLMSG_ALIGN(hdrlen);
 }
 
-static inline int nlmsg_valid_hdr(const struct nlmsghdr *nlh, int hdrlen)
-{
-	if (nlh->nlmsg_len < (uint)nlmsg_msg_size(hdrlen))
-		return 0;
+static inline int nlmsg_valid_hdr(const struct nlmsghdr *nlh, int hdrlen) {
+  if (nlh->nlmsg_len < (uint)nlmsg_msg_size(hdrlen))
+    return 0;
 
-	return 1;
+  return 1;
 }
 
-
-static inline void nlmsg_set_proto(struct nl_msg *msg, int protocol)
-{
-	msg->nm_protocol = protocol;
+static inline void nlmsg_set_proto(struct nl_msg *msg, int protocol) {
+  msg->nm_protocol = protocol;
 }
 
-static inline int nlmsg_get_proto(struct nl_msg *msg)
-{
-	return msg->nm_protocol;
+static inline int nlmsg_get_proto(struct nl_msg *msg) {
+  return msg->nm_protocol;
 }
 
-static inline size_t nlmsg_get_max_size(struct nl_msg *msg)
-{
-	return msg->nm_size;
+static inline size_t nlmsg_get_max_size(struct nl_msg *msg) {
+  return msg->nm_size;
 }
 
-static inline void nlmsg_set_src(struct nl_msg *msg, struct sockaddr_nl *addr)
-{
-	memcpy(&msg->nm_src, addr, sizeof(*addr));
+static inline void nlmsg_set_src(struct nl_msg *msg, struct sockaddr_nl *addr) {
+  memcpy(&msg->nm_src, addr, sizeof(*addr));
 }
 
-static inline struct sockaddr_nl *nlmsg_get_src(struct nl_msg *msg)
-{
-	return &msg->nm_src;
+static inline struct sockaddr_nl *nlmsg_get_src(struct nl_msg *msg) {
+  return &msg->nm_src;
 }
 
-static inline void nlmsg_set_dst(struct nl_msg *msg, struct sockaddr_nl *addr)
-{
-	memcpy(&msg->nm_dst, addr, sizeof(*addr));
+static inline void nlmsg_set_dst(struct nl_msg *msg, struct sockaddr_nl *addr) {
+  memcpy(&msg->nm_dst, addr, sizeof(*addr));
 }
 
-static inline struct sockaddr_nl *nlmsg_get_dst(struct nl_msg *msg)
-{
-	return &msg->nm_dst;
+static inline struct sockaddr_nl *nlmsg_get_dst(struct nl_msg *msg) {
+  return &msg->nm_dst;
 }
 
-static inline void nlmsg_set_creds(struct nl_msg *msg, struct ucred *creds)
-{
-	memcpy(&msg->nm_creds, creds, sizeof(*creds));
-	msg->nm_flags |= NL_MSG_CRED_PRESENT;
+static inline void nlmsg_set_creds(struct nl_msg *msg, struct ucred *creds) {
+  memcpy(&msg->nm_creds, creds, sizeof(*creds));
+  msg->nm_flags |= NL_MSG_CRED_PRESENT;
 }
 
-static inline struct ucred *nlmsg_get_creds(struct nl_msg *msg)
-{
-	if (msg->nm_flags & NL_MSG_CRED_PRESENT)
-		return &msg->nm_creds;
-	return NULL;
+static inline struct ucred *nlmsg_get_creds(struct nl_msg *msg) {
+  if (msg->nm_flags & NL_MSG_CRED_PRESENT)
+    return &msg->nm_creds;
+  return NULL;
 }
 
 /**
  * Return actual netlink message
  * @arg n		netlink message
- * 
+ *
  * Returns the actual netlink message casted to the type of the netlink
  * message header.
- * 
+ *
  * @return A pointer to the netlink message.
  */
-static inline struct nlmsghdr *nlmsg_hdr(struct nl_msg *n)
-{
-	return n->nm_nlh;
-}
+static inline struct nlmsghdr *nlmsg_hdr(struct nl_msg *n) { return n->nm_nlh; }
 
 /**
  * Acquire a reference on a netlink message
  * @arg msg		message to acquire reference from
  */
-static inline void nlmsg_get(struct nl_msg *msg)
-{
-	msg->nm_refcnt++;
-}
+static inline void nlmsg_get(struct nl_msg *msg) { msg->nm_refcnt++; }
 
 /**
  * Expand maximum payload size of a netlink message
@@ -245,23 +216,21 @@ static inline void nlmsg_get(struct nl_msg *msg)
  *
  * @return 0 on success or a negative error code.
  */
-static inline int nlmsg_expand(struct nl_msg *n, size_t newlen)
-{
-	void *tmp;
+static inline int nlmsg_expand(struct nl_msg *n, size_t newlen) {
+  void *tmp;
 
-	if (newlen <= n->nm_size)
-		return -NLE_INVAL;
+  if (newlen <= n->nm_size)
+    return -NLE_INVAL;
 
-	tmp = realloc(n->nm_nlh, newlen);
-	if (tmp == NULL)
-		return -NLE_NOMEM;
+  tmp = realloc(n->nm_nlh, newlen);
+  if (tmp == NULL)
+    return -NLE_NOMEM;
 
-	n->nm_nlh = (struct nlmsghdr*)tmp;
-	n->nm_size = newlen;
+  n->nm_nlh = (struct nlmsghdr *)tmp;
+  n->nm_size = newlen;
 
-	return 0;
+  return 0;
 }
-
 
 /**
  * @name Iterators
@@ -276,9 +245,9 @@ static inline int nlmsg_expand(struct nl_msg *n, size_t newlen)
  * @arg hdrlen	length of family header
  * @arg rem	initialized to len, holds bytes currently remaining in stream
  */
-#define nlmsg_for_each_attr(pos, nlh, hdrlen, rem) \
-	nla_for_each_attr(pos, nlmsg_attrdata(nlh, hdrlen), \
-			  nlmsg_attrlen(nlh, hdrlen), rem)
+#define nlmsg_for_each_attr(pos, nlh, hdrlen, rem)                             \
+  nla_for_each_attr(pos, nlmsg_attrdata(nlh, hdrlen),                          \
+                    nlmsg_attrlen(nlh, hdrlen), rem)
 
 /**
  * Iterate over a stream of messages
@@ -287,10 +256,8 @@ static inline int nlmsg_expand(struct nl_msg *n, size_t newlen)
  * @arg len	length of message stream
  * @arg rem	initialized to len, holds bytes currently remaining in stream
  */
-#define nlmsg_for_each_msg(pos, head, len, rem) \
-	for (pos = head, rem = len; \
-	     nlmsg_ok(pos, rem); \
-	     pos = nlmsg_next(pos, &(rem)))
+#define nlmsg_for_each_msg(pos, head, len, rem)                                \
+  for (pos = head, rem = len; nlmsg_ok(pos, rem); pos = nlmsg_next(pos, &(rem)))
 
 /** @} */
 

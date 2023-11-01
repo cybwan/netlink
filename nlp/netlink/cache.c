@@ -8,7 +8,7 @@
  *
  * @code
  *   Cache Management             |    | Type Specific Cache Operations
- *                                      
+ *
  *                                |    | +----------------+ +------------+
  *                                       | request update | | msg_parser |
  *                                |    | +----------------+ +------------+
@@ -29,13 +29,13 @@
  *                                           +---------+
  *                                |      |                 Core Netlink
  * @endcode
- * 
+ *
  * @{
  */
 
 #include <netlink-local.h>
-#include <netlink/netlink.h>
 #include <netlink/cache.h>
+#include <netlink/netlink.h>
 #include <netlink/object.h>
 #include <netlink/utils.h>
 
@@ -47,41 +47,39 @@
 /**
  * Allocate an empty cache
  * @arg ops		cache operations to base the cache on
- * 
+ *
  * @return A newly allocated and initialized cache.
  */
-struct nl_cache *nl_cache_alloc(struct nl_cache_ops *ops)
-{
-	struct nl_cache *cache;
+struct nl_cache *nl_cache_alloc(struct nl_cache_ops *ops) {
+  struct nl_cache *cache;
 
-	cache = calloc(1, sizeof(*cache));
-	if (!cache)
-		return NULL;
+  cache = calloc(1, sizeof(*cache));
+  if (!cache)
+    return NULL;
 
-	nl_init_list_head(&cache->c_items);
-	cache->c_ops = ops;
+  nl_init_list_head(&cache->c_items);
+  cache->c_ops = ops;
 
-	NL_DBG(2, "Allocated cache %p <%s>.\n", cache, nl_cache_name(cache));
+  NL_DBG(2, "Allocated cache %p <%s>.\n", cache, nl_cache_name(cache));
 
-	return cache;
+  return cache;
 }
 
 int nl_cache_alloc_and_fill(struct nl_cache_ops *ops, struct nl_sock *sock,
-			    struct nl_cache **result)
-{
-	struct nl_cache *cache;
-	int err;
-	
-	if (!(cache = nl_cache_alloc(ops)))
-		return -NLE_NOMEM;
+                            struct nl_cache **result) {
+  struct nl_cache *cache;
+  int err;
 
-	if (sock && (err = nl_cache_refill(sock, cache)) < 0) {
-		nl_cache_free(cache);
-		return err;
-	}
+  if (!(cache = nl_cache_alloc(ops)))
+    return -NLE_NOMEM;
 
-	*result = cache;
-	return 0;
+  if (sock && (err = nl_cache_refill(sock, cache)) < 0) {
+    nl_cache_free(cache);
+    return err;
+  }
+
+  *result = cache;
+  return 0;
 }
 
 /**
@@ -90,14 +88,13 @@ int nl_cache_alloc_and_fill(struct nl_cache_ops *ops, struct nl_sock *sock,
  *
  * Removes all elements of a cache.
  */
-void nl_cache_clear(struct nl_cache *cache)
-{
-	struct nl_object *obj, *tmp;
+void nl_cache_clear(struct nl_cache *cache) {
+  struct nl_object *obj, *tmp;
 
-	NL_DBG(1, "Clearing cache %p <%s>...\n", cache, nl_cache_name(cache));
+  NL_DBG(1, "Clearing cache %p <%s>...\n", cache, nl_cache_name(cache));
 
-	nl_list_for_each_entry_safe(obj, tmp, &cache->c_items, ce_list)
-		nl_cache_remove(obj);
+  nl_list_for_each_entry_safe(obj, tmp, &cache->c_items, ce_list)
+      nl_cache_remove(obj);
 }
 
 /**
@@ -108,14 +105,13 @@ void nl_cache_clear(struct nl_cache *cache)
  *
  * @note Use this function if you are working with allocated caches.
  */
-void nl_cache_free(struct nl_cache *cache)
-{
-	if (!cache)
-		return;
+void nl_cache_free(struct nl_cache *cache) {
+  if (!cache)
+    return;
 
-	nl_cache_clear(cache);
-	NL_DBG(1, "Freeing cache %p <%s>...\n", cache, nl_cache_name(cache));
-	free(cache);
+  nl_cache_clear(cache);
+  NL_DBG(1, "Freeing cache %p <%s>...\n", cache, nl_cache_name(cache));
+  free(cache);
 }
 
 /** @} */
@@ -125,17 +121,15 @@ void nl_cache_free(struct nl_cache *cache)
  * @{
  */
 
-static int __cache_add(struct nl_cache *cache, struct nl_object *obj)
-{
-	obj->ce_cache = cache;
+static int __cache_add(struct nl_cache *cache, struct nl_object *obj) {
+  obj->ce_cache = cache;
 
-	nl_list_add_tail(&obj->ce_list, &cache->c_items);
-	cache->c_nitems++;
+  nl_list_add_tail(&obj->ce_list, &cache->c_items);
+  cache->c_nitems++;
 
-	NL_DBG(1, "Added %p to cache %p <%s>.\n",
-	       obj, cache, nl_cache_name(cache));
+  NL_DBG(1, "Added %p to cache %p <%s>.\n", obj, cache, nl_cache_name(cache));
 
-	return 0;
+  return 0;
 }
 
 /**
@@ -148,23 +142,22 @@ static int __cache_add(struct nl_cache *cache, struct nl_object *obj)
  *
  * @return 0 or a negative error code.
  */
-int nl_cache_add(struct nl_cache *cache, struct nl_object *obj)
-{
-	struct nl_object *new;
+int nl_cache_add(struct nl_cache *cache, struct nl_object *obj) {
+  struct nl_object *new;
 
-	if (cache->c_ops->co_obj_ops != obj->ce_ops)
-		return -NLE_OBJ_MISMATCH;
+  if (cache->c_ops->co_obj_ops != obj->ce_ops)
+    return -NLE_OBJ_MISMATCH;
 
-	if (!nl_list_empty(&obj->ce_list)) {
-		new = nl_object_clone(obj);
-		if (!new)
-			return -NLE_NOMEM;
-	} else {
-		nl_object_get(obj);
-		new = obj;
-	}
+  if (!nl_list_empty(&obj->ce_list)) {
+    new = nl_object_clone(obj);
+    if (!new)
+      return -NLE_NOMEM;
+  } else {
+    nl_object_get(obj);
+    new = obj;
+  }
 
-	return __cache_add(cache, new);
+  return __cache_add(cache, new);
 }
 
 /**
@@ -175,20 +168,19 @@ int nl_cache_add(struct nl_cache *cache, struct nl_object *obj)
  * an object can only be assigned to one cache at a time, the cache
  * must ne be passed along with it.
  */
-void nl_cache_remove(struct nl_object *obj)
-{
-	struct nl_cache *cache = obj->ce_cache;
+void nl_cache_remove(struct nl_object *obj) {
+  struct nl_cache *cache = obj->ce_cache;
 
-	if (cache == NULL)
-		return;
+  if (cache == NULL)
+    return;
 
-	nl_list_del(&obj->ce_list);
-	obj->ce_cache = NULL;
-	nl_object_put(obj);
-	cache->c_nitems--;
+  nl_list_del(&obj->ce_list);
+  obj->ce_cache = NULL;
+  nl_object_put(obj);
+  cache->c_nitems--;
 
-	NL_DBG(1, "Deleted %p from cache %p <%s>.\n",
-	       obj, cache, nl_cache_name(cache));
+  NL_DBG(1, "Deleted %p from cache %p <%s>.\n", obj, cache,
+         nl_cache_name(cache));
 }
 
 /** @} */
@@ -209,64 +201,61 @@ void nl_cache_remove(struct nl_object *obj)
  * Use nl_cache_pickup() to read the objects from the socket and fill them
  * into a cache.
  */
-int nl_cache_request_full_dump(struct nl_sock *sk, struct nl_cache *cache)
-{
-	NL_DBG(2, "Requesting dump from kernel for cache %p <%s>...\n",
-	          cache, nl_cache_name(cache));
+int nl_cache_request_full_dump(struct nl_sock *sk, struct nl_cache *cache) {
+  NL_DBG(2, "Requesting dump from kernel for cache %p <%s>...\n", cache,
+         nl_cache_name(cache));
 
-	if (cache->c_ops->co_request_update == NULL)
-		return -NLE_OPNOTSUPP;
+  if (cache->c_ops->co_request_update == NULL)
+    return -NLE_OPNOTSUPP;
 
-	return cache->c_ops->co_request_update(cache, sk);
+  return cache->c_ops->co_request_update(cache, sk);
 }
 
 /** @cond SKIP */
 struct update_xdata {
-	struct nl_cache_ops *ops;
-	struct nl_parser_param *params;
+  struct nl_cache_ops *ops;
+  struct nl_parser_param *params;
 };
 
-static int update_msg_parser(struct nl_msg *msg, void *arg)
-{
-	struct update_xdata *x = arg;
-	
-	return nl_cache_parse(x->ops, &msg->nm_src, msg->nm_nlh, x->params);
+static int update_msg_parser(struct nl_msg *msg, void *arg) {
+  struct update_xdata *x = arg;
+
+  return nl_cache_parse(x->ops, &msg->nm_src, msg->nm_nlh, x->params);
 }
 /** @endcond */
 
 int __cache_pickup(struct nl_sock *sk, struct nl_cache *cache,
-		   struct nl_parser_param *param)
-{
-	int err;
-	struct nl_cb *cb;
-	struct update_xdata x = {
-		.ops = cache->c_ops,
-		.params = param,
-	};
+                   struct nl_parser_param *param) {
+  int err;
+  struct nl_cb *cb;
+  struct update_xdata x = {
+      .ops = cache->c_ops,
+      .params = param,
+  };
 
-	NL_DBG(1, "Picking up answer for cache %p <%s>...\n",
-		  cache, nl_cache_name(cache));
+  NL_DBG(1, "Picking up answer for cache %p <%s>...\n", cache,
+         nl_cache_name(cache));
 
-	cb = nl_cb_clone(sk->s_cb);
-	if (cb == NULL)
-		return -NLE_NOMEM;
+  cb = nl_cb_clone(sk->s_cb);
+  if (cb == NULL)
+    return -NLE_NOMEM;
 
-	nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, update_msg_parser, &x);
+  nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, update_msg_parser, &x);
 
-	err = nl_recvmsgs(sk, cb);
-	if (err < 0)
-		NL_DBG(2, "While picking up for %p <%s>, recvmsgs() returned " \
-		       "%d: %s", cache, nl_cache_name(cache),
-		       err, nl_geterror(err));
+  err = nl_recvmsgs(sk, cb);
+  if (err < 0)
+    NL_DBG(2,
+           "While picking up for %p <%s>, recvmsgs() returned "
+           "%d: %s",
+           cache, nl_cache_name(cache), err, nl_geterror(err));
 
-	nl_cb_put(cb);
+  nl_cb_put(cb);
 
-	return err;
+  return err;
 }
 
-static int pickup_cb(struct nl_object *c, struct nl_parser_param *p)
-{
-	return nl_cache_add((struct nl_cache *) p->pp_arg, c);
+static int pickup_cb(struct nl_object *c, struct nl_parser_param *p) {
+  return nl_cache_add((struct nl_cache *)p->pp_arg, c);
 }
 
 /**
@@ -279,16 +268,14 @@ static int pickup_cb(struct nl_object *c, struct nl_parser_param *p)
  *
  * @return 0 on success or a negative error code.
  */
-int nl_cache_pickup(struct nl_sock *sk, struct nl_cache *cache)
-{
-	struct nl_parser_param p = {
-		.pp_cb = pickup_cb,
-		.pp_arg = cache,
-	};
+int nl_cache_pickup(struct nl_sock *sk, struct nl_cache *cache) {
+  struct nl_parser_param p = {
+      .pp_cb = pickup_cb,
+      .pp_arg = cache,
+  };
 
-	return __cache_pickup(sk, cache, &p);
+  return __cache_pickup(sk, cache, &p);
 }
-
 
 /** @} */
 
@@ -299,25 +286,23 @@ int nl_cache_pickup(struct nl_sock *sk, struct nl_cache *cache)
 
 /** @cond SKIP */
 int nl_cache_parse(struct nl_cache_ops *ops, struct sockaddr_nl *who,
-		   struct nlmsghdr *nlh, struct nl_parser_param *params)
-{
-	int i, err;
+                   struct nlmsghdr *nlh, struct nl_parser_param *params) {
+  int i, err;
 
-	if (!nlmsg_valid_hdr(nlh, ops->co_hdrsize))
-		return -NLE_MSG_TOOSHORT;
+  if (!nlmsg_valid_hdr(nlh, ops->co_hdrsize))
+    return -NLE_MSG_TOOSHORT;
 
-	for (i = 0; ops->co_msgtypes[i].mt_id >= 0; i++) {
-		if (ops->co_msgtypes[i].mt_id == nlh->nlmsg_type) {
-			err = ops->co_msg_parser(ops, who, nlh, params);
-			if (err != -NLE_OPNOTSUPP)
-				goto errout;
-		}
-	}
+  for (i = 0; ops->co_msgtypes[i].mt_id >= 0; i++) {
+    if (ops->co_msgtypes[i].mt_id == nlh->nlmsg_type) {
+      err = ops->co_msg_parser(ops, who, nlh, params);
+      if (err != -NLE_OPNOTSUPP)
+        goto errout;
+    }
+  }
 
-
-	err = -NLE_MSGTYPE_NOSUPPORT;
+  err = -NLE_MSGTYPE_NOSUPPORT;
 errout:
-	return err;
+  return err;
 }
 /** @endcond */
 
@@ -331,14 +316,13 @@ errout:
  *
  * @return 0 or a negative error code.
  */
-int nl_cache_parse_and_add(struct nl_cache *cache, struct nl_msg *msg)
-{
-	struct nl_parser_param p = {
-		.pp_cb = pickup_cb,
-		.pp_arg = cache,
-	};
+int nl_cache_parse_and_add(struct nl_cache *cache, struct nl_msg *msg) {
+  struct nl_parser_param p = {
+      .pp_cb = pickup_cb,
+      .pp_arg = cache,
+  };
 
-	return nl_cache_parse(cache->c_ops, NULL, nlmsg_hdr(msg), &p);
+  return nl_cache_parse(cache->c_ops, NULL, nlmsg_hdr(msg), &p);
 }
 
 /**
@@ -351,19 +335,18 @@ int nl_cache_parse_and_add(struct nl_cache *cache, struct nl_msg *msg)
  *
  * @return 0 or a negative error code.
  */
-int nl_cache_refill(struct nl_sock *sk, struct nl_cache *cache)
-{
-	int err;
+int nl_cache_refill(struct nl_sock *sk, struct nl_cache *cache) {
+  int err;
 
-	err = nl_cache_request_full_dump(sk, cache);
-	if (err < 0)
-		return err;
+  err = nl_cache_request_full_dump(sk, cache);
+  if (err < 0)
+    return err;
 
-	NL_DBG(2, "Upading cache %p <%s>, request sent, waiting for dump...\n",
-	       cache, nl_cache_name(cache));
-	nl_cache_clear(cache);
+  NL_DBG(2, "Upading cache %p <%s>, request sent, waiting for dump...\n", cache,
+         nl_cache_name(cache));
+  nl_cache_clear(cache);
 
-	return nl_cache_pickup(sk, cache);
+  return nl_cache_pickup(sk, cache);
 }
 
 /** @} */

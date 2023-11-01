@@ -5,9 +5,9 @@
 #ifndef NETLINK_GENL_MNGT_H_
 #define NETLINK_GENL_MNGT_H_
 
-#include <netlink/netlink.h>
 #include <netlink/attr.h>
 #include <netlink/list.h>
+#include <netlink/netlink.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -15,63 +15,58 @@ extern "C" {
 
 struct nl_cache_ops;
 
-struct genl_info
-{
-	struct sockaddr_nl *    who;
-	struct nlmsghdr *       nlh;
-	struct genlmsghdr *     genlhdr;
-	void *                  userhdr;
-	struct nlattr **        attrs;
+struct genl_info {
+  struct sockaddr_nl *who;
+  struct nlmsghdr *nlh;
+  struct genlmsghdr *genlhdr;
+  void *userhdr;
+  struct nlattr **attrs;
 };
 
 /**
  * @ingroup genl_mngt
  * Generic Netlink Command
  */
-struct genl_cmd
-{
-	/** Unique command identifier */
-	int			c_id;
+struct genl_cmd {
+  /** Unique command identifier */
+  int c_id;
 
-	/** Name/description of command */
-	char *			c_name;
+  /** Name/description of command */
+  char *c_name;
 
-	/**
-	 * Maximum attribute identifier, must be provided if
-	 * a message parser is available.
-	 */
-	int			c_maxattr;
+  /**
+   * Maximum attribute identifier, must be provided if
+   * a message parser is available.
+   */
+  int c_maxattr;
 
-	int		      (*c_msg_parser)(struct nl_cache_ops *,
-					      struct genl_cmd *,
-					      struct genl_info *, void *);
+  int (*c_msg_parser)(struct nl_cache_ops *, struct genl_cmd *,
+                      struct genl_info *, void *);
 
-	/**
-	 * Attribute validation policy (optional)
-	 */
-	struct nla_policy *	c_attr_policy;
+  /**
+   * Attribute validation policy (optional)
+   */
+  struct nla_policy *c_attr_policy;
 };
 
 /**
  * @ingroup genl_mngt
  * Generic Netlink Operations
  */
-struct genl_ops
-{
-	int			o_family;
-	int			o_id;
-	char *			o_name;
-	struct nl_cache_ops *	o_cache_ops;
-	struct genl_cmd	*	o_cmds;
-	int			o_ncmds;
+struct genl_ops {
+  int o_family;
+  int o_id;
+  char *o_name;
+  struct nl_cache_ops *o_cache_ops;
+  struct genl_cmd *o_cmds;
+  int o_ncmds;
 
-	/* linked list of all genl cache operations */
-	struct nl_list_head	o_list;
+  /* linked list of all genl cache operations */
+  struct nl_list_head o_list;
 };
 
-
-extern int		genl_register(struct nl_cache_ops *);
-extern void		genl_unregister(struct nl_cache_ops *);
+extern int genl_register(struct nl_cache_ops *);
+extern void genl_unregister(struct nl_cache_ops *);
 
 #ifdef __cplusplus
 }

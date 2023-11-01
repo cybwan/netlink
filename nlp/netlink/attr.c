@@ -2,13 +2,13 @@
  * netlink/attr.c		Netlink Attributes
  */
 
+#include <linux/socket.h>
 #include <netlink-local.h>
-#include <netlink/netlink.h>
-#include <netlink/utils.h>
 #include <netlink/addr.h>
 #include <netlink/attr.h>
 #include <netlink/msg.h>
-#include <linux/socket.h>
+#include <netlink/netlink.h>
+#include <netlink/utils.h>
 
 /**
  * @ingroup msg
@@ -391,13 +391,10 @@
  *
  * @return True if the attribute can be accessed safely, false otherwise.
  */
-int nla_ok(const struct nlattr *nla, int remaining)
-{
-	size_t r = remaining;
+int nla_ok(const struct nlattr *nla, int remaining) {
+  size_t r = remaining;
 
-	return r >= sizeof(*nla) &&
-	       nla->nla_len >= sizeof(*nla) &&
-	       nla->nla_len <= r;
+  return r >= sizeof(*nla) && nla->nla_len >= sizeof(*nla) && nla->nla_len <= r;
 }
 
 /**
@@ -416,63 +413,60 @@ int nla_ok(const struct nlattr *nla, int remaining)
  *
  * @return Pointer to next attribute.
  */
-struct nlattr *nla_next(const struct nlattr *nla, int *remaining)
-{
-	int totlen = NLA_ALIGN(nla->nla_len);
+struct nlattr *nla_next(const struct nlattr *nla, int *remaining) {
+  int totlen = NLA_ALIGN(nla->nla_len);
 
-	*remaining -= totlen;
-	return (struct nlattr *) ((char *) nla + totlen);
+  *remaining -= totlen;
+  return (struct nlattr *)((char *)nla + totlen);
 }
 
-static uint16_t nla_attr_minlen[NLA_TYPE_MAX+1] = {
-	[NLA_U8]	= sizeof(uint8_t),
-	[NLA_U16]	= sizeof(uint16_t),
-	[NLA_U32]	= sizeof(uint32_t),
-	[NLA_U64]	= sizeof(uint64_t),
-	[NLA_STRING]	= 1,
-	[NLA_S8]	= sizeof(int8_t),
-	[NLA_S16]	= sizeof(int16_t),
-	[NLA_S32]	= sizeof(int32_t),
-	[NLA_S64]	= sizeof(int64_t),
+static uint16_t nla_attr_minlen[NLA_TYPE_MAX + 1] = {
+    [NLA_U8] = sizeof(uint8_t),
+    [NLA_U16] = sizeof(uint16_t),
+    [NLA_U32] = sizeof(uint32_t),
+    [NLA_U64] = sizeof(uint64_t),
+    [NLA_STRING] = 1,
+    [NLA_S8] = sizeof(int8_t),
+    [NLA_S16] = sizeof(int16_t),
+    [NLA_S32] = sizeof(int32_t),
+    [NLA_S64] = sizeof(int64_t),
 };
 
 static int validate_nla(const struct nlattr *nla, int maxtype,
-			const struct nla_policy *policy)
-{
-	const struct nla_policy *pt;
-	int minlen = 0, type = nla_type(nla);
+                        const struct nla_policy *policy) {
+  const struct nla_policy *pt;
+  int minlen = 0, type = nla_type(nla);
 
-	if (type <= 0 || type > maxtype)
-		return 0;
+  if (type <= 0 || type > maxtype)
+    return 0;
 
-	pt = &policy[type];
+  pt = &policy[type];
 
-	if (pt->type > NLA_TYPE_MAX)
-		BUG();
+  if (pt->type > NLA_TYPE_MAX)
+    BUG();
 
-	if (pt->minlen)
-		minlen = pt->minlen;
-	else if (pt->type != NLA_UNSPEC)
-		minlen = nla_attr_minlen[pt->type];
+  if (pt->minlen)
+    minlen = pt->minlen;
+  else if (pt->type != NLA_UNSPEC)
+    minlen = nla_attr_minlen[pt->type];
 
-	if (pt->type == NLA_FLAG && nla_len(nla) > 0)
-		return -NLE_RANGE;
+  if (pt->type == NLA_FLAG && nla_len(nla) > 0)
+    return -NLE_RANGE;
 
-	if (nla_len(nla) < minlen)
-		return -NLE_RANGE;
+  if (nla_len(nla) < minlen)
+    return -NLE_RANGE;
 
-	if (pt->maxlen && nla_len(nla) > pt->maxlen)
-		return -NLE_RANGE;
+  if (pt->maxlen && nla_len(nla) > pt->maxlen)
+    return -NLE_RANGE;
 
-	if (pt->type == NLA_STRING) {
-		char *data = nla_data(nla);
-		if (data[nla_len(nla) - 1] != '\0')
-			return -NLE_INVAL;
-	}
+  if (pt->type == NLA_STRING) {
+    char *data = nla_data(nla);
+    if (data[nla_len(nla) - 1] != '\0')
+      return -NLE_INVAL;
+  }
 
-	return 0;
+  return 0;
 }
-
 
 /**
  * Create attribute index based on a stream of attributes.
@@ -493,39 +487,40 @@ static int validate_nla(const struct nlattr *nla, int maxtype,
  * @return 0 on success or a negative error code.
  */
 int nla_parse(struct nlattr *tb[], int maxtype, struct nlattr *head, int len,
-	      const struct nla_policy *policy)
-{
-	struct nlattr *nla;
-	int rem, err;
+              const struct nla_policy *policy) {
+  struct nlattr *nla;
+  int rem, err;
 
-	memset(tb, 0, sizeof(struct nlattr *) * (maxtype + 1));
+  memset(tb, 0, sizeof(struct nlattr *) * (maxtype + 1));
 
-	nla_for_each_attr(nla, head, len, rem) {
-		int type = nla_type(nla);
+  nla_for_each_attr(nla, head, len, rem) {
+    int type = nla_type(nla);
 
-		if (type == 0) {
-			fprintf(stderr, "Illegal nla->nla_type == 0\n");
-			continue;
-		}
+    if (type == 0) {
+      fprintf(stderr, "Illegal nla->nla_type == 0\n");
+      continue;
+    }
 
-		if (type <= maxtype) {
-			if (policy) {
-				err = validate_nla(nla, maxtype, policy);
-				if (err < 0)
-					goto errout;
-			}
+    if (type <= maxtype) {
+      if (policy) {
+        err = validate_nla(nla, maxtype, policy);
+        if (err < 0)
+          goto errout;
+      }
 
-			tb[type] = nla;
-		}
-	}
+      tb[type] = nla;
+    }
+  }
 
-	if (rem > 0)
-		fprintf(stderr, "netlink: %d bytes leftover after parsing "
-		       "attributes.\n", rem);
+  if (rem > 0)
+    fprintf(stderr,
+            "netlink: %d bytes leftover after parsing "
+            "attributes.\n",
+            rem);
 
-	err = 0;
+  err = 0;
 errout:
-	return err;
+  return err;
 }
 
 /**
@@ -546,20 +541,19 @@ errout:
  * @return 0 on success or a negative error code.
  */
 int nla_validate(const struct nlattr *head, int len, int maxtype,
-		 const struct nla_policy *policy)
-{
-	const struct nlattr *nla;
-	int rem, err;
+                 const struct nla_policy *policy) {
+  const struct nlattr *nla;
+  int rem, err;
 
-	nla_for_each_attr(nla, head, len, rem) {
-		err = validate_nla(nla, maxtype, policy);
-		if (err < 0)
-			goto errout;
-	}
+  nla_for_each_attr(nla, head, len, rem) {
+    err = validate_nla(nla, maxtype, policy);
+    if (err < 0)
+      goto errout;
+  }
 
-	err = 0;
+  err = 0;
 errout:
-	return err;
+  return err;
 }
 
 /**
@@ -574,16 +568,14 @@ errout:
  *
  * @return Pointer to attribute found or NULL.
  */
-struct nlattr *nla_find(struct nlattr *head, int len, int attrtype)
-{
-	struct nlattr *nla;
-	int rem;
+struct nlattr *nla_find(struct nlattr *head, int len, int attrtype) {
+  struct nlattr *nla;
+  int rem;
 
-	nla_for_each_attr(nla, head, len, rem)
-		if (nla_type(nla) == attrtype)
-			return nla;
+  nla_for_each_attr(nla, head, len,
+                    rem) if (nla_type(nla) == attrtype) return nla;
 
-	return NULL;
+  return NULL;
 }
 
 /** @} */
@@ -608,29 +600,29 @@ struct nlattr *nla_find(struct nlattr *head, int len, int attrtype)
  *
  * @return Pointer to start of attribute or NULL on failure.
  */
-struct nlattr *nla_reserve(struct nl_msg *msg, int attrtype, int attrlen)
-{
-	struct nlattr *nla;
-	int tlen;
-	
-	tlen = NLMSG_ALIGN(msg->nm_nlh->nlmsg_len) + nla_total_size(attrlen);
+struct nlattr *nla_reserve(struct nl_msg *msg, int attrtype, int attrlen) {
+  struct nlattr *nla;
+  int tlen;
 
-	if ((tlen + msg->nm_nlh->nlmsg_len) > msg->nm_size)
-		return NULL;
+  tlen = NLMSG_ALIGN(msg->nm_nlh->nlmsg_len) + nla_total_size(attrlen);
 
-	nla = (struct nlattr *) nlmsg_tail(msg->nm_nlh);
-	nla->nla_type = attrtype;
-	nla->nla_len = nla_attr_size(attrlen);
+  if ((tlen + msg->nm_nlh->nlmsg_len) > msg->nm_size)
+    return NULL;
 
-	memset((unsigned char *) nla + nla->nla_len, 0, nla_padlen(attrlen));
-	msg->nm_nlh->nlmsg_len = tlen;
+  nla = (struct nlattr *)nlmsg_tail(msg->nm_nlh);
+  nla->nla_type = attrtype;
+  nla->nla_len = nla_attr_size(attrlen);
 
-	NL_DBG(2, "msg %p: Reserved %d bytes at offset +%td for attr %d "
-		  "nlmsg_len=%d\n", msg, attrlen,
-		  (void *) nla - nlmsg_data(msg->nm_nlh),
-		  attrtype, msg->nm_nlh->nlmsg_len);
+  memset((unsigned char *)nla + nla->nla_len, 0, nla_padlen(attrlen));
+  msg->nm_nlh->nlmsg_len = tlen;
 
-	return nla;
+  NL_DBG(2,
+         "msg %p: Reserved %d bytes at offset +%td for attr %d "
+         "nlmsg_len=%d\n",
+         msg, attrlen, (void *)nla - nlmsg_data(msg->nm_nlh), attrtype,
+         msg->nm_nlh->nlmsg_len);
+
+  return nla;
 }
 
 /**
@@ -647,21 +639,18 @@ struct nlattr *nla_reserve(struct nl_msg *msg, int attrtype, int attrlen)
  * @see nla_reserve
  * @return 0 on success or a negative error code.
  */
-int nla_put(struct nl_msg *msg, int attrtype, int datalen, const void *data)
-{
-	struct nlattr *nla;
+int nla_put(struct nl_msg *msg, int attrtype, int datalen, const void *data) {
+  struct nlattr *nla;
 
-	nla = nla_reserve(msg, attrtype, datalen);
-	if (!nla)
-		return -NLE_NOMEM;
+  nla = nla_reserve(msg, attrtype, datalen);
+  if (!nla)
+    return -NLE_NOMEM;
 
-	memcpy(nla_data(nla), data, datalen);
-	NL_DBG(2, "msg %p: Wrote %d bytes at offset +%td for attr %d\n",
-	       msg, datalen, (void *) nla - nlmsg_data(msg->nm_nlh), attrtype);
+  memcpy(nla_data(nla), data, datalen);
+  NL_DBG(2, "msg %p: Wrote %d bytes at offset +%td for attr %d\n", msg, datalen,
+         (void *)nla - nlmsg_data(msg->nm_nlh), attrtype);
 
-	return 0;
+  return 0;
 }
-
-
 
 /** @} */

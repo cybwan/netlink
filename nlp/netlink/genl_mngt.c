@@ -74,59 +74,57 @@
  */
 
 #include <netlink-generic.h>
-#include <netlink/netlink.h>
+#include <netlink/genl/ctrl.h>
+#include <netlink/genl/family.h>
 #include <netlink/genl/genl.h>
 #include <netlink/genl/mngt.h>
-#include <netlink/genl/family.h>
-#include <netlink/genl/ctrl.h>
+#include <netlink/netlink.h>
 #include <netlink/utils.h>
 
 static NL_LIST_HEAD(genl_ops_list);
 
 static int genl_msg_parser(struct nl_cache_ops *ops, struct sockaddr_nl *who,
-			   struct nlmsghdr *nlh, struct nl_parser_param *pp)
-{
-	int i, err;
-	struct genlmsghdr *ghdr;
-	struct genl_cmd *cmd;
+                           struct nlmsghdr *nlh, struct nl_parser_param *pp) {
+  int i, err;
+  struct genlmsghdr *ghdr;
+  struct genl_cmd *cmd;
 
-	ghdr = nlmsg_data(nlh);
+  ghdr = nlmsg_data(nlh);
 
-	if (ops->co_genl == NULL)
-		BUG();
+  if (ops->co_genl == NULL)
+    BUG();
 
-	for (i = 0; i < ops->co_genl->o_ncmds; i++) {
-		cmd = &ops->co_genl->o_cmds[i];
-		if (cmd->c_id == ghdr->cmd)
-			goto found;
-	}
+  for (i = 0; i < ops->co_genl->o_ncmds; i++) {
+    cmd = &ops->co_genl->o_cmds[i];
+    if (cmd->c_id == ghdr->cmd)
+      goto found;
+  }
 
-	err = -NLE_MSGTYPE_NOSUPPORT;
-	goto errout;
+  err = -NLE_MSGTYPE_NOSUPPORT;
+  goto errout;
 
 found:
-	if (cmd->c_msg_parser == NULL)
-		err = -NLE_OPNOTSUPP;
-	else {
-		struct nlattr *tb[cmd->c_maxattr + 1];
-		struct genl_info info = {
-			.who = who,
-			.nlh = nlh,
-			.genlhdr = ghdr,
-			.userhdr = genlmsg_data(ghdr),
-			.attrs = tb,
-		};
+  if (cmd->c_msg_parser == NULL)
+    err = -NLE_OPNOTSUPP;
+  else {
+    struct nlattr *tb[cmd->c_maxattr + 1];
+    struct genl_info info = {
+        .who = who,
+        .nlh = nlh,
+        .genlhdr = ghdr,
+        .userhdr = genlmsg_data(ghdr),
+        .attrs = tb,
+    };
 
-		err = nlmsg_parse(nlh, ops->co_hdrsize, tb, cmd->c_maxattr,
-				  cmd->c_attr_policy);
-		if (err < 0)
-			goto errout;
+    err = nlmsg_parse(nlh, ops->co_hdrsize, tb, cmd->c_maxattr,
+                      cmd->c_attr_policy);
+    if (err < 0)
+      goto errout;
 
-		err = cmd->c_msg_parser(ops, cmd, &info, pp);
-	}
+    err = cmd->c_msg_parser(ops, cmd, &info, pp);
+  }
 errout:
-	return err;
-
+  return err;
 }
 
 /**
@@ -138,47 +136,45 @@ errout:
  * Register generic netlink operations
  * @arg ops		cache operations
  */
-int genl_register(struct nl_cache_ops *ops)
-{
-	int err;
+int genl_register(struct nl_cache_ops *ops) {
+  int err;
 
-	if (ops->co_protocol != NETLINK_GENERIC) {
-		err = -NLE_PROTO_MISMATCH;
-		goto errout;
-	}
+  if (ops->co_protocol != NETLINK_GENERIC) {
+    err = -NLE_PROTO_MISMATCH;
+    goto errout;
+  }
 
-	if ((size_t) ops->co_hdrsize < GENL_HDRSIZE(0)) {
-		err = -NLE_INVAL;
-		goto errout;
-	}
+  if ((size_t)ops->co_hdrsize < GENL_HDRSIZE(0)) {
+    err = -NLE_INVAL;
+    goto errout;
+  }
 
-	if (ops->co_genl == NULL) {
-		err = -NLE_INVAL;
-		goto errout;
-	}
+  if (ops->co_genl == NULL) {
+    err = -NLE_INVAL;
+    goto errout;
+  }
 
-	ops->co_genl->o_cache_ops = ops;
-	ops->co_genl->o_name = ops->co_msgtypes[0].mt_name;
-	ops->co_genl->o_family = ops->co_msgtypes[0].mt_id;
-	ops->co_msg_parser = genl_msg_parser;
+  ops->co_genl->o_cache_ops = ops;
+  ops->co_genl->o_name = ops->co_msgtypes[0].mt_name;
+  ops->co_genl->o_family = ops->co_msgtypes[0].mt_id;
+  ops->co_msg_parser = genl_msg_parser;
 
-	/* FIXME: check for dup */
+  /* FIXME: check for dup */
 
-	nl_list_add_tail(&ops->co_genl->o_list, &genl_ops_list);
+  nl_list_add_tail(&ops->co_genl->o_list, &genl_ops_list);
 
-	err = nl_cache_mngt_register(ops);
+  err = nl_cache_mngt_register(ops);
 errout:
-	return err;
+  return err;
 }
 
 /**
  * Unregister generic netlink operations
  * @arg ops		cache operations
  */
-void genl_unregister(struct nl_cache_ops *ops)
-{
-	nl_cache_mngt_unregister(ops);
-	nl_list_del(&ops->co_genl->o_list);
+void genl_unregister(struct nl_cache_ops *ops) {
+  nl_cache_mngt_unregister(ops);
+  nl_list_del(&ops->co_genl->o_list);
 }
 
 /** @} */

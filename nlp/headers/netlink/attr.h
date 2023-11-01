@@ -5,11 +5,11 @@
 #ifndef NETLINK_ATTR_H_
 #define NETLINK_ATTR_H_
 
-#include <netlink/netlink.h>
-#include <netlink/object.h>
 #include <netlink/addr.h>
 #include <netlink/data.h>
 #include <netlink/msg.h>
+#include <netlink/netlink.h>
+#include <netlink/object.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,30 +22,30 @@ struct nl_msg;
  * @{
  */
 
- /**
-  * @ingroup attr
-  * Basic attribute data types
-  *
-  * See \ref attr_datatypes for more details.
-  */
+/**
+ * @ingroup attr
+ * Basic attribute data types
+ *
+ * See \ref attr_datatypes for more details.
+ */
 enum {
-	NLA_UNSPEC,	/**< Unspecified type, binary data chunk */
-	NLA_U8,		/**< 8 bit integer */
-	NLA_U16,	/**< 16 bit integer */
-	NLA_U32,	/**< 32 bit integer */
-	NLA_U64,	/**< 64 bit integer */
-	NLA_STRING,	/**< NUL terminated character string */
-	NLA_FLAG,	/**< Flag */
-	NLA_MSECS,	/**< Micro seconds (64bit) */
-	NLA_NESTED,	/**< Nested attributes */
-	NLA_NESTED_ARRAY,
-	NLA_NUL_STRING,
-	NLA_BINARY,
-	NLA_S8,
-	NLA_S16,
-	NLA_S32,
-	NLA_S64,
-	__NLA_TYPE_MAX,
+  NLA_UNSPEC, /**< Unspecified type, binary data chunk */
+  NLA_U8,     /**< 8 bit integer */
+  NLA_U16,    /**< 16 bit integer */
+  NLA_U32,    /**< 32 bit integer */
+  NLA_U64,    /**< 64 bit integer */
+  NLA_STRING, /**< NUL terminated character string */
+  NLA_FLAG,   /**< Flag */
+  NLA_MSECS,  /**< Micro seconds (64bit) */
+  NLA_NESTED, /**< Nested attributes */
+  NLA_NESTED_ARRAY,
+  NLA_NUL_STRING,
+  NLA_BINARY,
+  NLA_S8,
+  NLA_S16,
+  NLA_S32,
+  NLA_S64,
+  __NLA_TYPE_MAX,
 };
 
 #define NLA_TYPE_MAX (__NLA_TYPE_MAX - 1)
@@ -59,28 +59,28 @@ enum {
  * See \ref attr_datatypes for more details.
  */
 struct nla_policy {
-	/** Type of attribute or NLA_UNSPEC */
-	uint16_t	type;
+  /** Type of attribute or NLA_UNSPEC */
+  uint16_t type;
 
-	/** Minimal length of payload required */
-	uint16_t	minlen;
+  /** Minimal length of payload required */
+  uint16_t minlen;
 
-	/** Maximal length of payload allowed */
-	uint16_t	maxlen;
+  /** Maximal length of payload allowed */
+  uint16_t maxlen;
 };
 
 /* Attribute parsing */
-extern int		nla_ok(const struct nlattr *, int);
-extern struct nlattr *	nla_next(const struct nlattr *, int *);
-extern int		nla_parse(struct nlattr **, int, struct nlattr *,
-				  int, const struct nla_policy *);
-extern int		nla_validate(const struct nlattr *, int, int,
-				     const struct nla_policy *);
-extern struct nlattr *	nla_find(struct nlattr *, int, int);
+extern int nla_ok(const struct nlattr *, int);
+extern struct nlattr *nla_next(const struct nlattr *, int *);
+extern int nla_parse(struct nlattr **, int, struct nlattr *, int,
+                     const struct nla_policy *);
+extern int nla_validate(const struct nlattr *, int, int,
+                        const struct nla_policy *);
+extern struct nlattr *nla_find(struct nlattr *, int, int);
 
 /* Unspecific attribute */
-extern struct nlattr *	nla_reserve(struct nl_msg *, int, int);
-extern int		nla_put(struct nl_msg *, int, int, const void *);
+extern struct nlattr *nla_reserve(struct nl_msg *, int, int);
+extern int nla_put(struct nl_msg *, int, int, const void *);
 
 /**
  * nlmsg_find_attr - find a specific attribute in a netlink message
@@ -90,12 +90,11 @@ extern int		nla_put(struct nl_msg *, int, int, const void *);
  *
  * Returns the first attribute which matches the specified type.
  */
-static inline struct nlattr *nlmsg_find_attr(struct nlmsghdr *nlh, int hdrlen, int attrtype)
-{
-	return nla_find(nlmsg_attrdata(nlh, hdrlen),
-			nlmsg_attrlen(nlh, hdrlen), attrtype);
+static inline struct nlattr *nlmsg_find_attr(struct nlmsghdr *nlh, int hdrlen,
+                                             int attrtype) {
+  return nla_find(nlmsg_attrdata(nlh, hdrlen), nlmsg_attrlen(nlh, hdrlen),
+                  attrtype);
 }
-
 
 /**
  * Return size of attribute whithout padding.
@@ -110,10 +109,7 @@ static inline struct nlattr *nlmsg_find_attr(struct nlmsghdr *nlh, int hdrlen, i
  *
  * @return Size of attribute in bytes without padding.
  */
-static inline int nla_attr_size(int payload)
-{
-	return NLA_HDRLEN + payload;
-}
+static inline int nla_attr_size(int payload) { return NLA_HDRLEN + payload; }
 
 /**
  * Return size of attribute including padding.
@@ -128,9 +124,8 @@ static inline int nla_attr_size(int payload)
  *
  * @return Size of attribute in bytes.
  */
-static inline int nla_total_size(int payload)
-{
-	return NLA_ALIGN(nla_attr_size(payload));
+static inline int nla_total_size(int payload) {
+  return NLA_ALIGN(nla_attr_size(payload));
 }
 
 /**
@@ -141,14 +136,13 @@ static inline int nla_total_size(int payload)
  *   +------------------+- - -+- - - - - - - - - +- - -+
  *   | Attribute Header | Pad |     Payload      | Pad |
  *   +------------------+- - -+- - - - - - - - - +- - -+
- *                                                <--->  
+ *                                                <--->
  * @endcode
  *
  * @return Length of padding in bytes.
  */
-static inline int nla_padlen(int payload)
-{
-	return nla_total_size(payload) - nla_attr_size(payload);
+static inline int nla_padlen(int payload) {
+  return nla_total_size(payload) - nla_attr_size(payload);
 }
 
 /**
@@ -157,9 +151,8 @@ static inline int nla_padlen(int payload)
  *
  * @return Type of attribute.
  */
-static inline int nla_type(const struct nlattr *nla)
-{
-	return nla->nla_type & NLA_TYPE_MASK;
+static inline int nla_type(const struct nlattr *nla) {
+  return nla->nla_type & NLA_TYPE_MASK;
 }
 
 /**
@@ -168,9 +161,8 @@ static inline int nla_type(const struct nlattr *nla)
  *
  * @return Pointer to start of payload section.
  */
-static inline void *nla_data(const struct nlattr *nla)
-{
-	return (char *) nla + NLA_HDRLEN;
+static inline void *nla_data(const struct nlattr *nla) {
+  return (char *)nla + NLA_HDRLEN;
 }
 
 /**
@@ -179,9 +171,8 @@ static inline void *nla_data(const struct nlattr *nla)
  *
  * @return Length of payload in bytes.
  */
-static inline int nla_len(const struct nlattr *nla)
-{
-	return nla->nla_len - NLA_HDRLEN;
+static inline int nla_len(const struct nlattr *nla) {
+  return nla->nla_len - NLA_HDRLEN;
 }
 
 /**
@@ -195,19 +186,17 @@ static inline int nla_len(const struct nlattr *nla)
  *
  * @return The number of bytes copied to dest.
  */
-static inline int nla_memcpy(void *dest, const struct nlattr *src, int count)
-{
-	int minlen;
+static inline int nla_memcpy(void *dest, const struct nlattr *src, int count) {
+  int minlen;
 
-	if (!src)
-		return 0;
-	
-	minlen = min_t(int, count, nla_len(src));
-	memcpy(dest, nla_data(src), minlen);
+  if (!src)
+    return 0;
 
-	return minlen;
+  minlen = min_t(int, count, nla_len(src));
+  memcpy(dest, nla_data(src), minlen);
+
+  return minlen;
 }
-
 
 /**
  * Add abstract data as unspecific attribute to netlink message.
@@ -221,10 +210,9 @@ static inline int nla_memcpy(void *dest, const struct nlattr *src, int count)
  * @see nla_put
  * @return 0 on success or a negative error code.
  */
-static inline int nla_put_data(struct nl_msg *msg, int attrtype, struct nl_data *data)
-{
-	return nla_put(msg, attrtype, nl_data_get_size(data),
-		       nl_data_get(data));
+static inline int nla_put_data(struct nl_msg *msg, int attrtype,
+                               struct nl_data *data) {
+  return nla_put(msg, attrtype, nl_data_get_size(data), nl_data_get(data));
 }
 
 /**
@@ -236,10 +224,10 @@ static inline int nla_put_data(struct nl_msg *msg, int attrtype, struct nl_data 
  * @see nla_put
  * @return 0 on success or a negative error code.
  */
-static inline int nla_put_addr(struct nl_msg *msg, int attrtype, struct nl_addr *addr)
-{
-	return nla_put(msg, attrtype, nl_addr_get_len(addr),
-		       nl_addr_get_binary_addr(addr));
+static inline int nla_put_addr(struct nl_msg *msg, int attrtype,
+                               struct nl_addr *addr) {
+  return nla_put(msg, attrtype, nl_addr_get_len(addr),
+                 nl_addr_get_binary_addr(addr));
 }
 
 /** @} */
@@ -257,9 +245,8 @@ static inline int nla_put_addr(struct nl_msg *msg, int attrtype, struct nl_addr 
  * @see nla_put
  * @return 0 on success or a negative error code.
  */
-static inline int nla_put_s8(struct nl_msg *msg, int attrtype, int8_t value)
-{
-	return nla_put(msg, attrtype, sizeof(int8_t), &value);
+static inline int nla_put_s8(struct nl_msg *msg, int attrtype, int8_t value) {
+  return nla_put(msg, attrtype, sizeof(int8_t), &value);
 }
 
 /**
@@ -268,9 +255,8 @@ static inline int nla_put_s8(struct nl_msg *msg, int attrtype, int8_t value)
  *
  * @return Payload as 8 bit integer.
  */
-static inline int8_t nla_get_s8(const struct nlattr *nla)
-{
-	return *(const int8_t *) nla_data(nla);
+static inline int8_t nla_get_s8(const struct nlattr *nla) {
+  return *(const int8_t *)nla_data(nla);
 }
 
 /**
@@ -282,9 +268,8 @@ static inline int8_t nla_get_s8(const struct nlattr *nla)
  * @see nla_put
  * @return 0 on success or a negative error code.
  */
-static inline int nla_put_u8(struct nl_msg *msg, int attrtype, uint8_t value)
-{
-	return nla_put(msg, attrtype, sizeof(uint8_t), &value);
+static inline int nla_put_u8(struct nl_msg *msg, int attrtype, uint8_t value) {
+  return nla_put(msg, attrtype, sizeof(uint8_t), &value);
 }
 
 /**
@@ -293,9 +278,8 @@ static inline int nla_put_u8(struct nl_msg *msg, int attrtype, uint8_t value)
  *
  * @return Payload as 8 bit integer.
  */
-static inline uint8_t nla_get_u8(const struct nlattr *nla)
-{
-	return *(const uint8_t *) nla_data(nla);
+static inline uint8_t nla_get_u8(const struct nlattr *nla) {
+  return *(const uint8_t *)nla_data(nla);
 }
 
 /**
@@ -307,9 +291,8 @@ static inline uint8_t nla_get_u8(const struct nlattr *nla)
  * @see nla_put
  * @return 0 on success or a negative error code.
  */
-static inline int nla_put_s16(struct nl_msg *msg, int attrtype, int16_t value)
-{
-	return nla_put(msg, attrtype, sizeof(int16_t), &value);
+static inline int nla_put_s16(struct nl_msg *msg, int attrtype, int16_t value) {
+  return nla_put(msg, attrtype, sizeof(int16_t), &value);
 }
 
 /**
@@ -318,9 +301,8 @@ static inline int nla_put_s16(struct nl_msg *msg, int attrtype, int16_t value)
  *
  * @return Payload as 16 bit integer.
  */
-static inline int16_t nla_get_s16(const struct nlattr *nla)
-{
-	return *(const int16_t *) nla_data(nla);
+static inline int16_t nla_get_s16(const struct nlattr *nla) {
+  return *(const int16_t *)nla_data(nla);
 }
 
 /**
@@ -332,9 +314,9 @@ static inline int16_t nla_get_s16(const struct nlattr *nla)
  * @see nla_put
  * @return 0 on success or a negative error code.
  */
-static inline int nla_put_u16(struct nl_msg *msg, int attrtype, uint16_t value)
-{
-	return nla_put(msg, attrtype, sizeof(uint16_t), &value);
+static inline int nla_put_u16(struct nl_msg *msg, int attrtype,
+                              uint16_t value) {
+  return nla_put(msg, attrtype, sizeof(uint16_t), &value);
 }
 
 /**
@@ -343,9 +325,8 @@ static inline int nla_put_u16(struct nl_msg *msg, int attrtype, uint16_t value)
  *
  * @return Payload as 16 bit integer.
  */
-static inline uint16_t nla_get_u16(const struct nlattr *nla)
-{
-	return *(const uint16_t *) nla_data(nla);
+static inline uint16_t nla_get_u16(const struct nlattr *nla) {
+  return *(const uint16_t *)nla_data(nla);
 }
 
 /**
@@ -357,9 +338,8 @@ static inline uint16_t nla_get_u16(const struct nlattr *nla)
  * @see nla_put
  * @return 0 on success or a negative error code.
  */
-static inline int nla_put_s32(struct nl_msg *msg, int attrtype, int32_t value)
-{
-	return nla_put(msg, attrtype, sizeof(int32_t), &value);
+static inline int nla_put_s32(struct nl_msg *msg, int attrtype, int32_t value) {
+  return nla_put(msg, attrtype, sizeof(int32_t), &value);
 }
 
 /**
@@ -368,9 +348,8 @@ static inline int nla_put_s32(struct nl_msg *msg, int attrtype, int32_t value)
  *
  * @return Payload as 32 bit integer.
  */
-static inline int32_t nla_get_s32(const struct nlattr *nla)
-{
-	return *(const int32_t *) nla_data(nla);
+static inline int32_t nla_get_s32(const struct nlattr *nla) {
+  return *(const int32_t *)nla_data(nla);
 }
 
 /**
@@ -382,9 +361,9 @@ static inline int32_t nla_get_s32(const struct nlattr *nla)
  * @see nla_put
  * @return 0 on success or a negative error code.
  */
-static inline int nla_put_u32(struct nl_msg *msg, int attrtype, uint32_t value)
-{
-	return nla_put(msg, attrtype, sizeof(uint32_t), &value);
+static inline int nla_put_u32(struct nl_msg *msg, int attrtype,
+                              uint32_t value) {
+  return nla_put(msg, attrtype, sizeof(uint32_t), &value);
 }
 
 /**
@@ -393,9 +372,8 @@ static inline int nla_put_u32(struct nl_msg *msg, int attrtype, uint32_t value)
  *
  * @return Payload as 32 bit integer.
  */
-static inline uint32_t nla_get_u32(const struct nlattr *nla)
-{
-	return *(const uint32_t *) nla_data(nla);
+static inline uint32_t nla_get_u32(const struct nlattr *nla) {
+  return *(const uint32_t *)nla_data(nla);
 }
 
 /**
@@ -407,9 +385,8 @@ static inline uint32_t nla_get_u32(const struct nlattr *nla)
  * @see nla_put
  * @return 0 on success or a negative error code.
  */
-static inline int nla_put_s64(struct nl_msg *msg, int attrtype, int64_t value)
-{
-	return nla_put(msg, attrtype, sizeof(int64_t), &value);
+static inline int nla_put_s64(struct nl_msg *msg, int attrtype, int64_t value) {
+  return nla_put(msg, attrtype, sizeof(int64_t), &value);
 }
 
 /**
@@ -418,13 +395,12 @@ static inline int nla_put_s64(struct nl_msg *msg, int attrtype, int64_t value)
  *
  * @return Payload as 64 bit integer.
  */
-static inline int64_t nla_get_s64(const struct nlattr *nla)
-{
-	int64_t tmp;
+static inline int64_t nla_get_s64(const struct nlattr *nla) {
+  int64_t tmp;
 
-	nla_memcpy(&tmp, nla, sizeof(tmp));
+  nla_memcpy(&tmp, nla, sizeof(tmp));
 
-	return tmp;
+  return tmp;
 }
 
 /**
@@ -436,9 +412,9 @@ static inline int64_t nla_get_s64(const struct nlattr *nla)
  * @see nla_put
  * @return 0 on success or a negative error code.
  */
-static inline int nla_put_u64(struct nl_msg *msg, int attrtype, uint64_t value)
-{
-	return nla_put(msg, attrtype, sizeof(uint64_t), &value);
+static inline int nla_put_u64(struct nl_msg *msg, int attrtype,
+                              uint64_t value) {
+  return nla_put(msg, attrtype, sizeof(uint64_t), &value);
 }
 
 /**
@@ -447,13 +423,12 @@ static inline int nla_put_u64(struct nl_msg *msg, int attrtype, uint64_t value)
  *
  * @return Payload as 64 bit integer.
  */
-static inline uint64_t nla_get_u64(const struct nlattr *nla)
-{
-	uint64_t tmp;
+static inline uint64_t nla_get_u64(const struct nlattr *nla) {
+  uint64_t tmp;
 
-	nla_memcpy(&tmp, nla, sizeof(tmp));
+  nla_memcpy(&tmp, nla, sizeof(tmp));
 
-	return tmp;
+  return tmp;
 }
 
 /**
@@ -465,9 +440,9 @@ static inline uint64_t nla_get_u64(const struct nlattr *nla)
  * @see nla_put
  * @return 0 on success or a negative error code.
  */
-static inline int nla_put_string(struct nl_msg *msg, int attrtype, const char *str)
-{
-	return nla_put(msg, attrtype, strlen(str) + 1, str);
+static inline int nla_put_string(struct nl_msg *msg, int attrtype,
+                                 const char *str) {
+  return nla_put(msg, attrtype, strlen(str) + 1, str);
 }
 
 /**
@@ -476,14 +451,12 @@ static inline int nla_put_string(struct nl_msg *msg, int attrtype, const char *s
  *
  * @return Pointer to attribute payload.
  */
-static inline char *nla_get_string(const struct nlattr *nla)
-{
-	return (char *) nla_data(nla);
+static inline char *nla_get_string(const struct nlattr *nla) {
+  return (char *)nla_data(nla);
 }
 
-static inline char *nla_strdup(const struct nlattr *nla)
-{
-	return strdup(nla_get_string(nla));
+static inline char *nla_strdup(const struct nlattr *nla) {
+  return strdup(nla_get_string(nla));
 }
 
 /** @} */
@@ -500,9 +473,8 @@ static inline char *nla_strdup(const struct nlattr *nla)
  * @see nla_put
  * @return 0 on success or a negative error code.
  */
-static inline int nla_put_flag(struct nl_msg *msg, int attrtype)
-{
-	return nla_put(msg, attrtype, 0, NULL);
+static inline int nla_put_flag(struct nl_msg *msg, int attrtype) {
+  return nla_put(msg, attrtype, 0, NULL);
 }
 
 /**
@@ -511,10 +483,7 @@ static inline int nla_put_flag(struct nl_msg *msg, int attrtype)
  *
  * @return True if flag is set, otherwise false.
  */
-static inline int nla_get_flag(const struct nlattr *nla)
-{
-	return !!nla;
-}
+static inline int nla_get_flag(const struct nlattr *nla) { return !!nla; }
 
 /** @} */
 
@@ -528,9 +497,9 @@ static inline int nla_get_flag(const struct nlattr *nla)
  * @arg attrtype	attribute type
  * @arg msecs 		number of msecs
  */
-static inline int nla_put_msecs(struct nl_msg *n, int attrtype, unsigned long msecs)
-{
-	return nla_put_u64(n, attrtype, msecs);
+static inline int nla_put_msecs(struct nl_msg *n, int attrtype,
+                                unsigned long msecs) {
+  return nla_put_u64(n, attrtype, msecs);
 }
 
 /**
@@ -539,9 +508,8 @@ static inline int nla_put_msecs(struct nl_msg *n, int attrtype, unsigned long ms
  *
  * @return the number of milliseconds.
  */
-static inline unsigned long nla_get_msecs(const struct nlattr *nla)
-{
-	return nla_get_u64(nla);
+static inline unsigned long nla_get_msecs(const struct nlattr *nla) {
+  return nla_get_u64(nla);
 }
 
 /**
@@ -557,10 +525,10 @@ static inline unsigned long nla_get_msecs(const struct nlattr *nla)
  * @see nla_put
  * @return 0 on success or a negative error code.
  */
-static inline int nla_put_nested(struct nl_msg *msg, int attrtype, const struct nl_msg *nested)
-{
-	return nla_put(msg, attrtype, nlmsg_len(nested->nm_nlh),
-		       nlmsg_data(nested->nm_nlh));
+static inline int nla_put_nested(struct nl_msg *msg, int attrtype,
+                                 const struct nl_msg *nested) {
+  return nla_put(msg, attrtype, nlmsg_len(nested->nm_nlh),
+                 nlmsg_data(nested->nm_nlh));
 }
 
 /**
@@ -570,14 +538,13 @@ static inline int nla_put_nested(struct nl_msg *msg, int attrtype, const struct 
  *
  * @return Pointer to container attribute.
  */
-static inline struct nlattr *nla_nest_start(struct nl_msg *msg, int attrtype)
-{
-	struct nlattr *start = (struct nlattr *) nlmsg_tail(msg->nm_nlh);
+static inline struct nlattr *nla_nest_start(struct nl_msg *msg, int attrtype) {
+  struct nlattr *start = (struct nlattr *)nlmsg_tail(msg->nm_nlh);
 
-	if (nla_put(msg, attrtype | NLA_F_NESTED, 0, NULL) < 0)
-		return NULL;
+  if (nla_put(msg, attrtype | NLA_F_NESTED, 0, NULL) < 0)
+    return NULL;
 
-	return start;
+  return start;
 }
 
 /**
@@ -589,11 +556,10 @@ static inline struct nlattr *nla_nest_start(struct nl_msg *msg, int attrtype)
  *
  * @return 0
  */
-static inline int nla_nest_end(struct nl_msg *msg, struct nlattr *start)
-{
-	start->nla_len = (unsigned char *) nlmsg_tail(msg->nm_nlh) -
-				(unsigned char *) start;
-	return 0;
+static inline int nla_nest_end(struct nl_msg *msg, struct nlattr *start) {
+  start->nla_len =
+      (unsigned char *)nlmsg_tail(msg->nm_nlh) - (unsigned char *)start;
+  return 0;
 }
 
 /**
@@ -609,10 +575,11 @@ static inline int nla_nest_end(struct nl_msg *msg, struct nlattr *start)
  * @see nla_parse
  * @return 0 on success or a negative error code.
  */
-static inline int nla_parse_nested(struct nlattr *tb[], int maxtype, struct nlattr *nla,
-		     const struct nla_policy *policy)
-{
-	return nla_parse(tb, maxtype, (struct nlattr *)nla_data(nla), nla_len(nla), policy);
+static inline int nla_parse_nested(struct nlattr *tb[], int maxtype,
+                                   struct nlattr *nla,
+                                   const struct nla_policy *policy) {
+  return nla_parse(tb, maxtype, (struct nlattr *)nla_data(nla), nla_len(nla),
+                   policy);
 }
 
 /**
@@ -624,14 +591,14 @@ static inline int nla_parse_nested(struct nlattr *tb[], int maxtype, struct nlat
  * @see memcmp(3)
  * @return An integer less than, equal to, or greater than zero.
  */
-static inline int nla_memcmp(const struct nlattr *nla, const void *data, size_t size)
-{
-	int d = nla_len(nla) - size;
+static inline int nla_memcmp(const struct nlattr *nla, const void *data,
+                             size_t size) {
+  int d = nla_len(nla) - size;
 
-	if (d == 0)
-		d = memcmp(nla_data(nla), data, size);
+  if (d == 0)
+    d = memcmp(nla_data(nla), data, size);
 
-	return d;
+  return d;
 }
 
 /**
@@ -642,15 +609,14 @@ static inline int nla_memcmp(const struct nlattr *nla, const void *data, size_t 
  * @see strcmp(3)
  * @return An integer less than, equal to, or greater than zero.
  */
-static inline int nla_strcmp(const struct nlattr *nla, const char *str)
-{
-	int len = strlen(str) + 1;
-	int d = nla_len(nla) - len;
+static inline int nla_strcmp(const struct nlattr *nla, const char *str) {
+  int len = strlen(str) + 1;
+  int d = nla_len(nla) - len;
 
-	if (d == 0)
-		d = memcmp(nla_data(nla), str, len);
+  if (d == 0)
+    d = memcmp(nla_data(nla), str, len);
 
-	return d;
+  return d;
 }
 
 /**
@@ -665,24 +631,23 @@ static inline int nla_strcmp(const struct nlattr *nla, const char *str)
  *
  * @return The length of string attribute without the terminating NUL.
  */
-static inline size_t nla_strlcpy(char *dst, const struct nlattr *nla, size_t dstsize)
-{
-	size_t srclen = (size_t)nla_len(nla);
-	char *src = (char*)nla_data(nla);
+static inline size_t nla_strlcpy(char *dst, const struct nlattr *nla,
+                                 size_t dstsize) {
+  size_t srclen = (size_t)nla_len(nla);
+  char *src = (char *)nla_data(nla);
 
-	if (srclen > 0 && src[srclen - 1] == '\0')
-		srclen--;
+  if (srclen > 0 && src[srclen - 1] == '\0')
+    srclen--;
 
-	if (dstsize > 0) {
-		size_t len = (srclen >= dstsize) ? dstsize - 1 : srclen;
+  if (dstsize > 0) {
+    size_t len = (srclen >= dstsize) ? dstsize - 1 : srclen;
 
-		memset(dst, 0, dstsize);
-		memcpy(dst, src, len);
-	}
+    memset(dst, 0, dstsize);
+    memcpy(dst, src, len);
+  }
 
-	return srclen;
+  return srclen;
 }
-
 
 /**
  * @name Attribute Construction (Exception Based)
@@ -697,11 +662,11 @@ static inline size_t nla_strlcpy(char *dst, const struct nlattr *nla, size_t dst
  * @arg attrlen		Length of attribute payload.
  * @arg data		Head of attribute payload.
  */
-#define NLA_PUT(msg, attrtype, attrlen, data) \
-	do { \
-		if (nla_put(msg, attrtype, attrlen, data) < 0) \
-			goto nla_put_failure; \
-	} while(0)
+#define NLA_PUT(msg, attrtype, attrlen, data)                                  \
+  do {                                                                         \
+    if (nla_put(msg, attrtype, attrlen, data) < 0)                             \
+      goto nla_put_failure;                                                    \
+  } while (0)
 
 /**
  * @ingroup attr
@@ -711,11 +676,11 @@ static inline size_t nla_strlcpy(char *dst, const struct nlattr *nla, size_t dst
  * @arg attrtype	Attribute type.
  * @arg value		Head of attribute payload.
  */
-#define NLA_PUT_TYPE(msg, type, attrtype, value) \
-	do { \
-		type __tmp = value; \
-		NLA_PUT(msg, attrtype, sizeof(type), &__tmp); \
-	} while(0)
+#define NLA_PUT_TYPE(msg, type, attrtype, value)                               \
+  do {                                                                         \
+    type __tmp = value;                                                        \
+    NLA_PUT(msg, attrtype, sizeof(type), &__tmp);                              \
+  } while (0)
 
 /**
  * Add 8 bit signed integer attribute to netlink message.
@@ -723,8 +688,8 @@ static inline size_t nla_strlcpy(char *dst, const struct nlattr *nla, size_t dst
  * @arg attrtype	Attribute type.
  * @arg value		Numeric value.
  */
-#define NLA_PUT_S8(msg, attrtype, value) \
-	NLA_PUT_TYPE(msg, int8_t, attrtype, value)
+#define NLA_PUT_S8(msg, attrtype, value)                                       \
+  NLA_PUT_TYPE(msg, int8_t, attrtype, value)
 
 /**
  * Add 8 bit signed integer attribute to netlink message.
@@ -732,8 +697,8 @@ static inline size_t nla_strlcpy(char *dst, const struct nlattr *nla, size_t dst
  * @arg attrtype	Attribute type.
  * @arg value		Numeric value.
  */
-#define NLA_PUT_S8(msg, attrtype, value) \
-	NLA_PUT_TYPE(msg, int8_t, attrtype, value)
+#define NLA_PUT_S8(msg, attrtype, value)                                       \
+  NLA_PUT_TYPE(msg, int8_t, attrtype, value)
 
 /**
  * Add 8 bit integer attribute to netlink message.
@@ -741,8 +706,8 @@ static inline size_t nla_strlcpy(char *dst, const struct nlattr *nla, size_t dst
  * @arg attrtype	Attribute type.
  * @arg value		Numeric value.
  */
-#define NLA_PUT_U8(msg, attrtype, value) \
-	NLA_PUT_TYPE(msg, uint8_t, attrtype, value)
+#define NLA_PUT_U8(msg, attrtype, value)                                       \
+  NLA_PUT_TYPE(msg, uint8_t, attrtype, value)
 
 /**
  * Add 16 bit signed integer attribute to netlink message.
@@ -750,8 +715,8 @@ static inline size_t nla_strlcpy(char *dst, const struct nlattr *nla, size_t dst
  * @arg attrtype	Attribute type.
  * @arg value		Numeric value.
  */
-#define NLA_PUT_S16(msg, attrtype, value) \
-	NLA_PUT_TYPE(msg, int16_t, attrtype, value)
+#define NLA_PUT_S16(msg, attrtype, value)                                      \
+  NLA_PUT_TYPE(msg, int16_t, attrtype, value)
 
 /**
  * Add 16 bit integer attribute to netlink message.
@@ -759,8 +724,8 @@ static inline size_t nla_strlcpy(char *dst, const struct nlattr *nla, size_t dst
  * @arg attrtype	Attribute type.
  * @arg value		Numeric value.
  */
-#define NLA_PUT_U16(msg, attrtype, value) \
-	NLA_PUT_TYPE(msg, uint16_t, attrtype, value)
+#define NLA_PUT_U16(msg, attrtype, value)                                      \
+  NLA_PUT_TYPE(msg, uint16_t, attrtype, value)
 
 /**
  * Add 32 bit signed integer attribute to netlink message.
@@ -768,8 +733,8 @@ static inline size_t nla_strlcpy(char *dst, const struct nlattr *nla, size_t dst
  * @arg attrtype	Attribute type.
  * @arg value		Numeric value.
  */
-#define NLA_PUT_S32(msg, attrtype, value) \
-	NLA_PUT_TYPE(msg, int32_t, attrtype, value)
+#define NLA_PUT_S32(msg, attrtype, value)                                      \
+  NLA_PUT_TYPE(msg, int32_t, attrtype, value)
 
 /**
  * Add 32 bit integer attribute to netlink message.
@@ -777,8 +742,8 @@ static inline size_t nla_strlcpy(char *dst, const struct nlattr *nla, size_t dst
  * @arg attrtype	Attribute type.
  * @arg value		Numeric value.
  */
-#define NLA_PUT_U32(msg, attrtype, value) \
-	NLA_PUT_TYPE(msg, uint32_t, attrtype, value)
+#define NLA_PUT_U32(msg, attrtype, value)                                      \
+  NLA_PUT_TYPE(msg, uint32_t, attrtype, value)
 
 /**
  * Add 64 bit signed integer attribute to netlink message.
@@ -786,8 +751,8 @@ static inline size_t nla_strlcpy(char *dst, const struct nlattr *nla, size_t dst
  * @arg attrtype	Attribute type.
  * @arg value		Numeric value.
  */
-#define NLA_PUT_S64(msg, attrtype, value) \
-	NLA_PUT_TYPE(msg, int64_t, attrtype, value)
+#define NLA_PUT_S64(msg, attrtype, value)                                      \
+  NLA_PUT_TYPE(msg, int64_t, attrtype, value)
 
 /**
  * Add 64 bit integer attribute to netlink message.
@@ -795,8 +760,8 @@ static inline size_t nla_strlcpy(char *dst, const struct nlattr *nla, size_t dst
  * @arg attrtype	Attribute type.
  * @arg value		Numeric value.
  */
-#define NLA_PUT_U64(msg, attrtype, value) \
-	NLA_PUT_TYPE(msg, uint64_t, attrtype, value)
+#define NLA_PUT_U64(msg, attrtype, value)                                      \
+  NLA_PUT_TYPE(msg, uint64_t, attrtype, value)
 
 /**
  * Add string attribute to netlink message.
@@ -804,16 +769,15 @@ static inline size_t nla_strlcpy(char *dst, const struct nlattr *nla, size_t dst
  * @arg attrtype	Attribute type.
  * @arg value		NUL terminated character string.
  */
-#define NLA_PUT_STRING(msg, attrtype, value) \
-	NLA_PUT(msg, attrtype, strlen(value) + 1, value)
+#define NLA_PUT_STRING(msg, attrtype, value)                                   \
+  NLA_PUT(msg, attrtype, strlen(value) + 1, value)
 
 /**
  * Add flag attribute to netlink message.
  * @arg msg		Netlink message.
  * @arg attrtype	Attribute type.
  */
-#define NLA_PUT_FLAG(msg, attrtype) \
-	NLA_PUT(msg, attrtype, 0, NULL)
+#define NLA_PUT_FLAG(msg, attrtype) NLA_PUT(msg, attrtype, 0, NULL)
 
 /**
  * Add msecs attribute to netlink message.
@@ -821,8 +785,7 @@ static inline size_t nla_strlcpy(char *dst, const struct nlattr *nla, size_t dst
  * @arg attrtype	Attribute type.
  * @arg msecs		Numeric value in micro seconds.
  */
-#define NLA_PUT_MSECS(msg, attrtype, msecs) \
-	NLA_PUT_U64(msg, attrtype, msecs)
+#define NLA_PUT_MSECS(msg, attrtype, msecs) NLA_PUT_U64(msg, attrtype, msecs)
 
 /**
  * Add address attribute to netlink message.
@@ -830,9 +793,8 @@ static inline size_t nla_strlcpy(char *dst, const struct nlattr *nla, size_t dst
  * @arg attrtype	Attribute type.
  * @arg addr		Abstract address object.
  */
-#define NLA_PUT_ADDR(msg, attrtype, addr) \
-	NLA_PUT(msg, attrtype, nl_addr_get_len(addr), \
-		nl_addr_get_binary_addr(addr))
+#define NLA_PUT_ADDR(msg, attrtype, addr)                                      \
+  NLA_PUT(msg, attrtype, nl_addr_get_len(addr), nl_addr_get_binary_addr(addr))
 
 /** @} */
 
@@ -849,10 +811,8 @@ static inline size_t nla_strlcpy(char *dst, const struct nlattr *nla, size_t dst
  * @arg len	length of attribute stream
  * @arg rem	initialized to len, holds bytes currently remaining in stream
  */
-#define nla_for_each_attr(pos, head, len, rem) \
-	for (pos = head, rem = len; \
-	     nla_ok(pos, rem); \
-	     pos = nla_next(pos, &(rem)))
+#define nla_for_each_attr(pos, head, len, rem)                                 \
+  for (pos = head, rem = len; nla_ok(pos, rem); pos = nla_next(pos, &(rem)))
 
 /**
  * @ingroup attr
@@ -861,10 +821,9 @@ static inline size_t nla_strlcpy(char *dst, const struct nlattr *nla, size_t dst
  * @arg nla	attribute containing the nested attributes
  * @arg rem	initialized to len, holds bytes currently remaining in stream
  */
-#define nla_for_each_nested(pos, nla, rem) \
-	for (pos = (struct nlattr *)nla_data(nla), rem = nla_len(nla); \
-	     nla_ok(pos, rem); \
-	     pos = nla_next(pos, &(rem)))
+#define nla_for_each_nested(pos, nla, rem)                                     \
+  for (pos = (struct nlattr *)nla_data(nla), rem = nla_len(nla);               \
+       nla_ok(pos, rem); pos = nla_next(pos, &(rem)))
 
 /** @} */
 

@@ -174,14 +174,14 @@ extern "C" {
  * This macro must be included as first member in every object
  * definition to allow objects to be cached.
  */
-#define NLHDR_COMMON				\
-	int			ce_refcnt;	\
-	struct nl_object_ops *	ce_ops;		\
-	struct nl_cache *	ce_cache;	\
-	struct nl_list_head	ce_list;	\
-	int			ce_msgtype;	\
-	int			ce_flags;	\
-	uint32_t		ce_mask;
+#define NLHDR_COMMON                                                           \
+  int ce_refcnt;                                                               \
+  struct nl_object_ops *ce_ops;                                                \
+  struct nl_cache *ce_cache;                                                   \
+  struct nl_list_head ce_list;                                                 \
+  int ce_msgtype;                                                              \
+  int ce_flags;                                                                \
+  uint32_t ce_mask;
 
 /**
  * Return true if attribute is available in both objects
@@ -191,7 +191,7 @@ extern "C" {
  *
  * @return True if the attribute is available, otherwise false is returned.
  */
-#define AVAILABLE(A, B, ATTR)	(((A)->ce_mask & (B)->ce_mask) & (ATTR))
+#define AVAILABLE(A, B, ATTR) (((A)->ce_mask & (B)->ce_mask) & (ATTR))
 
 /**
  * Return true if attributes mismatch
@@ -208,7 +208,7 @@ extern "C" {
  *
  * @return True if the attribute mismatch, or false if they match.
  */
-#define ATTR_MISMATCH(A, B, ATTR, EXPR)	(!AVAILABLE(A, B, ATTR) || (EXPR))
+#define ATTR_MISMATCH(A, B, ATTR, EXPR) (!AVAILABLE(A, B, ATTR) || (EXPR))
 
 /**
  * Return attribute bit if attribute does not match
@@ -231,88 +231,86 @@ extern "C" {
  * diff |= ATTR_DIFF(attrs, MY_ATTR_FOO, a, b, a->foo != b->foo);
  * @endcode
  */
-#define ATTR_DIFF(LIST, ATTR, A, B, EXPR) \
-({	int diff = 0; \
-	if (((LIST) & (ATTR)) && ATTR_MISMATCH(A, B, ATTR, EXPR)) \
-		diff = ATTR; \
-	diff; })
+#define ATTR_DIFF(LIST, ATTR, A, B, EXPR)                                      \
+  ({                                                                           \
+    int diff = 0;                                                              \
+    if (((LIST) & (ATTR)) && ATTR_MISMATCH(A, B, ATTR, EXPR))                  \
+      diff = ATTR;                                                             \
+    diff;                                                                      \
+  })
 
 /**
  * Object Operations
  */
 struct nl_object;
-struct nl_object_ops
-{
-	/**
-	 * Unique name of object type
-	 *
-	 * Must be in the form family/name, e.g. "route/addr"
-	 */
-	char *		oo_name;
+struct nl_object_ops {
+  /**
+   * Unique name of object type
+   *
+   * Must be in the form family/name, e.g. "route/addr"
+   */
+  char *oo_name;
 
-	/** Size of object including its header */
-	size_t		oo_size;
+  /** Size of object including its header */
+  size_t oo_size;
 
-	/* List of attributes needed to uniquely identify the object */
-	uint32_t	oo_id_attrs;
+  /* List of attributes needed to uniquely identify the object */
+  uint32_t oo_id_attrs;
 
-	/**
-	 * Constructor function
-	 *
-	 * Will be called when a new object of this type is allocated.
-	 * Can be used to initialize members such as lists etc.
-	 */
-	void  (*oo_constructor)(struct nl_object *);
+  /**
+   * Constructor function
+   *
+   * Will be called when a new object of this type is allocated.
+   * Can be used to initialize members such as lists etc.
+   */
+  void (*oo_constructor)(struct nl_object *);
 
-	/**
-	 * Destructor function
-	 *
-	 * Will be called when an object is freed. Must free all
-	 * resources which may have been allocated as part of this
-	 * object.
-	 */
-	void  (*oo_free_data)(struct nl_object *);
+  /**
+   * Destructor function
+   *
+   * Will be called when an object is freed. Must free all
+   * resources which may have been allocated as part of this
+   * object.
+   */
+  void (*oo_free_data)(struct nl_object *);
 
-	/**
-	 * Cloning function
-	 *
-	 * Will be called when an object needs to be cloned. Please
-	 * note that the generic object code will make an exact
-	 * copy of the object first, therefore you only need to take
-	 * care of members which require reference counting etc.
-	 *
-	 * May return a negative error code to abort cloning.
-	 */
-	int  (*oo_clone)(struct nl_object *, struct nl_object *);
+  /**
+   * Cloning function
+   *
+   * Will be called when an object needs to be cloned. Please
+   * note that the generic object code will make an exact
+   * copy of the object first, therefore you only need to take
+   * care of members which require reference counting etc.
+   *
+   * May return a negative error code to abort cloning.
+   */
+  int (*oo_clone)(struct nl_object *, struct nl_object *);
 
-	/**
-	 * Dumping functions
-	 *
-	 * Will be called when an object is dumped. The implementations
-	 * have to use nl_dump(), nl_dump_line(), and nl_new_line() to
-	 * dump objects.
-	 *
-	 * The functions must return the number of lines printed.
-	 */
-	void (*oo_dump[NL_DUMP_MAX+1])(struct nl_object *,
-				       struct nl_dump_params *);
+  /**
+   * Dumping functions
+   *
+   * Will be called when an object is dumped. The implementations
+   * have to use nl_dump(), nl_dump_line(), and nl_new_line() to
+   * dump objects.
+   *
+   * The functions must return the number of lines printed.
+   */
+  void (*oo_dump[NL_DUMP_MAX + 1])(struct nl_object *, struct nl_dump_params *);
 
-	/**
-	 * Comparison function
-	 *
-	 * Will be called when two objects of the same type are
-	 * compared. It takes the two objects in question, an object
-	 * specific bitmask defining which attributes should be
-	 * compared and flags to control the behaviour.
-	 *
-	 * The function must return a bitmask with the relevant bit
-	 * set for each attribute that mismatches.
-	 */
-	int   (*oo_compare)(struct nl_object *, struct nl_object *,
-			    uint32_t, int);
+  /**
+   * Comparison function
+   *
+   * Will be called when two objects of the same type are
+   * compared. It takes the two objects in question, an object
+   * specific bitmask defining which attributes should be
+   * compared and flags to control the behaviour.
+   *
+   * The function must return a bitmask with the relevant bit
+   * set for each attribute that mismatches.
+   */
+  int (*oo_compare)(struct nl_object *, struct nl_object *, uint32_t, int);
 
-
-	char *(*oo_attrs2str)(int, char *, size_t);
+  char *(*oo_attrs2str)(int, char *, size_t);
 };
 
 /** @} */
