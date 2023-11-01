@@ -137,10 +137,13 @@ typedef struct nl_neigh_mod {
 
 typedef struct nl_addr_mod {
   struct nl_ip_net ipnet;
+  __u8 label[IF_NAMESIZE];
   __u32 flags;
   __u32 scope;
   struct nl_ip_net peer;
   struct nl_ip broadcast;
+  __u32 prefered_lft;
+  __u32 valid_lft;
   __u32 link_index;
 } nl_addr_mod_t;
 
@@ -218,12 +221,16 @@ bool nl_vlan_del(int vlan_id);
 bool nl_vlan_member_add(int vlan_id, const char *ifi_name, bool tagged);
 bool nl_vlan_member_del(int vlan_id, const char *ifi_name, bool tagged);
 
+bool nl_vxlan_bridge_add(int vxlan_id, const char *ep_ifi_name);
+bool nl_vxlan_del(int vxlan_id);
+
 bool nl_link_add(nl_link_t *link, int flags);
 bool nl_link_up(int ifi_index);
 bool nl_link_down(int ifi_index);
 bool nl_link_del(int ifi_index);
 bool nl_link_master(int ifi_index, int master_ifi_index);
 bool nl_link_no_master(int ifi_index);
+nl_addr_mod_t *nl_link_addr_list(__u32 ifa_index, __u8 family, int *addrs_cnt);
 
 int nl_link_get_by_index(int ifi_index, nl_port_mod_t *port);
 int nl_link_get_by_name(const char *ifi_name, nl_port_mod_t *port);

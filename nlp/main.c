@@ -3,6 +3,48 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+static inline void debug_addr1(nl_addr_mod_t *addr) {
+  printf("Addr Link Index: %2d ", addr->link_index);
+
+  if (addr->peer.ip.f.v4) {
+    struct in_addr *in = (struct in_addr *)addr->peer.ip.v4.bytes;
+    printf("peer: %s/%d ", inet_ntoa(*in), addr->peer.mask);
+  } else if (addr->peer.ip.f.v6) {
+    struct in6_addr *in = (struct in6_addr *)addr->peer.ip.v6.bytes;
+    char a_str[INET6_ADDRSTRLEN];
+    inet_ntop(AF_INET6, in, a_str, INET6_ADDRSTRLEN);
+    printf("peer: %s/%d ", a_str, addr->peer.mask);
+  }
+
+  if (addr->ipnet.ip.f.v4) {
+    struct in_addr *in = (struct in_addr *)addr->ipnet.ip.v4.bytes;
+    printf("ipnet: %12s/%02d ", inet_ntoa(*in), addr->ipnet.mask);
+  } else if (addr->ipnet.ip.f.v6) {
+    struct in6_addr *in = (struct in6_addr *)addr->ipnet.ip.v6.bytes;
+    char a_str[INET6_ADDRSTRLEN];
+    inet_ntop(AF_INET6, in, a_str, INET6_ADDRSTRLEN);
+    printf("ipnet: %12s/%d ", a_str, addr->ipnet.mask);
+  }
+
+  if (addr->broadcast.f.v4) {
+    struct in_addr *in = (struct in_addr *)addr->broadcast.v4.bytes;
+    printf("broadcast: %s ", inet_ntoa(*in));
+  } else if (addr->broadcast.f.v6) {
+    struct in6_addr *in = (struct in6_addr *)addr->broadcast.v6.bytes;
+    char a_str[INET6_ADDRSTRLEN];
+    inet_ntop(AF_INET6, in, a_str, INET6_ADDRSTRLEN);
+    printf("broadcast: %s ", a_str);
+  }
+
+  printf("scope: %3d ", addr->scope);
+  printf("flags: %3d ", addr->flags);
+  printf("label: %5s ", addr->label);
+  printf("prefered_lft: %u ", addr->prefered_lft);
+  printf("valid_lft: %u ", addr->valid_lft);
+
+  printf("\n");
+}
+
 int main() {
   // nl_debug = 0;
   // nl_rtattr_t *info = nl_rtattr_new(1, 0, NULL);
@@ -124,6 +166,17 @@ int main() {
   //   return 0;
   // }
 
+  // int addrs_cnt = 0;
+  // nl_addr_mod_t *addrs = nl_link_addr_list(1, FAMILY_V4, &addrs_cnt);
+  // for (int i = 0; i < addrs_cnt; i++) {
+  //   debug_addr1(&addrs[i]);
+  // }
+  // printf("addrs_cnt=[%d]\n", addrs_cnt);
+
+  int ret = nl_vxlan_bridge_add(1, "ens33");
+  printf("ret=[%d]\n", ret);
+  ret = nl_vxlan_del(1);
+  printf("ret=[%d]\n", ret);
   printf("success\n");
 
   return 0;

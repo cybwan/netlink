@@ -878,6 +878,7 @@ bool nl_vxlan_bridge_add(int vxlan_id, const char *ep_ifi_name) {
   if (vxlan_bridge.index > 0) {
     return false;
   }
+
   nl_port_mod_t endpoint_link;
   memset(&endpoint_link, 0, sizeof(endpoint_link));
   nl_link_get_by_name(ep_ifi_name, &endpoint_link);
@@ -885,33 +886,60 @@ bool nl_vxlan_bridge_add(int vxlan_id, const char *ep_ifi_name) {
     return false;
   }
 
-  return true;
+  nl_ip_t src_addr;
+  memset(&src_addr, 0, sizeof(src_addr));
+  int addrs_cnt = 0;
+  nl_addr_mod_t *addrs =
+      nl_link_addr_list(endpoint_link.index, FAMILY_V4, &addrs_cnt);
+  if (addrs_cnt == 0) {
+    free(addrs);
+    return false;
+  } else {
+    memcpy(&src_addr, &addrs[0].ipnet, sizeof(src_addr));
+    free(addrs);
+  }
 
-  // char vlan_dev_name[IF_NAMESIZE];
-  // memset(vlan_dev_name, 0, IF_NAMESIZE);
-  // if (tagged) {
-  //   snprintf(vlan_dev_name, IF_NAMESIZE, "%s.%d", ifi_name, vlan_id);
-  //   nl_link_t vlan_link;
-  //   memset(&vlan_link, 0, sizeof(vlan_link));
-  //   vlan_link.attrs.name = vlan_dev_name;
-  //   vlan_link.attrs.parent_index = (__s32)parent_link.index;
-  //   vlan_link.type.vlan = 1;
-  //   vlan_link.u.vlan.vlan_id = vlan_id;
-  //   if (!nl_link_add(&vlan_link, NLM_F_CREATE | NLM_F_EXCL | NLM_F_ACK)) {
-  //     return false;
-  //   }
-  // } else {
-  //   snprintf(vlan_dev_name, IF_NAMESIZE, "%s", ifi_name);
-  // }
+  nl_link_t vxlan_link;
+  memset(&vxlan_link, 0, sizeof(vxlan_link));
+  vxlan_link.attrs.name = vxlan_bridge_name;
+  vxlan_link.attrs.mtu = 9000;
+  vxlan_link.type.vxlan = 1;
+  vxlan_link.u.vxlan.vxlan_id = vxlan_id;
+  vxlan_link.u.vxlan.vtep_dev_index = endpoint_link.index;
+  vxlan_link.u.vxlan.port = 4789; // VxLAN default port
+  vxlan_link.u.vxlan.src_addr = &src_addr;
 
-  // nl_port_mod_t vlan_dev_link;
-  // memset(&vlan_dev_link, 0, sizeof(vlan_dev_link));
-  // nl_link_get_by_name(vlan_dev_name, &vlan_dev_link);
-  // if (vlan_dev_link.index == 0) {
-  //   return false;
-  // }
-  // nl_link_up(vlan_dev_link.index);
-  // return nl_link_master(vlan_dev_link.index, vlan_bridge.index);
+  if (!nl_link_add(&vxlan_link, NLM_F_CREATE | NLM_F_EXCL | NLM_F_ACK)) {
+    return false;
+  }
+
+  sleep(1);
+
+  memset(&vxlan_bridge, 0, sizeof(vxlan_bridge));
+  nl_link_get_by_name(vxlan_bridge_name, &vxlan_bridge);
+  if (vxlan_bridge.index == 0) {
+    return false;
+  }
+
+  return nl_link_up(vxlan_bridge.index);
+}
+
+bool nl_vxlan_del(int vxlan_id) {
+  char vxlan_bridge_name[IF_NAMESIZE];
+  memset(vxlan_bridge_name, 0, IF_NAMESIZE);
+  snprintf(vxlan_bridge_name, IF_NAMESIZE, "vxlan%d", vxlan_id);
+  nl_port_mod_t vxlan_bridge;
+  memset(&vxlan_bridge, 0, sizeof(vxlan_bridge));
+  nl_link_get_by_name(vxlan_bridge_name, &vxlan_bridge);
+  if (vxlan_bridge.index == 0) {
+    return false;
+  }
+
+  if (!nl_link_down(vxlan_bridge.index)) {
+    return false;
+  }
+
+  return nl_link_del(vxlan_bridge.index);
 }
 
 #define IFF_TUN 0x1
@@ -2289,4 +2317,165 @@ bool nl_link_master(int ifi_index, int master_ifi_index) {
 bool nl_link_no_master(int ifi_index) {
   int master_ifi_index = 0;
   return nl_link_master(ifi_index, master_ifi_index);
+}
+
+int _internal_nl_link_addr_list_res(struct nl_msg *msg, void *arg) {
+  struct nlmsghdr *nlh = nlmsg_hdr(msg);
+  if (nlh->nlmsg_type == NLMSG_DONE || nlh->nlmsg_type == NLMSG_ERROR) {
+    return NL_SKIP;
+  }
+  if (nlh->nlmsg_type != RTM_NEWADDR && nlh->nlmsg_type != RTM_DELADDR) {
+    return NL_SKIP;
+  }
+
+  struct ifaddrmsg *ifa_msg = NLMSG_DATA(nlh);
+  struct nl_multi_arg *args = (struct nl_multi_arg *)arg;
+  int *addrs_cnt_ptr = (int *)args->arg1;
+  nl_addr_mod_t **addrs_ptr = (nl_addr_mod_t **)args->arg2;
+  struct ifaddrmsg *nl_req = (struct ifaddrmsg *)args->arg3;
+
+  if (nl_req->ifa_index != 0 && nl_req->ifa_index != ifa_msg->ifa_index) {
+    return NL_SKIP;
+  }
+
+  if (nl_req->ifa_family != 0 && nl_req->ifa_family != ifa_msg->ifa_family) {
+    return NL_SKIP;
+  }
+
+  struct rtattr *attrs[IFA_MAX + 1];
+  int remaining = nlh->nlmsg_len - NLMSG_LENGTH(sizeof(*ifa_msg));
+  parse_rtattr(attrs, IFA_MAX, IFA_RTA(ifa_msg), remaining);
+
+  __u8 family = ifa_msg->ifa_family;
+  nl_addr_mod_t addr;
+  memset(&addr, 0, sizeof(addr));
+  addr.link_index = ifa_msg->ifa_index;
+
+  nl_ip_net_t local, dst;
+  bool has_local = false;
+  memset(&local, 0, sizeof(local));
+  memset(&dst, 0, sizeof(dst));
+  if (attrs[IFA_ADDRESS]) {
+    struct rtattr *ifa_addr = attrs[IFA_ADDRESS];
+    __u8 *rta_val = (__u8 *)RTA_DATA(ifa_addr);
+    if (ifa_addr->rta_len == 8) {
+      dst.ip.f.v4 = 1;
+      memcpy(dst.ip.v4.bytes, rta_val, 4);
+      dst.mask = ifa_msg->ifa_prefixlen;
+    } else if (ifa_addr->rta_len == 20) {
+      dst.ip.f.v6 = 1;
+      memcpy(dst.ip.v6.bytes, rta_val, 16);
+      dst.mask = ifa_msg->ifa_prefixlen;
+    }
+  }
+  if (attrs[IFA_LOCAL]) {
+    struct rtattr *ifa_addr = attrs[IFA_LOCAL];
+    __u8 *rta_val = (__u8 *)RTA_DATA(ifa_addr);
+    if (ifa_addr->rta_len == 8) {
+      local.ip.f.v4 = 1;
+      memcpy(local.ip.v4.bytes, rta_val, 4);
+      local.mask = 32;
+      has_local = true;
+    } else if (ifa_addr->rta_len == 20) {
+      local.ip.f.v6 = 1;
+      memcpy(local.ip.v6.bytes, rta_val, 16);
+      local.mask = 128;
+      has_local = true;
+    }
+  }
+  if (attrs[IFA_BROADCAST]) {
+    struct rtattr *ifa_addr = attrs[IFA_BROADCAST];
+    __u8 *rta_val = (__u8 *)RTA_DATA(ifa_addr);
+    if (ifa_addr->rta_len == 8) {
+      addr.broadcast.f.v4 = 1;
+      memcpy(addr.broadcast.v4.bytes, rta_val, 4);
+    } else if (ifa_addr->rta_len == 20) {
+      addr.broadcast.f.v6 = 1;
+      memcpy(addr.broadcast.v6.bytes, rta_val, 16);
+    }
+  }
+  if (attrs[IFA_LABEL]) {
+    struct rtattr *ifa_label = attrs[IFA_LABEL];
+    __u8 *rta_val = (__u8 *)RTA_DATA(ifa_label);
+    memcpy(addr.label, rta_val, ifa_label->rta_len - 4);
+  }
+  if (attrs[IFA_FLAGS]) {
+    struct rtattr *ifa_flags = attrs[IFA_FLAGS];
+    addr.flags = *(__u32 *)RTA_DATA(ifa_flags);
+  }
+  if (attrs[IFA_CACHEINFO]) {
+    struct rtattr *ifa_cache_info = attrs[IFA_CACHEINFO];
+    __u32 *cache_info = (__u32 *)RTA_DATA(ifa_cache_info);
+    addr.prefered_lft = cache_info[0];
+    addr.valid_lft = cache_info[1];
+  }
+
+  if (has_local) {
+    if (family == FAMILY_V4 &&
+        memcmp(&local.ip, &dst.ip, sizeof(nl_ip_t)) == 0) {
+      memcpy(&addr.ipnet, &dst, sizeof(nl_ip_net_t));
+    } else {
+      memcpy(&addr.ipnet, &local, sizeof(nl_ip_net_t));
+      memcpy(&addr.peer, &dst, sizeof(nl_ip_net_t));
+    }
+  } else {
+    memcpy(&addr.ipnet, &dst, sizeof(nl_ip_net_t));
+  }
+
+  addr.scope = ifa_msg->ifa_scope;
+
+  int addrs_cnt = *addrs_cnt_ptr;
+  nl_addr_mod_t *new_addrs = calloc(addrs_cnt + 1, sizeof(addr));
+  if (addrs_cnt > 0) {
+    memcpy(new_addrs, (nl_addr_mod_t *)*addrs_ptr, addrs_cnt * sizeof(addr));
+  }
+  memcpy(new_addrs + addrs_cnt, &addr, sizeof(addr));
+  if (addrs_cnt > 0) {
+    free(*addrs_ptr);
+  }
+
+  *addrs_ptr = new_addrs;
+  *addrs_cnt_ptr = addrs_cnt + 1;
+
+  return NL_OK;
+}
+
+nl_addr_mod_t *nl_link_addr_list(__u32 ifa_index, __u8 family, int *addrs_cnt) {
+  struct nl_sock *socket = nl_socket_alloc();
+  nl_connect(socket, NETLINK_ROUTE);
+
+  struct nl_msg *msg = nlmsg_alloc();
+
+  struct ifaddrmsg *nl_req;
+
+  struct nlmsghdr *nlh = nlmsg_put(msg, NL_AUTO_PID, NL_AUTO_SEQ, RTM_GETADDR,
+                                   sizeof(*nl_req), NLM_F_REQUEST | NLM_F_DUMP);
+
+  nl_req = nlmsg_data(nlh);
+  memset(nl_req, 0, sizeof(*nl_req));
+  nl_req->ifa_family = family;
+  nl_req->ifa_index = ifa_index;
+
+  int ret = nl_send_auto_complete(socket, msg);
+  if (ret < 0) {
+    nlmsg_free(msg);
+    nl_socket_free(socket);
+    return NULL;
+  }
+
+  *addrs_cnt = 0;
+  nl_addr_mod_t *addrs = NULL;
+  struct nl_multi_arg args = {
+      .arg1 = addrs_cnt,
+      .arg2 = &addrs,
+      .arg3 = nl_req,
+  };
+  nl_socket_modify_cb(socket, NL_CB_VALID, NL_CB_CUSTOM,
+                      _internal_nl_link_addr_list_res, &args);
+  nl_recvmsgs_default(socket);
+
+  nlmsg_free(msg);
+  nl_socket_free(socket);
+
+  return addrs;
 }
