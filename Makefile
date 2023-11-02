@@ -38,12 +38,12 @@ nlp-clean:
 .PHONY: clean
 clean: gonl-clean nlp-clean
 
-.PHONY: cmake-build
-cmake-build:
+.PHONY: build
+build:
 	@rm -rf build && mkdir build && cd build && cmake ../nlp && make
 
-.PHONY: cmake-run
-cmake-run:
+.PHONY: run
+run:
 	@cd build && ./nlp
 
 .PHONY: net

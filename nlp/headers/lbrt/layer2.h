@@ -1,7 +1,7 @@
 #ifndef __FLB_LBRT_LAYER2_H__
 #define __FLB_LBRT_LAYER2_H__
 
-#include <linux/if_ether.h>
+#include <cmn/types.h>
 
 typedef struct lbrt_fdb_key {
   __u8 mac_addr[ETH_ALEN];
