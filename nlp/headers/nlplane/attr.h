@@ -1,5 +1,5 @@
-#ifndef __FLB_ATTR_H__
-#define __FLB_ATTR_H__
+#ifndef __FLB_NLPLANE_ATTR_H__
+#define __FLB_NLPLANE_ATTR_H__
 
 #include <linux/if_arp.h>
 
@@ -566,4 +566,4 @@ static inline char *encap_type(__u16 type) {
   }
 }
 
-#endif
+#endif /* __FLB_NLPLANE_ATTR_H__ */
