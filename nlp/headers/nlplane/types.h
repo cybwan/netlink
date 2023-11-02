@@ -1,26 +1,18 @@
 #ifndef __FLB_NLPLANE_TYPES_H__
 #define __FLB_NLPLANE_TYPES_H__
 
-#include <ctype.h>
-#include <linux/types.h>
-#include <stdbool.h>
-
-#include <stdio.h>
-#include <stdlib.h>
-
-#include <arpa/inet.h>
 #include <net/if.h>
+#include <stdio.h>
 
 #include <linux/if_addr.h>
 #include <linux/if_ether.h>
 #include <linux/if_tunnel.h>
 #include <linux/neighbour.h>
-#include <linux/rtnetlink.h>
 
 #include <netlink-generic.h>
 #include <netlink-types.h>
 
-#include <attr.h>
+#include <nlplane/attr.h>
 
 #define FAMILY_ALL AF_UNSPEC
 #define FAMILY_V4 AF_INET
@@ -65,23 +57,6 @@ enum {
   FDB_TUN,  // fdb of a tun dev
   FDB_VLAN, // fdb of a vlan dev
 };
-
-#ifndef _NL_IP_NET_T_
-#define _NL_IP_NET_T_
-typedef struct nl_ip_net {
-  struct nl_ip ip;
-  __u8 mask;
-} nl_ip_net_t;
-#endif
-
-#ifndef _NL_LABEL_NET_T_
-#define _NL_LABEL_NET_T_
-typedef struct nl_label_net {
-  struct nl_ip ip;
-  __u8 mask;
-  __u8 label[IF_NAMESIZE];
-} nl_label_net_t;
-#endif
 
 typedef struct nl_multi_arg {
   void *arg1;

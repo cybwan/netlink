@@ -1,7 +1,9 @@
-#include <net_api.h>
-#include <nlp.h>
+// #include <net_api.h>
+// #include <nlp.h>
 #include <stdio.h>
-#include <stdlib.h>
+// #include <stdlib.h>
+
+#include <cmn/types.h>
 
 int main() {
   // nl_debug = 0;
@@ -56,12 +58,11 @@ int main() {
 
   // nl_neigh_list(&port);
 
-  // char *ip_str = "fe80::20c:29ff:fe79:ab57/64";
-
-  // struct nl_ip_net ip_net;
-  // if (parse_ip_net(ip_str, &ip_net)) {
-  //   printf("ip_net mask=[%d]\n", ip_net.mask);
-  // }
+  char *ip_str = "fe80::20c:29ff:fe79:ab57/64";
+  struct nl_ip_net ip_net;
+  if (parse_ip_net(ip_str, &ip_net)) {
+    printf("ip_net mask=[%d]\n", ip_net.mask);
+  }
 
   // bool ret = nl_route_add("7.7.7.0/24", "192.168.127.1");
   // printf("success:[%d]\n", ret);
@@ -131,10 +132,10 @@ int main() {
   // }
   // printf("addrs_cnt=[%d]\n", addrs_cnt);
 
-  int ret = nl_vxlan_bridge_add(1, "ens33");
-  printf("ret=[%d]\n", ret);
-  ret = nl_vxlan_del(1);
-  printf("ret=[%d]\n", ret);
+  // int ret = nl_vxlan_bridge_add(1, "ens33");
+  // printf("ret=[%d]\n", ret);
+  // ret = nl_vxlan_del(1);
+  // printf("ret=[%d]\n", ret);
   printf("success\n");
 
   return 0;

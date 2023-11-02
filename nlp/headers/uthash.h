@@ -4,8 +4,8 @@
 #include <uthash/utarray.h>
 #include <uthash/uthash.h>
 #include <uthash/utlist.h>
-#include <uthash/utstack.h>
 #include <uthash/utringbuffer.h>
+#include <uthash/utstack.h>
 #include <uthash/utstring.h>
 
 #endif

@@ -3,6 +3,8 @@
 
 #include <linux/if_arp.h>
 
+#include <cmn/types.h>
+
 #define RTA_PADDING(rta) RTA_ALIGN(sizeof(rta)) - sizeof(rta)
 
 typedef struct nl_rtattr {
@@ -24,25 +26,6 @@ __u16 nl_rtattr_len(nl_rtattr_t *e);
 __u8 *nl_rtattr_serialize(nl_rtattr_t *e, __u16 *length);
 
 nl_rtattr_t *nl_rtattr_new(__u16 rta_type, __u16 rta_val_len, __u8 *rta_val);
-
-typedef struct nl_ip {
-  struct {
-    __u8 v4 : 1;
-    __u8 v6 : 1;
-  } f;
-  union {
-    union {
-      __u8 bytes[16];
-    } v6;
-    union {
-      __u8 _pad[12];
-      union {
-        __u8 bytes[4];
-        __u32 ip;
-      };
-    } v4;
-  };
-} nl_ip_t;
 
 typedef struct nl_link_statistics_64 {
   __u64 rx_packets;
