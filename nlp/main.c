@@ -1,11 +1,21 @@
 // #include <net_api.h>
 // #include <nlp.h>
 #include <stdio.h>
-// #include <stdlib.h>
 
 #include <cmn/types.h>
 
+void test_nl_ip_net() {
+  char *ip_str = "fe80::20c:29ff:fe79:ab57/64";
+  struct nl_ip_net ip_net;
+  if (parse_ip_net(ip_str, &ip_net)) {
+    printf("ip_net mask=[%d]\n", ip_net.mask);
+  }
+  printf("test_nl_ip_net success\n");
+}
+
 int main() {
+  test_nl_ip_net();
+
   // nl_debug = 0;
   // nl_rtattr_t *info = nl_rtattr_new(1, 0, NULL);
 
@@ -57,12 +67,6 @@ int main() {
   // printf("loaded:%d\n", loaded);
 
   // nl_neigh_list(&port);
-
-  char *ip_str = "fe80::20c:29ff:fe79:ab57/64";
-  struct nl_ip_net ip_net;
-  if (parse_ip_net(ip_str, &ip_net)) {
-    printf("ip_net mask=[%d]\n", ip_net.mask);
-  }
 
   // bool ret = nl_route_add("7.7.7.0/24", "192.168.127.1");
   // printf("success:[%d]\n", ret);

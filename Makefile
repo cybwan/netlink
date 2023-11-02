@@ -1,5 +1,8 @@
 #!make
 
+.PHONY: default
+default: run
+
 .PHONY: format-c
 format-c:
 	find . -regex '.*\.\(c\|h\)' -exec clang-format -style=file -i {} \;
@@ -43,7 +46,7 @@ build:
 	@rm -rf build && mkdir build && cd build && cmake ../nlp && make
 
 .PHONY: run
-run:
+run: build
 	@cd build && ./nlp
 
 .PHONY: net
