@@ -23,15 +23,15 @@ SET(SOURCES
 	netlink/object.c
 	netlink/socket.c
 	netlink/unl.c
-    addr.c
-    filter.c
-	link.c
-    neigh.c
-    net_api.c
-    nlops.c
-    route.c
+	nlp/addr.c
+	nlp/filter.c
+	nlp/link.c
+	nlp/neigh.c
+	nlp/net_api.c
+	nlp/nlops.c
+	nlp/route.c
 )
 
-ADD_LIBRARY(nlp SHARED ${SOURCES})
+#ADD_LIBRARY(nlp SHARED ${SOURCES})
 
-ADD_EXECUTABLE(test main.c ${SOURCES})
+ADD_EXECUTABLE(nlp main.c ${SOURCES})
