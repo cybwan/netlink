@@ -3,6 +3,12 @@
 #include <stdio.h>
 
 #include <cmn/types.h>
+#include <lbrt/layer2.h>
+
+#define RED "\033[0;31m"
+#define GREEN "\033[0;32m"
+#define YELLOW "\033[0;33m"
+#define RESET "\033[0;0m\n"
 
 void test_nl_ip_net() {
   char *ip_str = "fe80::20c:29ff:fe79:ab57/64";
@@ -10,11 +16,32 @@ void test_nl_ip_net() {
   if (parse_ip_net(ip_str, &ip_net)) {
     printf("ip_net mask=[%d]\n", ip_net.mask);
   }
-  printf("test_nl_ip_net success\n");
+  printf(GREEN "test_nl_ip_net success\n" RESET);
+}
+
+void test_lbrt_layer2() {
+  lbrt_l2h_t l2h;
+  memset(&l2h,0,sizeof(lbrt_l2h_t));
+
+  lbrt_fdb_entry_t *r, *p, *tmp;
+  r = (lbrt_fdb_entry_t *)calloc(1, sizeof(lbrt_fdb_entry_t));
+  r->fdb_key.bridge_id = 1;
+  r->fdb_attr.type = 2;
+  snprintf(r->fdb_attr.oif,IF_NAMESIZE,"ens33");
+
+  HASH_ADD(hh, l2h.fdb_map, fdb_key, sizeof(lbrt_fdb_key_t), r);
+
+  HASH_ITER(hh, l2h.fdb_map, p, tmp) {
+    printf(GREEN "bridge_id=[%d] type=[%d] oif=[%s]" RESET, p->fdb_key.bridge_id, p->fdb_attr.type,p->fdb_attr.oif);
+    HASH_DEL(l2h.fdb_map, p);
+    free(p);
+  }
+  printf(GREEN "test_lbrt_layer2 success" RESET);
 }
 
 int main() {
-  test_nl_ip_net();
+  // test_nl_ip_net();
+  test_lbrt_layer2();
 
   // nl_debug = 0;
   // nl_rtattr_t *info = nl_rtattr_new(1, 0, NULL);
@@ -140,7 +167,7 @@ int main() {
   // printf("ret=[%d]\n", ret);
   // ret = nl_vxlan_del(1);
   // printf("ret=[%d]\n", ret);
-  printf("success\n");
+  printf(YELLOW "DONE!" RESET);
 
   return 0;
 }

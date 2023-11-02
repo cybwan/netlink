@@ -180,7 +180,7 @@ typedef struct nl_link {
       __s32 down_delay;
       __s32 use_carrier;
       __s32 arp_interval;
-      nl_ip_t *arp_ip_targets;
+      ip_t *arp_ip_targets;
       __s32 arp_validate;
       __s32 arp_all_targets;
       __s32 primary;
@@ -212,8 +212,8 @@ typedef struct nl_link {
     struct {
       __s32 vxlan_id;
       __s32 vtep_dev_index;
-      nl_ip_t *src_addr;
-      nl_ip_t *group;
+      ip_t *src_addr;
+      ip_t *group;
       __s32 ttl;
       __s32 tos;
       bool learning;
@@ -249,7 +249,7 @@ typedef struct nl_link {
     } macvtap;
     struct {
       __u32 id;
-      nl_ip_t *remote;
+      ip_t *remote;
       __u8 ttl;
       __u8 tos;
       __u16 d_port;
@@ -264,8 +264,8 @@ typedef struct nl_link {
       __u32 okey;
       __u16 encap_s_port;
       __u16 encap_d_port;
-      nl_ip_t *local;
-      nl_ip_t *remote;
+      ip_t *local;
+      ip_t *remote;
       __u16 iflags;
       __u16 oflags;
       __u8 p_mtu_disc;
@@ -281,8 +281,8 @@ typedef struct nl_link {
       __u8 tos;
       __u8 p_mtu_disc;
       __u32 link;
-      nl_ip_t *local;
-      nl_ip_t *remote;
+      ip_t *local;
+      ip_t *remote;
       __u16 encap_s_port;
       __u16 encap_d_port;
       __u16 encap_type;
@@ -291,8 +291,8 @@ typedef struct nl_link {
     } iptun;
     struct {
       __u32 link;
-      nl_ip_t *local;
-      nl_ip_t *remote;
+      ip_t *local;
+      ip_t *remote;
       __u8 ttl;
       __u8 tos;
       __u8 encap_limit;
@@ -302,8 +302,8 @@ typedef struct nl_link {
     } ip6tnl;
     struct {
       __u32 link;
-      nl_ip_t *local;
-      nl_ip_t *remote;
+      ip_t *local;
+      ip_t *remote;
       __u8 ttl;
       __u8 tos;
       __u8 p_mtu_disc;
@@ -318,8 +318,8 @@ typedef struct nl_link {
       __u16 oflags;
       __u32 ikey;
       __u32 okey;
-      nl_ip_t *local;
-      nl_ip_t *remote;
+      ip_t *local;
+      ip_t *remote;
       __u8 ttl;
       __u8 tos;
       __u8 p_mtu_disc;
@@ -332,8 +332,8 @@ typedef struct nl_link {
       __u32 ikey;
       __u32 okey;
       __u32 link;
-      nl_ip_t *local;
-      nl_ip_t *remote;
+      ip_t *local;
+      ip_t *remote;
     } vti;
     struct {
       __u32 table;

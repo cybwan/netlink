@@ -10,28 +10,8 @@
 #include <arpa/inet.h>
 #include <net/if.h>
 
-#ifndef AF_INET
-#define AF_INET 2
-#endif
-
-#ifndef AF_INET6
-#define AF_INET6 10
-#endif
-
 #ifndef ETH_ALEN
 #define ETH_ALEN 6
-#endif
-
-#ifndef INET_ADDRSTRLEN
-#define INET_ADDRSTRLEN 16
-#endif
-
-#ifndef INET6_ADDRSTRLEN
-#define INET6_ADDRSTRLEN 46
-#endif
-
-#ifndef IF_NAMESIZE
-#define IF_NAMESIZE 16
 #endif
 
 typedef struct nl_ip {
@@ -52,18 +32,18 @@ typedef struct nl_ip {
       };
     } v4;
   };
-} nl_ip_t;
+} ip_t;
 
 typedef struct nl_ip_net {
   struct nl_ip ip;
   __u8 mask;
-} nl_ip_net_t;
+} ip_net_t;
 
 typedef struct nl_label_net {
   struct nl_ip ip;
   __u8 mask;
   __u8 label[IF_NAMESIZE];
-} nl_label_net_t;
+} label_net_t;
 
 static __u8 zero_mac[ETH_ALEN] = {0};
 

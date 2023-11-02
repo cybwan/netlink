@@ -886,7 +886,7 @@ bool nl_vxlan_bridge_add(int vxlan_id, const char *ep_ifi_name) {
     return false;
   }
 
-  nl_ip_t src_addr;
+  ip_t src_addr;
   memset(&src_addr, 0, sizeof(src_addr));
   int addrs_cnt = 0;
   nl_addr_mod_t *addrs =
@@ -1599,7 +1599,7 @@ bool nl_link_add(nl_link_t *link, int flags) {
       nl_rtattr_t *attr_bond_arp_ip_target =
           nl_rtattr_new(IFLA_BOND_ARP_IP_TARGET, 0, NULL);
       nl_rtattr_add_child(link_info_data, attr_bond_arp_ip_target);
-      int num = sizeof(*link->u.bond.arp_ip_targets) / sizeof(nl_ip_t);
+      int num = sizeof(*link->u.bond.arp_ip_targets) / sizeof(ip_t);
       for (int i = 0; i < num; i++) {
         if (link->u.bond.arp_ip_targets[i].f.v4) {
           nl_rtattr_t *attr_bond_arp_ipv4_target = nl_rtattr_new(
@@ -2351,7 +2351,7 @@ int _internal_nl_link_addr_list_res(struct nl_msg *msg, void *arg) {
   memset(&addr, 0, sizeof(addr));
   addr.link_index = ifa_msg->ifa_index;
 
-  nl_ip_net_t local, dst;
+  ip_net_t local, dst;
   bool has_local = false;
   memset(&local, 0, sizeof(local));
   memset(&dst, 0, sizeof(dst));
@@ -2411,15 +2411,14 @@ int _internal_nl_link_addr_list_res(struct nl_msg *msg, void *arg) {
   }
 
   if (has_local) {
-    if (family == FAMILY_V4 &&
-        memcmp(&local.ip, &dst.ip, sizeof(nl_ip_t)) == 0) {
-      memcpy(&addr.ipnet, &dst, sizeof(nl_ip_net_t));
+    if (family == FAMILY_V4 && memcmp(&local.ip, &dst.ip, sizeof(ip_t)) == 0) {
+      memcpy(&addr.ipnet, &dst, sizeof(ip_net_t));
     } else {
-      memcpy(&addr.ipnet, &local, sizeof(nl_ip_net_t));
-      memcpy(&addr.peer, &dst, sizeof(nl_ip_net_t));
+      memcpy(&addr.ipnet, &local, sizeof(ip_net_t));
+      memcpy(&addr.peer, &dst, sizeof(ip_net_t));
     }
   } else {
-    memcpy(&addr.ipnet, &dst, sizeof(nl_ip_net_t));
+    memcpy(&addr.ipnet, &dst, sizeof(ip_net_t));
   }
 
   addr.scope = ifa_msg->ifa_scope;
