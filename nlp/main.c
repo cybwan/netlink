@@ -2,8 +2,7 @@
 // #include <nlp.h>
 #include <stdio.h>
 
-#include <cmn/types.h>
-#include <lbrt/layer2.h>
+#include <lbrt/types.h>
 
 #define RED "\033[0;31m"
 #define GREEN "\033[0;32m"
@@ -20,19 +19,20 @@ void test_nl_ip_net() {
 }
 
 void test_lbrt_layer2() {
-  lbrt_l2h_t l2h;
-  memset(&l2h,0,sizeof(lbrt_l2h_t));
+  lbrt_l2_h_t l2h;
+  memset(&l2h, 0, sizeof(lbrt_l2_h_t));
 
-  lbrt_fdb_entry_t *r, *p, *tmp;
-  r = (lbrt_fdb_entry_t *)calloc(1, sizeof(lbrt_fdb_entry_t));
+  lbrt_fdb_ent_t *r, *p, *tmp;
+  r = (lbrt_fdb_ent_t *)calloc(1, sizeof(lbrt_fdb_ent_t));
   r->fdb_key.bridge_id = 1;
   r->fdb_attr.type = 2;
-  snprintf(r->fdb_attr.oif,IF_NAMESIZE,"ens33");
+  snprintf(r->fdb_attr.oif, IF_NAMESIZE, "ens33");
 
-  HASH_ADD(hh, l2h.fdb_map, fdb_key, sizeof(lbrt_fdb_key_t), r);
+  HASH_ADD(hh, l2h.fdb_map, fdb_key, sizeof(lbrt_fdb_ent_t), r);
 
   HASH_ITER(hh, l2h.fdb_map, p, tmp) {
-    printf(GREEN "bridge_id=[%d] type=[%d] oif=[%s]" RESET, p->fdb_key.bridge_id, p->fdb_attr.type,p->fdb_attr.oif);
+    printf(GREEN "bridge_id=[%d] type=[%d] oif=[%s]" RESET,
+           p->fdb_key.bridge_id, p->fdb_attr.type, p->fdb_attr.oif);
     HASH_DEL(l2h.fdb_map, p);
     free(p);
   }
