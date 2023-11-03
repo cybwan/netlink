@@ -20,6 +20,7 @@
 #include <lbrt/route.h>
 #include <lbrt/rule.h>
 #include <lbrt/session.h>
+#include <lbrt/zone.h>
 
 #include <lbrt/net.h>
 

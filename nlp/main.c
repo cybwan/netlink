@@ -55,10 +55,74 @@ void test_lbrt_layer2() {
   printf(GREEN "test_lbrt_layer2 success" RESET);
 }
 
+void test_lbrt_zone() {
+  lbrt_zone_h_t *zh = lbrt_zone_h_alloc();
+
+  lbrt_zone_add(zh, "test1");
+  lbrt_zone_add(zh, "test2");
+  lbrt_zone_add(zh, "test3");
+  lbrt_zone_add(zh, "test4");
+  lbrt_zone_add(zh, "test5");
+
+  lbrt_zone_t *p, *tmp = NULL;
+  HASH_ITER(hh, zh->zone_map, p, tmp) {
+    printf(YELLOW "zone_name=[%s] zone_num=[%d]" RESET, p->name, p->zone_num);
+  }
+
+  lbrt_zone_t *fp = lbrt_zone_find(zh, "test2");
+  if (fp) {
+    printf(YELLOW "zone_name=[%s] zone_num=[%d] found success" RESET, fp->name,
+           fp->zone_num);
+  }
+  lbrt_zone_delete(zh, "test2");
+  fp = lbrt_zone_find(zh, "test2");
+  if (fp) {
+    printf(YELLOW "delete fail" RESET);
+  } else {
+    printf(YELLOW "delete success" RESET);
+  }
+
+  int ret = lbrt_zone_br_add(zh, "test4", "test5");
+  printf(YELLOW "lbrt_zone_br_add ret=[%d]" RESET, ret);
+  lbrt_zone_br_t *br_p, *br_tmp = NULL;
+  HASH_ITER(hh, zh->zone_brs, br_p, br_tmp) {
+    printf(YELLOW "zone_brs br_name=[%s] zone_name=[%s]" RESET, br_p->br_name,
+           br_p->zone->name);
+  }
+  ret = lbrt_zone_br_delete(zh, "test4");
+  printf(YELLOW "lbrt_zone_br_delete ret=[%d]" RESET, ret);
+  HASH_ITER(hh, zh->zone_brs, br_p, br_tmp) {
+    printf(YELLOW "zone_brs br_name=[%s] zone_name=[%s]" RESET, br_p->br_name,
+           br_p->zone->name);
+  }
+
+  ret = lbrt_zone_port_add(zh, "test3", "test5");
+  printf(YELLOW "lbrt_zone_port_add ret=[%d]" RESET, ret);
+  bool valid = lbrt_zone_port_is_valid(zh, "test3", "test5");
+  printf(YELLOW "lbrt_zone_port_is_valid valid=[%d]" RESET, valid);
+  fp = lbrt_zone_get_by_port(zh, "test3");
+  if (fp) {
+    printf(YELLOW
+           "zone_name=[%s] zone_name=[%s] lbrt_zone_get_by_port success" RESET,
+           fp->name, fp->name);
+  }
+
+  ret = lbrt_zone_port_delete(zh, "test3");
+  printf(YELLOW "lbrt_zone_port_delete ret=[%d]" RESET, ret);
+  lbrt_zone_port_t *port_p, *port_tmp = NULL;
+  HASH_ITER(hh, zh->zone_ports, port_p, port_tmp) {
+    printf(YELLOW "zone_ports port_name=[%s] zone_name=[%s]" RESET,
+           port_p->port_name, br_p->zone->name);
+  }
+
+  printf(GREEN "test_lbrt_zone success\n" RESET);
+}
+
 int main() {
   // test_nl_ip_net();
-  test_lbrt_layer2();
-  test_lbrt_counter();
+  // test_lbrt_layer2();
+  // test_lbrt_counter();
+  test_lbrt_zone();
 
   // nl_debug = 0;
   // nl_rtattr_t *info = nl_rtattr_new(1, 0, NULL);

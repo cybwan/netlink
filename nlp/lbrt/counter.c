@@ -29,16 +29,16 @@ void lbrt_counter_free(struct lbrt_counter *c) {
 }
 
 __u64 lbrt_counter_get_counter(struct lbrt_counter *c) {
-  if (c->cap <= 0 || c->start == (~(__u64)0)) {
-    return ~(__u64)0;
+  if (c->cap <= 0 || c->start == COUNTER_OVERFLOW) {
+    return COUNTER_OVERFLOW;
   }
   c->cap--;
   __u64 rid = c->start;
   if (c->start == c->end) {
-    c->start = ~(__u64)0;
+    c->start = COUNTER_OVERFLOW;
   } else {
     c->start = c->counters[rid];
-    c->counters[rid] = ~(__u64)0;
+    c->counters[rid] = COUNTER_OVERFLOW;
   }
   return rid + c->begin;
 }
@@ -52,7 +52,7 @@ bool lbrt_counter_put_counter(struct lbrt_counter *c, __u64 id) {
   c->end = rid;
   c->counters[tmp] = rid;
   c->cap++;
-  if (c->start == ~(__u64)0) {
+  if (c->start == COUNTER_OVERFLOW) {
     c->start = c->end;
   }
   return true;

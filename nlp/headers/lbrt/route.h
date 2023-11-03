@@ -4,7 +4,7 @@
 #include <lbrt/types.h>
 
 enum {
-  RT_ERRBASE = -5000,
+  RT_ERR_BASE = -5000,
   RT_EXISTS_ERR,
   RT_NH_ERR,
   RT_NOENT_ERR,

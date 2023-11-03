@@ -5,6 +5,8 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+#define COUNTER_OVERFLOW ~(__u64)0
+
 typedef struct lbrt_counter {
   __u64 begin;
   __u64 end;
