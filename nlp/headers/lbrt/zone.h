@@ -17,7 +17,9 @@ typedef struct lbrt_zone {
   struct lbrt_pol_h *pols;
   struct lbrt_mirr_h *mirrs;
   struct lbrt_mutex *mtx;
+
   UT_hash_handle hh;
+
 } lbrt_zone_t;
 
 typedef struct lbrt_zone_h {
