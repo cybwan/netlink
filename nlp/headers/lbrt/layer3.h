@@ -18,7 +18,9 @@ typedef struct lbrt_ifa {
   struct lbrt_zone *zone;
   enum lbrt_dp_status sync;
   struct lbrt_ifa_ent **ifas;
+
   UT_hash_handle hh;
+
 } lbrt_ifa_t;
 
 typedef struct lbrt_l3_h {

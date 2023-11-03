@@ -26,7 +26,9 @@ typedef struct lbrt_mirr_entry {
   struct lbrt_pol_stats stats;
   enum lbrt_dp_status sync;
   struct lbrt_mirr_obj_info *mobjs;
+
   UT_hash_handle hh;
+
 } lbrt_mirr_entry_t;
 
 typedef struct lbrt_mirr_h {

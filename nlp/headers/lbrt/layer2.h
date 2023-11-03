@@ -35,7 +35,9 @@ typedef struct lbrt_fdb_ent {
   bool unreach;
   bool inactive;
   enum lbrt_dp_status sync;
+
   UT_hash_handle hh;
+
 } lbrt_fdb_ent_t;
 
 typedef struct lbrt_l2_h {
