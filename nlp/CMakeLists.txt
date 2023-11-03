@@ -30,6 +30,10 @@ SET(SOURCES
 	nlp/net_api.c
 	nlp/nlops.c
 	nlp/route.c
+	lbrt/counter.c
+	lbrt/layer2.c
+	lbrt/zone.c
+	lbrt/net.c
 )
 
 #ADD_LIBRARY(nlp SHARED ${SOURCES})

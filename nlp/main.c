@@ -18,6 +18,22 @@ void test_nl_ip_net() {
   printf(GREEN "test_nl_ip_net success\n" RESET);
 }
 
+void test_lbrt_counter() {
+  struct lbrt_counter *cnt = lbrt_counter_alloc(1, 5);
+  printf(YELLOW "counter:[%llu]" RESET, lbrt_counter_get_counter(cnt));
+  printf(YELLOW "counter:[%llu]" RESET, lbrt_counter_get_counter(cnt));
+  printf(YELLOW "counter:[%llu]" RESET, lbrt_counter_get_counter(cnt));
+  printf(YELLOW "counter:[%llu]" RESET, lbrt_counter_get_counter(cnt));
+  printf(YELLOW "counter:[%llu]" RESET, lbrt_counter_get_counter(cnt));
+  printf(YELLOW "counter:[%llu]" RESET, lbrt_counter_get_counter(cnt));
+  lbrt_counter_put_counter(cnt, 4);
+  printf(YELLOW "counter:[%llu]" RESET, lbrt_counter_get_counter(cnt));
+  printf(YELLOW "counter:[%llu]" RESET, lbrt_counter_get_counter(cnt));
+  printf(YELLOW "counter:[%llu]" RESET, lbrt_counter_get_counter(cnt));
+  lbrt_counter_free(cnt);
+  printf(GREEN "test_lbrt_counter success\n" RESET);
+}
+
 void test_lbrt_layer2() {
   lbrt_l2_h_t l2h;
   memset(&l2h, 0, sizeof(lbrt_l2_h_t));
@@ -42,6 +58,7 @@ void test_lbrt_layer2() {
 int main() {
   // test_nl_ip_net();
   test_lbrt_layer2();
+  test_lbrt_counter();
 
   // nl_debug = 0;
   // nl_rtattr_t *info = nl_rtattr_new(1, 0, NULL);
@@ -167,7 +184,7 @@ int main() {
   // printf("ret=[%d]\n", ret);
   // ret = nl_vxlan_del(1);
   // printf("ret=[%d]\n", ret);
-  printf(YELLOW "DONE!" RESET);
 
+  printf(YELLOW "DONE!" RESET);
   return 0;
 }

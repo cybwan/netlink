@@ -9,6 +9,4 @@ typedef struct lbrt_net_meta {
   struct lbrt_mutex *mtx;
 } lbrt_net_meta_h;
 
-static lbrt_net_meta_h *mh;
-
 #endif /* __FLB_LBRT_NET_H__ */
