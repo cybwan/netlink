@@ -32,6 +32,7 @@ typedef struct lbrt_zone_h {
   lbrt_counter_t *zone_mark;
 } lbrt_zone_h_t;
 
-struct lbrt_zone_h *lbrt_zone_h_alloc(size_t maxsize);
+struct lbrt_zone_h *lbrt_zone_h_alloc(void);
+void lbrt_zone_h_free(struct lbrt_zone_h *zh);
 
 #endif /* __FLB_LBRT_ZONE_H__ */

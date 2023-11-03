@@ -47,7 +47,7 @@ void test_lbrt_layer2() {
   HASH_ADD(hh, l2h.fdb_map, fdb_key, sizeof(lbrt_fdb_ent_t), r);
 
   HASH_ITER(hh, l2h.fdb_map, p, tmp) {
-    printf(GREEN "bridge_id=[%d] type=[%d] oif=[%s]" RESET,
+    printf(YELLOW "bridge_id=[%d] type=[%d] oif=[%s]" RESET,
            p->fdb_key.bridge_id, p->fdb_attr.type, p->fdb_attr.oif);
     HASH_DEL(l2h.fdb_map, p);
     free(p);
