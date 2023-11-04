@@ -5,7 +5,7 @@ default: run
 
 .PHONY: format-c
 format-c:
-	find . -regex '.*\.\(c\|h\)' -exec clang-format -style=file -i {} \;
+	@find . -regex '.*\.\(c\|h\)' -exec clang-format -style=file -i {} \;
 
 .PHONY: gonl-build
 gonl-build: nlp-so

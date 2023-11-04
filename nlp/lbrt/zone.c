@@ -15,7 +15,7 @@ lbrt_zone_h_t *lbrt_zone_h_alloc(void) {
   zh->zone_ports = NULL;
   zh->zone_mark = lbrt_counter_alloc(1, MaximumZones);
   if (zh->zone_mark == NULL) {
-    free(zh);
+    lbrt_zone_h_free(zh);
     return NULL;
   }
   return zh;

@@ -3,6 +3,16 @@
 
 #include <lbrt/types.h>
 
+#define MaxBondInterfaces 8
+#define MaxRealInterfaces 128
+#define MaxInterfaces 512
+#define MaxWgInterfaces 8
+#define MaxVtiInterfaces 8
+#define RealPortIDB 3800
+#define BondIDB 4000
+#define WgIDB 4010
+#define VtIDB 4020
+
 enum {
   PortBaseErr = -1000,
   PortExistsErr,
@@ -86,7 +96,7 @@ typedef struct lbrt_port {
 } lbrt_port_t;
 
 typedef struct lbrt_ports_h {
-  struct lbrt_port *port_i_map;
+  struct lbrt_port *port_i_map[MaxInterfaces];
   struct lbrt_port *port_s_map;
   struct lbrt_port *port_o_map;
   struct lbrt_port_event_intf *port_notifs;
@@ -95,5 +105,8 @@ typedef struct lbrt_ports_h {
   struct lbrt_counter *wg_mark;
   struct lbrt_counter *vti_mark;
 } lbrt_ports_h_t;
+
+lbrt_ports_h_t *lbrt_ports_h_alloc(void);
+void lbrt_ports_h_free(lbrt_ports_h_t *ph);
 
 #endif /* __FLB_LBRT_PORT_H__ */
