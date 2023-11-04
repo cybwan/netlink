@@ -3,6 +3,21 @@
 
 #include <lbrt/types.h>
 
+enum {
+  VLAN_BASE_ERR = -2000,
+  VLAN_EXISTS_ERR,
+  VLAN_NOT_EXIST_ERR,
+  VLAN_RANGE_ERR,
+  VLAN_ADD_BRP_ERR,
+  VLAN_MP_EXIST_ERR,
+  VLAN_PORT_PHY_ERR,
+  VLAN_PORT_EXIST_ERR,
+  VLAN_PORT_TAGGED_ERR,
+  VLAN_NO_PORT_ERR,
+  VLAN_PORT_CREATE_ERR,
+  VLAN_ZONE_ERR,
+};
+
 #define MaximumVlans 4096 // constant to declare maximum number of vlans
 
 typedef struct lbrt_vlan_stat {
@@ -25,8 +40,13 @@ typedef struct lbrt_vlan {
 } lbrt_vlan_t;
 
 typedef struct lbrt_vlans_h {
-  struct lbrt_vlan vlan_map[MaximumVlans];
+  struct lbrt_vlan *vlan_map[MaximumVlans];
   struct lbrt_zone *zone;
 } lbrt_vlans_h_t;
+
+lbrt_vlans_h_t *lbrt_vlans_h_alloc(lbrt_zone_t *zone);
+void lbrt_vlans_h_free(lbrt_vlans_h_t *vh);
+
+bool lbrt_vlan_valid(__u32 vlan_id);
 
 #endif /* __FLB_LBRT_VLAN_H__ */
