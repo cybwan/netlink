@@ -35,23 +35,33 @@ void test_lbrt_counter() {
 }
 
 void test_lbrt_layer2() {
-  lbrt_l2_h_t l2h;
-  memset(&l2h, 0, sizeof(lbrt_l2_h_t));
+  lbrt_l2_h_t *l2h = lbrt_l2_h_alloc(NULL);
 
-  lbrt_fdb_ent_t *r, *p, *tmp;
-  r = (lbrt_fdb_ent_t *)calloc(1, sizeof(lbrt_fdb_ent_t));
-  r->fdb_key.bridge_id = 1;
-  r->fdb_attr.type = 2;
-  snprintf(r->fdb_attr.oif, IF_NAMESIZE, "ens33");
+  lbrt_fdb_key_t key;
+  memset(&key, 0, sizeof(key));
+  key.bridge_id = 189;
+  key.mac_addr[0] = 0xAA;
 
-  HASH_ADD(hh, l2h.fdb_map, fdb_key, sizeof(lbrt_fdb_ent_t), r);
+  lbrt_fdb_attr_t attr;
+  memset(&attr, 0, sizeof(attr));
+  attr.type = 8;
+  snprintf(attr.oif, IF_NAMESIZE, "ens33");
 
-  HASH_ITER(hh, l2h.fdb_map, p, tmp) {
+  lbrt_l2_fdb_add(l2h, &key, &attr);
+
+  lbrt_fdb_ent_t *p, *tmp;
+  HASH_ITER(hh, l2h->fdb_map, p, tmp) {
     printf(YELLOW "bridge_id=[%d] type=[%d] oif=[%s]" RESET,
            p->fdb_key.bridge_id, p->fdb_attr.type, p->fdb_attr.oif);
-    HASH_DEL(l2h.fdb_map, p);
-    free(p);
   }
+
+  lbrt_l2_fdb_del(l2h, &key);
+
+  HASH_ITER(hh, l2h->fdb_map, p, tmp) {
+    printf(YELLOW "bridge_id=[%d] type=[%d] oif=[%s]" RESET,
+           p->fdb_key.bridge_id, p->fdb_attr.type, p->fdb_attr.oif);
+  }
+
   printf(GREEN "test_lbrt_layer2 success" RESET);
 }
 
@@ -120,9 +130,9 @@ void test_lbrt_zone() {
 
 int main() {
   // test_nl_ip_net();
-  // test_lbrt_layer2();
+  test_lbrt_layer2();
   // test_lbrt_counter();
-  test_lbrt_zone();
+  // test_lbrt_zone();
 
   // nl_debug = 0;
   // nl_rtattr_t *info = nl_rtattr_new(1, 0, NULL);

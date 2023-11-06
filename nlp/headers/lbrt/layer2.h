@@ -42,6 +42,17 @@ typedef struct lbrt_fdb_ent {
 
 typedef struct lbrt_l2_h {
   struct lbrt_fdb_ent *fdb_map;
+  struct lbrt_zone *zone;
 } lbrt_l2_h_t;
+
+lbrt_l2_h_t *lbrt_l2_h_alloc(struct lbrt_zone *zone);
+void lbrt_l2_h_free(lbrt_l2_h_t *l2h);
+
+bool lbrt_fdb_attr_equal(lbrt_fdb_attr_t *a1, lbrt_fdb_attr_t *a2);
+void lbrt_fdb_attr_copy(lbrt_fdb_attr_t *dst, lbrt_fdb_attr_t *src);
+
+int lbrt_l2_fdb_add(lbrt_l2_h_t *l2h, lbrt_fdb_key_t *key,
+                    lbrt_fdb_attr_t *attr);
+int lbrt_l2_fdb_del(lbrt_l2_h_t *l2h, lbrt_fdb_key_t *key);
 
 #endif /* __FLB_LBRT_LAYER2_H__ */

@@ -35,6 +35,7 @@ enum {
   L2_OIF_ERR,
   L2_NO_FDB_ERR,
   L2_VXATTR_ERR,
+  L2_ALLOC_ERR,
 };
 
 enum {
