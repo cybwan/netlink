@@ -55,6 +55,7 @@ int lbrt_port_add(lbrt_ports_h_t *ph, char *name, __u32 osid, __u32 link_type,
                   lbrt_port_layer2_info_t *l2i) {
   if (!lbrt_zone_port_is_valid(mh.zn, name, zone))
     return PORT_ZONE_ERR;
+
   lbrt_zone_t *zn = lbrt_zone_find(mh.zn, zone);
   if (!zn)
     return PORT_ZONE_ERR;
@@ -140,3 +141,126 @@ int lbrt_port_add(lbrt_ports_h_t *ph, char *name, __u32 osid, __u32 link_type,
 
   return 0;
 }
+
+int lbrt_port_del(lbrt_ports_h_t *ph, char *name, __u32 link_type) {
+  lbrt_port_t *p = lbrt_port_find_by_name(ph, name);
+  if (!p) {
+    flb_log(LOG_LEVEL_ERR, "port delete - %s no such port", name);
+    return PORT_NOT_EXIST_ERR;
+  }
+
+  if ((p->sinfo.port_type & (PortReal | PortVlanSif)) ==
+          (PortReal | PortVlanSif) &&
+      link_type == PortVlanSif) {
+    lbrt_port_datapath(p, DP_REMOVE);
+
+    p->sinfo.port_type = p->sinfo.port_type & (~PortVlanSif);
+    if (p->sinfo.port_real) {
+      free(p->sinfo.port_real);
+      p->sinfo.port_real = NULL;
+    }
+    memset(p->hinfo.master, 0, IF_NAMESIZE);
+    p->l2.is_p_vid = true;
+    p->l2.vid = p->port_no + RealPortIDB;
+    lbrt_port_datapath(p, DP_CREATE);
+    return 0;
+  }
+
+  if ((p->sinfo.port_type & (PortVxlanBr | PortVlanSif)) ==
+          (PortVxlanBr | PortVlanSif) &&
+      link_type == PortVxlanBr) {
+    lbrt_port_datapath(p, DP_REMOVE);
+
+    p->sinfo.port_type = p->sinfo.port_type & (~PortVlanSif);
+    memset(p->hinfo.master, 0, IF_NAMESIZE);
+    p->l2.is_p_vid = true;
+    p->l2.vid = p->hinfo.tun_id;
+    lbrt_port_datapath(p, DP_CREATE);
+    return 0;
+  }
+
+  if ((p->sinfo.port_type & (PortBond | PortVlanSif)) ==
+          (PortBond | PortVlanSif) &&
+      link_type == PortVlanSif) {
+    lbrt_port_datapath(p, DP_REMOVE);
+
+    p->sinfo.port_type = p->sinfo.port_type & (~PortVlanSif);
+    p->l2.is_p_vid = true;
+    p->l2.vid = p->port_no + BondIDB;
+    lbrt_port_datapath(p, DP_CREATE);
+    return 0;
+  }
+
+  if ((p->sinfo.port_type & (PortReal | PortBondSif)) ==
+          (PortReal | PortBondSif) &&
+      link_type == PortBondSif) {
+    lbrt_port_datapath(p, DP_REMOVE);
+
+    p->sinfo.port_type = p->sinfo.port_type & (~PortBondSif);
+    memset(p->hinfo.master, 0, IF_NAMESIZE);
+    p->l2.is_p_vid = true;
+    p->l2.vid = p->port_no + RealPortIDB;
+    lbrt_port_datapath(p, DP_CREATE);
+    return 0;
+  }
+
+  __u32 rid = p->port_no;
+  if (!ph->port_i_map[rid]) {
+    flb_log(LOG_LEVEL_ERR, "port delete - %s no such osid", name);
+    return PORT_MAP_ERR;
+  }
+
+  lbrt_port_datapath(p, DP_REMOVE);
+
+  lbrt_zone_t *zone = lbrt_zone_get_by_port(mh.zn, p->name);
+  switch (p->sinfo.port_type) {
+  case PortVxlanBr:
+    if (p->sinfo.port_real) {
+      if (p->sinfo.port_real->sinfo.port_ovl) {
+        free(p->sinfo.port_real->sinfo.port_ovl);
+        p->sinfo.port_real->sinfo.port_ovl = NULL;
+      }
+      free(p->sinfo.port_real);
+      p->sinfo.port_real = NULL;
+    }
+    break;
+  case PortReal:
+  case PortBond:
+  case PortWg:
+  case PortVti:
+    if (zone) {
+      // lbrt_vlan_del(zone->vlans,p->l2.vid);
+    }
+    break;
+  case PortIPTun:
+    if (zone) {
+      // zone.Sess.Mark.PutCounter(p.SInfo.SessMark)
+    }
+    break;
+  }
+
+  if (p->sinfo.port_real) {
+    free(p->sinfo.port_real);
+    p->sinfo.port_real = NULL;
+  }
+  p->sinfo.port_active = false;
+  lbrt_zone_port_del(mh.zn, name);
+
+  flb_log(LOG_LEVEL_DEBUG, "port deleted - %s:%d", name, p->port_no);
+
+  HASH_DELETE(hh_by_name, ph->port_s_map, p);
+  HASH_DELETE(hh_by_osid, ph->port_o_map, p);
+  ph->port_i_map[rid] = NULL;
+
+  if (zone) {
+    // zone.Rt.RtDeleteByPort(p.Name)
+    // zone.Nh.NeighDeleteByPort(p.Name)
+    // zone.L3.IfaDeleteAll(p.Name)
+  }
+
+  free(p);
+
+  return 0;
+}
+
+int lbrt_port_datapath(lbrt_port_t *port, enum lbrt_dp_work work) { return 0; }

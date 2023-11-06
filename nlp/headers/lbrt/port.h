@@ -103,5 +103,8 @@ lbrt_port_t *lbrt_port_find_by_osid(lbrt_ports_h_t *ph, __u32 osid);
 int lbrt_port_add(lbrt_ports_h_t *ph, char *name, __u32 osid, __u32 link_type,
                   char *zone, lbrt_port_hw_info_t *hwi,
                   lbrt_port_layer2_info_t *l2i);
+int lbrt_port_del(lbrt_ports_h_t *ph, char *name, __u32 link_type);
+
+int lbrt_port_datapath(lbrt_port_t *port, enum lbrt_dp_work work);
 
 #endif /* __FLB_LBRT_PORT_H__ */
