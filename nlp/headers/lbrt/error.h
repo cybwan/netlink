@@ -1,0 +1,70 @@
+#ifndef __FLB_LBRT_ERROR_H__
+#define __FLB_LBRT_ERROR_H__
+
+enum {
+  PortBaseErr = -1000,
+  PortExistsErr,
+  PortNotExistErr,
+  PortNoMasterErr,
+  PortCounterErr,
+  PortMapErr,
+  PortZoneErr,
+  PortNoRealDevErr,
+  PortPropExistsErr,
+  PortPropNotExistsErr,
+};
+
+enum {
+  VLAN_BASE_ERR = -2000,
+  VLAN_EXISTS_ERR,
+  VLAN_NOT_EXIST_ERR,
+  VLAN_RANGE_ERR,
+  VLAN_ADD_BRP_ERR,
+  VLAN_MP_EXIST_ERR,
+  VLAN_PORT_PHY_ERR,
+  VLAN_PORT_EXIST_ERR,
+  VLAN_PORT_TAGGED_ERR,
+  VLAN_NO_PORT_ERR,
+  VLAN_PORT_CREATE_ERR,
+  VLAN_ZONE_ERR,
+};
+
+enum {
+  L2_BASE_ERR = -3000,
+  L2_SAME_FDB_ERR,
+  L2_OIF_ERR,
+  L2_NO_FDB_ERR,
+  L2_VXATTR_ERR,
+};
+
+enum {
+  NEIGH_BASE_ERR = -4000,
+  NEIGH_EXISTS_ERR,
+  NEIGH_OIF_ERR,
+  NEIGH_NO_ENT_ERR,
+  NEIGH_RANGE_ERR,
+  NEIGH_HOST_RT_ERR,
+  NEIGH_MAC_ERR,
+  NEIGH_TUN_ERR,
+};
+
+enum {
+  RT_ERR_BASE = -5000,
+  RT_EXISTS_ERR,
+  RT_NH_ERR,
+  RT_NOENT_ERR,
+  RT_RANGE_ERR,
+  RT_MOD_ERR,
+  RT_TRIE_ADD_ERR,
+  RT_TRIE_DEL_ERR,
+};
+
+enum {
+  ZONE_BASE_ERR = -RT_ERR_BASE - 1000,
+  ZONE_EXISTS_ERR,
+  ZONE_NOT_EXIST_ERR,
+  ZONE_NUMBER_ERR,
+  ZONE_ALLOC_ERR,
+};
+
+#endif /* __FLB_LBRT_ERROR_H__ */

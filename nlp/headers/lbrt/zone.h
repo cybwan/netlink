@@ -6,14 +6,6 @@
 /* Length of zone name.  */
 #define ZONE_NAMESIZE 16
 
-enum {
-  ZONE_BASE_ERR = -RT_ERR_BASE - 1000,
-  ZONE_EXISTS_ERR,
-  ZONE_NOT_EXIST_ERR,
-  ZONE_NUMBER_ERR,
-  ZONE_ALLOC_ERR,
-};
-
 typedef struct lbrt_zone {
   char name[ZONE_NAMESIZE];
   int zone_num;

@@ -4,17 +4,6 @@
 #include <lbrt/types.h>
 
 enum {
-  RT_ERR_BASE = -5000,
-  RT_EXISTS_ERR,
-  RT_NH_ERR,
-  RT_NOENT_ERR,
-  RT_RANGE_ERR,
-  RT_MOD_ERR,
-  RT_TRIE_ADD_ERR,
-  RT_TRIE_DEL_ERR,
-};
-
-enum {
   RT_TYPE_IND = 0X1,
   RT_TYPE_DYN = 0X2,
   RT_TYPE_SELF = 0X4,

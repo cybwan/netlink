@@ -7,12 +7,6 @@ typedef struct lbrt_pol_key {
   char *pol_name;
 } lbrt_pol_key_t;
 
-typedef struct lbrt_pol_stats {
-  __u64 packets_ok;
-  __u64 packets_nok;
-  __u64 bytes;
-} lbrt_pol_stats_t;
-
 typedef struct lbrt_pol_obj_info {
 
 } lbrt_pol_obj_info_t;

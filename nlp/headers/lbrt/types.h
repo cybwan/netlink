@@ -5,7 +5,14 @@
 
 #include <cmn/types.h>
 
+typedef struct lbrt_pol_stats {
+  __u64 packets_ok;
+  __u64 packets_nok;
+  __u64 bytes;
+} lbrt_pol_stats_t;
+
 #include <lbrt/counter.h>
+#include <lbrt/error.h>
 #include <lbrt/mutex.h>
 #include <lbrt/time.h>
 

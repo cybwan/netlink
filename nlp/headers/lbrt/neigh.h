@@ -3,17 +3,6 @@
 
 #include <lbrt/types.h>
 
-enum {
-  NEIGH_ERR_BASE = -4000,
-  NEIGH_EXISTS_ERR,
-  NEIGH_OIF_ERR,
-  NEIGH_NO_ENT_ERR,
-  NEIGH_RANGE_ERR,
-  NEIGH_HOST_RT_ERR,
-  NEIGH_MAC_ERR,
-  NEIGH_TUN_ERR,
-};
-
 typedef struct lbrt_neigh_key {
   char *nh;
   char *zone;

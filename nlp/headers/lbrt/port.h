@@ -13,19 +13,6 @@
 #define WgIDB 4010
 #define VtIDB 4020
 
-enum {
-  PortBaseErr = -1000,
-  PortExistsErr,
-  PortNotExistErr,
-  PortNoMasterErr,
-  PortCounterErr,
-  PortMapErr,
-  PortZoneErr,
-  PortNoRealDevErr,
-  PortPropExistsErr,
-  PortPropNotExistsErr,
-};
-
 typedef enum lbrt_port_event {
   PortEvDown = 1,
   PortEvLowerDown = 2,

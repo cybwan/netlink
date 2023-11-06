@@ -1,5 +1,7 @@
 #include <lbrt/port.h>
 
+extern struct lbrt_net_meta *mh;
+
 lbrt_ports_h_t *lbrt_ports_h_alloc(void) {
   lbrt_ports_h_t *ph;
   ph = calloc(1, sizeof(*ph));

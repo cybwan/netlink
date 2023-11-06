@@ -32,7 +32,14 @@ SET(SOURCES
 	nlp/route.c
 	lbrt/counter.c
 	lbrt/layer2.c
+	lbrt/layer3.c
+	lbrt/mirror.c
+	lbrt/neigh.c
 	lbrt/port.c
+	lbrt/qospol.c
+	lbrt/route.c
+	lbrt/rule.c
+	lbrt/session.c
 	lbrt/vlan.c
 	lbrt/zone.c
 	lbrt/net.c
