@@ -45,8 +45,8 @@ typedef struct lbrt_port_hw_info {
 
 typedef struct lbrt_port_layer3_info {
   bool routed;
-  char *ipv4_addrs[INET_ADDRSTRLEN];
-  char *ipv6_addrs[INET6_ADDRSTRLEN];
+  // char **ipv4_addrs;
+  // char **ipv6_addrs;
 } lbrt_port_layer3_info_t;
 
 typedef struct lbrt_port_sw_info {
