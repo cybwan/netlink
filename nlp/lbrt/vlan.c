@@ -42,7 +42,7 @@ int lbrt_vlan_add(lbrt_vlans_h_t *vh, __u32 vlan_id, char *name, char *zone,
   l2i.vid = vlan_id;
   ret = lbrt_port_add(vh->zone->ports, name, osid, PortVlanBr, zone, hwi, &l2i);
   if (ret != 0) {
-    lbrt_zone_br_delete(mh.zn, name);
+    lbrt_zone_br_del(mh.zn, name);
     return VLAN_ADD_BRP_ERR;
   }
 
@@ -72,7 +72,7 @@ int lbrt_vlan_del(lbrt_vlans_h_t *vh, __u32 vlan_id) {
     return VLAN_MP_EXIST_ERR;
   }
 
-  lbrt_zone_br_delete(mh.zn, vlan->name);
+  lbrt_zone_br_del(mh.zn, vlan->name);
 
   // lbrt_port_del(vh->zone->ports, vlan->name, PortVlanBr);
   // v.DP(DpStatsClr)

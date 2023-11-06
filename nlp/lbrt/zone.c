@@ -99,7 +99,7 @@ int lbrt_zone_br_add(lbrt_zone_h_t *zh, const char *br_name,
   return 0;
 }
 
-int lbrt_zone_br_delete(lbrt_zone_h_t *zh, const char *br_name) {
+int lbrt_zone_br_del(lbrt_zone_h_t *zh, const char *br_name) {
   lbrt_zone_br_t *zn_br = NULL;
   HASH_FIND(hh, zh->zone_brs, br_name, strlen(br_name), zn_br);
   if (!zn_br)
@@ -132,7 +132,7 @@ int lbrt_zone_port_add(lbrt_zone_h_t *zh, const char *port_name,
   return 0;
 }
 
-int lbrt_zone_port_delete(lbrt_zone_h_t *zh, const char *port_name) {
+int lbrt_zone_port_del(lbrt_zone_h_t *zh, const char *port_name) {
   lbrt_zone_br_t *zn_port = NULL;
   HASH_FIND(hh, zh->zone_ports, port_name, strlen(port_name), zn_port);
   if (!zn_port)

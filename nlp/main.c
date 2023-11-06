@@ -94,8 +94,8 @@ void test_lbrt_zone() {
     printf(YELLOW "zone_brs br_name=[%s] zone_name=[%s]" RESET, br_p->br_name,
            br_p->zone->name);
   }
-  ret = lbrt_zone_br_delete(zh, "test4");
-  printf(YELLOW "lbrt_zone_br_delete ret=[%d]" RESET, ret);
+  ret = lbrt_zone_br_del(zh, "test4");
+  printf(YELLOW "lbrt_zone_br_del ret=[%d]" RESET, ret);
   HASH_ITER(hh, zh->zone_brs, br_p, br_tmp) {
     printf(YELLOW "zone_brs br_name=[%s] zone_name=[%s]" RESET, br_p->br_name,
            br_p->zone->name);
@@ -112,8 +112,8 @@ void test_lbrt_zone() {
            fp->name, fp->name);
   }
 
-  ret = lbrt_zone_port_delete(zh, "test3");
-  printf(YELLOW "lbrt_zone_port_delete ret=[%d]" RESET, ret);
+  ret = lbrt_zone_port_del(zh, "test3");
+  printf(YELLOW "lbrt_zone_port_del ret=[%d]" RESET, ret);
   lbrt_zone_port_t *port_p, *port_tmp = NULL;
   HASH_ITER(hh, zh->zone_ports, port_p, port_tmp) {
     printf(YELLOW "zone_ports port_name=[%s] zone_name=[%s]" RESET,

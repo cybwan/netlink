@@ -54,10 +54,10 @@ int lbrt_zone_delete(lbrt_zone_h_t *zh, const char *name);
 
 int lbrt_zone_br_add(lbrt_zone_h_t *zh, const char *br_name,
                      const char *zone_name);
-int lbrt_zone_br_delete(lbrt_zone_h_t *zh, const char *br_name);
+int lbrt_zone_br_del(lbrt_zone_h_t *zh, const char *br_name);
 int lbrt_zone_port_add(lbrt_zone_h_t *zh, const char *port_name,
                        const char *zone_name);
-int lbrt_zone_port_delete(lbrt_zone_h_t *zh, const char *port_name);
+int lbrt_zone_port_del(lbrt_zone_h_t *zh, const char *port_name);
 bool lbrt_zone_port_is_valid(lbrt_zone_h_t *zh, const char *port_name,
                              const char *zone_name);
 lbrt_zone_t *lbrt_zone_get_by_port(lbrt_zone_h_t *zh, const char *port_name);
