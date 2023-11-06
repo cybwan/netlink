@@ -119,22 +119,24 @@ int lbrt_port_add(lbrt_ports_h_t *ph, char *name, __u32 osid, __u32 link_type,
   {
     lbrt_port_t *p, *tmp;
     HASH_ITER(hh_by_name, ph->port_s_map, p, tmp) {
-      flb_log(LOG_LEVEL_DEBUG, YELLOW "hh_by_name port name=[%s] port no=[%d]" RESET, p->name,
-             p->port_no);
+      flb_log(LOG_LEVEL_DEBUG,
+              YELLOW "hh_by_name port name=[%s] port no=[%d]" RESET, p->name,
+              p->port_no);
     }
   }
 
   {
     lbrt_port_t *p, *tmp;
     HASH_ITER(hh_by_osid, ph->port_o_map, p, tmp) {
-      flb_log(LOG_LEVEL_DEBUG, YELLOW "hh_by_osid port name=[%s] port no=[%d]" RESET, p->name,
-             p->port_no);
+      flb_log(LOG_LEVEL_DEBUG,
+              YELLOW "hh_by_osid port name=[%s] port no=[%d]" RESET, p->name,
+              p->port_no);
     }
   }
 
   lbrt_zone_port_add(mh.zn, name, zone);
 
-  flb_log(LOG_LEVEL_INFO,"port added - %s:%d\n", name, p->port_no);
+  flb_log(LOG_LEVEL_INFO, "port added - %s:%d\n", name, p->port_no);
 
   return 0;
 }

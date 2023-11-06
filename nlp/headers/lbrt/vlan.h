@@ -15,8 +15,8 @@ typedef struct lbrt_vlan_stat {
 typedef struct lbrt_vlan {
   __u32 vlan_id;
   bool created;
-  char *name;
-  char *zone;
+  char name[IF_NAMESIZE];
+  char zone[ZONE_NAMESIZE];
   __u32 num_tag_ports;
   struct lbrt_port *tagged_ports[MaximumVlans];
   __u32 num_un_tag_ports;
@@ -29,9 +29,13 @@ typedef struct lbrt_vlans_h {
   struct lbrt_zone *zone;
 } lbrt_vlans_h_t;
 
+struct lbrt_port_hw_info;
+
 lbrt_vlans_h_t *lbrt_vlans_h_alloc(struct lbrt_zone *zone);
 void lbrt_vlans_h_free(struct lbrt_vlans_h *vh);
 
 bool lbrt_vlan_valid(__u32 vlan_id);
+int lbrt_vlan_add(struct lbrt_vlans_h *vh, __u32 vlan_id, char *name,
+                  char *zone, __u32 osid, struct lbrt_port_hw_info *hwi);
 
 #endif /* __FLB_LBRT_VLAN_H__ */
