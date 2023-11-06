@@ -36,8 +36,8 @@ typedef struct lbrt_port_hw_info {
   bool link;
   bool state;
   __u32 mtu;
-  char *master;
-  char *real;
+  char master[IF_NAMESIZE];
+  char real[IF_NAMESIZE];
   __u32 tun_id;
   ip_t tun_src;
   ip_t tun_dst;
@@ -45,8 +45,8 @@ typedef struct lbrt_port_hw_info {
 
 typedef struct lbrt_port_layer3_info {
   bool routed;
-  char *Ipv4Addrs[INET_ADDRSTRLEN];
-  char *Ipv6Addrs[INET6_ADDRSTRLEN];
+  char *ipv4_addrs[INET_ADDRSTRLEN];
+  char *ipv6_addrs[INET6_ADDRSTRLEN];
 } lbrt_port_layer3_info_t;
 
 typedef struct lbrt_port_sw_info {
@@ -68,9 +68,10 @@ typedef struct lbrt_port_layer2_info {
 } lbrt_port_layer2_info_t;
 
 typedef struct lbrt_port {
-  char *name;
+  char name[IF_NAMESIZE];
+  __u32 osid;
   __u32 port_no;
-  char *zone;
+  char zone[ZONE_NAMESIZE];
   struct lbrt_port_sw_info sinfo;
   struct lbrt_port_hw_info hinfo;
   struct lbrt_port_stats_info stats;
@@ -78,7 +79,8 @@ typedef struct lbrt_port {
   struct lbrt_port_layer2_info l2;
   enum lbrt_dp_status sync;
 
-  UT_hash_handle hh;
+  UT_hash_handle hh_by_name;
+  UT_hash_handle hh_by_osid;
 
 } lbrt_port_t;
 
@@ -95,5 +97,11 @@ typedef struct lbrt_ports_h {
 
 lbrt_ports_h_t *lbrt_ports_h_alloc(void);
 void lbrt_ports_h_free(lbrt_ports_h_t *ph);
+
+lbrt_port_t *lbrt_port_find_by_name(lbrt_ports_h_t *ph, const char *name);
+lbrt_port_t *lbrt_port_find_by_osid(lbrt_ports_h_t *ph, __u32 osid);
+int lbrt_port_add(lbrt_ports_h_t *ph, char *name, __u32 osid, __u32 link_type,
+                  char *zone, lbrt_port_hw_info_t *hwi,
+                  lbrt_port_layer2_info_t *l2i);
 
 #endif /* __FLB_LBRT_PORT_H__ */

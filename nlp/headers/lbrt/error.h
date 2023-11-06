@@ -2,16 +2,16 @@
 #define __FLB_LBRT_ERROR_H__
 
 enum {
-  PortBaseErr = -1000,
-  PortExistsErr,
-  PortNotExistErr,
-  PortNoMasterErr,
-  PortCounterErr,
-  PortMapErr,
-  PortZoneErr,
-  PortNoRealDevErr,
-  PortPropExistsErr,
-  PortPropNotExistsErr,
+  PORT_BASE_ERR = -1000,
+  PORT_EXISTS_ERR,
+  PORT_NOT_EXIST_ERR,
+  PORT_NO_MASTER_ERR,
+  PORT_COUNTER_ERR,
+  PORT_MAP_ERR,
+  PORT_ZONE_ERR,
+  PORT_NO_REAL_DEV_ERR,
+  PORT_PROP_EXISTS_ERR,
+  PORT_PROP_NOT_EXISTS_ERR,
 };
 
 enum {

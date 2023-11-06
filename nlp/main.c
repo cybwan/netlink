@@ -4,11 +4,6 @@
 
 #include <lbrt/types.h>
 
-#define RED "\033[0;31m"
-#define GREEN "\033[0;32m"
-#define YELLOW "\033[0;33m"
-#define RESET "\033[0;0m\n"
-
 void test_nl_ip_net() {
   char *ip_str = "fe80::20c:29ff:fe79:ab57/64";
   struct nl_ip_net ip_net;
@@ -128,11 +123,78 @@ void test_lbrt_zone() {
   printf(GREEN "test_lbrt_zone success\n" RESET);
 }
 
+void test_lbrt_net(void) {
+  api_port_mod_t ens33;
+  memset(&ens33, 0, sizeof(api_port_mod_t));
+  snprintf(ens33.dev, IF_NAMESIZE, "ens33");
+  ens33.link_index = 2;
+  ens33.link_type = 1;
+  ens33.mac_addr[0] = 0;
+  ens33.mac_addr[1] = 12;
+  ens33.mac_addr[2] = 41;
+  ens33.mac_addr[3] = 121;
+  ens33.mac_addr[4] = 171;
+  ens33.mac_addr[5] = 87;
+  ens33.link = true;
+  ens33.state = true;
+  ens33.mtu = 1430;
+  ens33.tun_id = 0;
+  snprintf(ens33.tun_src, INET6_ADDRSTRLEN, "0.0.0.0");
+  snprintf(ens33.tun_dst, INET6_ADDRSTRLEN, "0.0.0.0");
+
+  api_port_mod_t ens36;
+  memset(&ens36, 0, sizeof(api_port_mod_t));
+  snprintf(ens36.dev, IF_NAMESIZE, "ens36");
+  ens36.link_index = 3;
+  ens36.link_type = 1;
+  ens36.mac_addr[0] = 0;
+  ens36.mac_addr[1] = 12;
+  ens36.mac_addr[2] = 41;
+  ens36.mac_addr[3] = 121;
+  ens36.mac_addr[4] = 171;
+  ens36.mac_addr[5] = 97;
+  ens36.link = true;
+  ens36.state = true;
+  ens36.mtu = 1430;
+  ens36.tun_id = 0;
+  snprintf(ens36.tun_src, INET6_ADDRSTRLEN, "0.0.0.0");
+  snprintf(ens36.tun_dst, INET6_ADDRSTRLEN, "0.0.0.0");
+
+  api_port_mod_t flb0;
+  memset(&flb0, 0, sizeof(api_port_mod_t));
+  snprintf(flb0.dev, IF_NAMESIZE, "flb0");
+  flb0.link_index = 4;
+  flb0.link_type = 1;
+  flb0.mac_addr[0] = 22;
+  flb0.mac_addr[1] = 45;
+  flb0.mac_addr[2] = 216;
+  flb0.mac_addr[3] = 254;
+  flb0.mac_addr[4] = 218;
+  flb0.mac_addr[5] = 106;
+  flb0.link = true;
+  flb0.state = true;
+  flb0.mtu = 1500;
+  flb0.tun_id = 0;
+  snprintf(flb0.tun_src, INET6_ADDRSTRLEN, "0.0.0.0");
+  snprintf(flb0.tun_dst, INET6_ADDRSTRLEN, "0.0.0.0");
+
+  lbrt_net_init();
+
+  lbrt_net_port_add(&ens33);
+  lbrt_net_port_add(&ens36);
+  lbrt_net_port_add(&flb0);
+
+  lbrt_net_uninit();
+
+  printf(GREEN "test_lbrt_net success\n" RESET);
+}
+
 int main() {
   // test_nl_ip_net();
-  test_lbrt_layer2();
+  // test_lbrt_layer2();
   // test_lbrt_counter();
   // test_lbrt_zone();
+  test_lbrt_net();
 
   // nl_debug = 0;
   // nl_rtattr_t *info = nl_rtattr_new(1, 0, NULL);

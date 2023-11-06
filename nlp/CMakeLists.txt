@@ -9,6 +9,7 @@ ADD_DEFINITIONS(-g -Og -W -Wall -Wextra -Wno-unused-parameter)
 STRING(REPLACE "-DNDEBUG" "" CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
 
 SET(SOURCES
+	log/log.c
 	netlink/attr.c
 	netlink/cache.c
 	netlink/cache_mngt.c

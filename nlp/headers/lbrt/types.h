@@ -3,7 +3,11 @@
 
 #include <uthash.h>
 
+#include <log/log.h>
+
 #include <cmn/types.h>
+
+#include <api/defs.h>
 
 typedef struct lbrt_pol_stats {
   __u64 packets_ok;
@@ -27,6 +31,7 @@ typedef struct lbrt_pol_stats {
 #include <lbrt/route.h>
 #include <lbrt/rule.h>
 #include <lbrt/session.h>
+#include <lbrt/vlan.h>
 #include <lbrt/zone.h>
 
 #include <lbrt/net.h>

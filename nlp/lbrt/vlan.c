@@ -1,6 +1,6 @@
 #include <lbrt/vlan.h>
 
-extern struct lbrt_net_meta *mh;
+extern struct lbrt_net_meta mh;
 
 lbrt_vlans_h_t *lbrt_vlans_h_alloc(lbrt_zone_t *zone) {
   lbrt_vlans_h_t *vh;

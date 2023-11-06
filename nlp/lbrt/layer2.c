@@ -1,6 +1,6 @@
 #include <lbrt/layer2.h>
 
-extern struct lbrt_net_meta *mh;
+extern struct lbrt_net_meta mh;
 
 lbrt_l2_h_t *lbrt_l2_h_alloc(lbrt_zone_t *zone) {
   lbrt_l2_h_t *l2h;

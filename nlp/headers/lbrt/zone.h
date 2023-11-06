@@ -3,9 +3,6 @@
 
 #include <lbrt/types.h>
 
-/* Length of zone name.  */
-#define ZONE_NAMESIZE 16
-
 typedef struct lbrt_zone {
   char name[ZONE_NAMESIZE];
   int zone_num;

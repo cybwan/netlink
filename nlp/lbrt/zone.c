@@ -1,8 +1,8 @@
-#include <lbrt/zone.h>
+#include <lbrt/types.h>
 
 #define MaximumZones 256
 
-extern struct lbrt_net_meta *mh;
+extern struct lbrt_net_meta mh;
 
 lbrt_zone_h_t *lbrt_zone_h_alloc(void) {
   lbrt_zone_h_t *zh;
@@ -47,6 +47,17 @@ int lbrt_zone_add(lbrt_zone_h_t *zh, const char *name) {
 
   zn->zone_num = zn_num;
   memcpy(zn->name, name, strlen(name));
+  zn->ports = lbrt_ports_h_alloc();
+  zn->vlans = lbrt_vlans_h_alloc(zn);
+  zn->l2 = lbrt_l2_h_alloc(zn);
+  // zn.Nh = NeighInit(zone)
+  // zn.Rt = RtInit(zone)
+  // zn.L3 = L3Init(zone)
+  // zn.Rules = RulesInit(zone)
+  // zn.Sess = SessInit(zone)
+  // zn.Pols = PolInit(zone)
+  // zn.Mirrs = MirrInit(zone)
+
   HASH_ADD(hh, zh->zone_map, name, strlen(name), zn);
 
   return 0;
@@ -135,7 +146,7 @@ bool lbrt_zone_port_is_valid(lbrt_zone_h_t *zh, const char *port_name,
   lbrt_zone_port_t *zn_port = NULL;
   HASH_FIND(hh, zh->zone_ports, port_name, strlen(port_name), zn_port);
   if (!zn_port)
-    return false;
+    return true;
 
   if (strcmp(zn_port->zone->name, zone_name) == 0)
     return true;
