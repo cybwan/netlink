@@ -74,8 +74,8 @@ int lbrt_vlan_del(lbrt_vlans_h_t *vh, __u32 vlan_id) {
 
   lbrt_zone_br_del(mh.zn, vlan->name);
 
-  // lbrt_port_del(vh->zone->ports, vlan->name, PortVlanBr);
-  // v.DP(DpStatsClr)
+  lbrt_port_del(vh->zone->ports, vlan->name, PortVlanBr);
+  lbrt_vlan_datapath(vlan,DP_STATSCLR);
 
   vh->vlan_map[vlan_id] = NULL;
   free(vlan);
@@ -84,3 +84,5 @@ int lbrt_vlan_del(lbrt_vlans_h_t *vh, __u32 vlan_id) {
 
   return 0;
 }
+
+int lbrt_vlan_datapath(lbrt_vlan_t *vlan, enum lbrt_dp_work work) { return 0; }

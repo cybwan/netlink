@@ -38,4 +38,6 @@ bool lbrt_vlan_valid(__u32 vlan_id);
 int lbrt_vlan_add(struct lbrt_vlans_h *vh, __u32 vlan_id, char *name,
                   char *zone, __u32 osid, struct lbrt_port_hw_info *hwi);
 
+int lbrt_vlan_datapath(lbrt_vlan_t *vlan, enum lbrt_dp_work work);
+
 #endif /* __FLB_LBRT_VLAN_H__ */
