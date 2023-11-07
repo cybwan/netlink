@@ -30,19 +30,23 @@ int lbrt_net_port_add(api_port_mod_t *pm) {
   mh.mtx->lock();
 
   lbrt_port_hw_info_t hwi;
-  memset(&hwi, 0, sizeof(lbrt_port_hw_info_t));
+  memset(&hwi, 0, sizeof(hwi));
   memcpy(hwi.mac_addr, pm->mac_addr, ETH_ALEN);
   hwi.link = pm->link;
   hwi.state = pm->state;
   hwi.mtu = pm->mtu;
-  memcpy(hwi.master, pm->master, strlen(pm->master));
-  memcpy(hwi.real, pm->real, strlen(pm->real));
+  if (pm->master)
+    memcpy(hwi.master, pm->master, strlen(pm->master));
+  if (pm->real)
+    memcpy(hwi.real, pm->real, strlen(pm->real));
   hwi.tun_id = pm->tun_id;
-  parse_ip(pm->tun_src, &hwi.tun_src);
-  parse_ip(pm->tun_dst, &hwi.tun_dst);
+  if (pm->tun_src)
+    parse_ip(pm->tun_src, &hwi.tun_src);
+  if (pm->tun_dst)
+    parse_ip(pm->tun_dst, &hwi.tun_dst);
 
   lbrt_port_layer2_info_t l2i;
-  memset(&l2i, 0, sizeof(lbrt_port_layer2_info_t));
+  memset(&l2i, 0, sizeof(l2i));
   l2i.is_p_vid = false;
   l2i.vid = 0;
   int ret = lbrt_port_add(mh.zr->ports, pm->dev, pm->link_index, pm->link_type,

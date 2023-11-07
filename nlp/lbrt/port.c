@@ -78,7 +78,8 @@ int lbrt_port_add(lbrt_ports_h_t *ph, char *name, __u32 osid, __u32 link_type,
   if (strlen(hwi->real) > 0) {
     rp = lbrt_port_find_by_name(ph, hwi->real);
     if (!rp) {
-      printf("port add - %s no real-port(%s)\n", name, hwi->real);
+      flb_log(LOG_LEVEL_ERR, "port add - %s no real-port(%s)\n", name,
+              hwi->real);
       return PORT_NO_REAL_DEV_ERR;
     }
   } else if (link_type == PortVxlanBr) {
@@ -120,24 +121,22 @@ int lbrt_port_add(lbrt_ports_h_t *ph, char *name, __u32 osid, __u32 link_type,
   {
     lbrt_port_t *p, *tmp;
     HASH_ITER(hh_by_name, ph->port_s_map, p, tmp) {
-      flb_log(LOG_LEVEL_DEBUG,
-              YELLOW "hh_by_name port name=[%s] port no=[%d]" RESET, p->name,
-              p->port_no);
+      flb_log(LOG_LEVEL_DEBUG, "hh_by_name port name=[%s] port no=[%d]",
+              p->name, p->port_no);
     }
   }
 
   {
     lbrt_port_t *p, *tmp;
     HASH_ITER(hh_by_osid, ph->port_o_map, p, tmp) {
-      flb_log(LOG_LEVEL_DEBUG,
-              YELLOW "hh_by_osid port name=[%s] port no=[%d]" RESET, p->name,
-              p->port_no);
+      flb_log(LOG_LEVEL_DEBUG, "hh_by_osid port name=[%s] port no=[%d]",
+              p->name, p->port_no);
     }
   }
 
   lbrt_zone_port_add(mh.zn, name, zone);
 
-  flb_log(LOG_LEVEL_INFO, "port added - %s:%d\n", name, p->port_no);
+  flb_log(LOG_LEVEL_INFO, "port added - %s:%d", name, p->port_no);
 
   return 0;
 }
