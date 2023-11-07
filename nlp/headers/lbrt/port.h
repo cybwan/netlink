@@ -52,7 +52,7 @@ typedef struct lbrt_port_layer3_info {
 typedef struct lbrt_port_sw_info {
   __u32 os_id;
   __u32 port_type;
-  // PortProp   cmn.PortProp
+  enum PortProp PortProp;
   __u32 port_pol_num;
   __u32 port_mir_num;
   bool port_active;
