@@ -12,6 +12,14 @@
   (((PtrArrLength + TrieJmpLength) & ~TrieJmpLength) / TrieJmpLength)
 
 typedef struct lbrt_trie_data {
+  struct {
+    __u8 ptr : 1;
+    __u8 num : 1;
+  } f;
+  struct {
+    void *ptr;
+    __u32 num;
+  } v;
 } lbrt_trie_data_t;
 
 typedef struct lbrt_trie_iter_intf {
@@ -29,5 +37,11 @@ typedef struct lbrt_trie_root {
 
 lbrt_trie_root_t *lbrt_trie_alloc(bool v6);
 void lbrt_trie_free(lbrt_trie_root_t *root);
-void lbrt_tire_test(void);
+
+int AddTrie(lbrt_trie_root_t *t, char *cidr, lbrt_trie_data_t *data);
+int DelTrie(lbrt_trie_root_t *t, char *cidr);
+int FindTrie(lbrt_trie_root_t *t, char *ip, ip_net_t *ipnet,
+             lbrt_trie_data_t *trieData);
+
+void Trie2String(lbrt_trie_root_t *t, lbrt_trie_iter_intf_t tf);
 #endif /* __FLB_LBRT_TRIE_H__ */

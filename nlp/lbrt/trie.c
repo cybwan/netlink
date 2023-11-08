@@ -5,7 +5,7 @@ typedef struct trieVar {
 } lbrt_trie_var_t;
 
 typedef struct trieState {
-  lbrt_trie_data_t trieData;
+  lbrt_trie_data_t *trieData;
   int lastMatchLevel;
   int lastMatchPfxLen;
   bool lastMatchEmpty;
@@ -218,7 +218,9 @@ int addTrieInt(lbrt_trie_root_t *t, lbrt_trie_var_t *tv, int currLevel,
       t->prefixData[pfxIdx] = NULL;
     }
     SetBitInArr(PrefixArrNbits, t->prefixArr, idx);
-    t->prefixData[pfxIdx] = ts->trieData;
+    lbrt_trie_data_t *trieData = calloc(1, sizeof(lbrt_trie_data_t));
+    memcpy(trieData, ts->trieData, sizeof(lbrt_trie_data_t));
+    t->prefixData[pfxIdx] = trieData;
     return 0;
   }
 }
@@ -411,29 +413,102 @@ int walkTrieInt(lbrt_trie_root_t *t, lbrt_trie_var_t *tv, int level,
 // AddTrie - Add a trie entry
 // cidr is the route in cidr format and data is any user-defined data
 // returns 0 on success or non-zero error code on error
-int AddTrie(lbrt_trie_root_t *t,char *cidr, lbrt_trie_data_t *data) int {
-	lbrt_trie_var_t tv;
-  memset(&tv,0,sizeof(tv));
-  lbrt_trie_state_t ts;
-  memset(&ts,0,sizeof(ts));
-  ts.maxLevels = 4;
-  memcpy(&ts.trieData,data,sizeof(lbrt_trie_data_t));
-
-	int pfxLen = cidr2TrieVar(cidr, &tv)
-	if (pfxLen < 0) {
-		return TrieErrPrefix;
-	}
-
-	int ret = addTrieInt(t,&tv, 0, pfxLen, &ts)
-	if (ret != 0 || ts.errCode != 0) {
-		return ret;
-	}
-
-	return 0;
-}
-
-void lbrt_tire_test(void) {
+int AddTrie(lbrt_trie_root_t *t, char *cidr, lbrt_trie_data_t *data) {
   lbrt_trie_var_t tv;
   memset(&tv, 0, sizeof(tv));
-  cidr2TrieVar("192.168.127.0/2", &tv);
+  lbrt_trie_state_t ts;
+  memset(&ts, 0, sizeof(ts));
+  ts.maxLevels = 4;
+  ts.trieData = data;
+
+  int pfxLen = cidr2TrieVar(cidr, &tv);
+  if (pfxLen < 0) {
+    return TrieErrPrefix;
+  }
+
+  int ret = addTrieInt(t, &tv, 0, pfxLen, &ts);
+  if (ret != 0 || ts.errCode != 0) {
+    return ret;
+  }
+
+  return 0;
+}
+
+// DelTrie - Delete a trie entry
+// cidr is the route in cidr format
+// returns 0 on success or non-zero error code on error
+int DelTrie(lbrt_trie_root_t *t, char *cidr) {
+  lbrt_trie_var_t tv;
+  memset(&tv, 0, sizeof(tv));
+  lbrt_trie_state_t ts;
+  memset(&ts, 0, sizeof(ts));
+  ts.maxLevels = 4;
+
+  int pfxLen = cidr2TrieVar(cidr, &tv);
+  if (pfxLen < 0) {
+    return TrieErrPrefix;
+  }
+
+  int ret = deleteTrieInt(t, &tv, 0, pfxLen, &ts);
+  if (ret != 0 || ts.errCode != 0) {
+    return ret;
+  }
+
+  return 0;
+}
+
+// FindTrie - Lookup matching route as per longest prefix match
+// IP is the IP address in string format
+// returns the following :
+// 1. 0 on success or non-zero error code on error
+// 2. matching route in *net.IPNet form
+// 3. user-defined data associated with the trie entry
+int FindTrie(lbrt_trie_root_t *t, char *ip, ip_net_t *ipnet,
+             lbrt_trie_data_t *trieData) {
+  lbrt_trie_var_t tv;
+  memset(&tv, 0, sizeof(tv));
+  lbrt_trie_state_t ts;
+  memset(&ts, 0, sizeof(ts));
+  ts.maxLevels = 4;
+
+  char cidr[IF_CIDRSIZE];
+  memset(cidr, 0, IF_CIDRSIZE);
+
+  if (!t->v6) {
+    snprintf(cidr, IF_CIDRSIZE, "%s/32", ip);
+  } else {
+    snprintf(cidr, IF_CIDRSIZE, "%s/128", ip);
+  }
+  int pfxLen = cidr2TrieVar(cidr, &tv);
+
+  if (pfxLen < 0) {
+    return TrieErrPrefix;
+  }
+
+  findTrieInt(t, &tv, 0, &ts);
+
+  if (ts.matchFound) {
+    if (!t->v6) {
+      ipnet->mask = 32;
+      ipnet->ip.f.v4 = 1;
+      memcpy(ipnet->ip.v4.bytes, ts.lastMatchTv.prefix, 4);
+      return 0;
+    } else {
+      ipnet->mask = 128;
+      ipnet->ip.f.v6 = 1;
+      memcpy(ipnet->ip.v6.bytes, ts.lastMatchTv.prefix, 16);
+      return 0;
+    }
+  }
+  return TrieErrNoEnt;
+}
+
+// Trie2String - stringify the trie table
+void Trie2String(lbrt_trie_root_t *t, lbrt_trie_iter_intf_t tf) {
+  lbrt_trie_var_t tv;
+  memset(&tv, 0, sizeof(tv));
+  lbrt_trie_state_t ts;
+  memset(&ts, 0, sizeof(ts));
+  ts.maxLevels = 4;
+  walkTrieInt(t, &tv, 0, &ts, tf);
 }
