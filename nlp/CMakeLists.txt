@@ -32,6 +32,7 @@ SET(SOURCES
 	nlp/nlops.c
 	nlp/route.c
 	lbrt/counter.c
+	lbrt/trie.c
 	lbrt/layer2.c
 	lbrt/layer3.c
 	lbrt/mirror.c

@@ -22,7 +22,7 @@ char *log_color(int level) {
 }
 
 void log_func_impl(int level, const char *fmt, va_list args) {
-  fprintf(stdout, "%s",log_color(level));
+  fprintf(stdout, "%s", log_color(level));
   vfprintf(stdout, fmt, args);
   fprintf(stdout, "\033[0;0m\n");
   fflush(stdout);

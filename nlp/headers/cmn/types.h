@@ -17,6 +17,9 @@
 /* Length of zone name.  */
 #define ZONE_NAMESIZE 16
 
+#define IF_ADDRSIZE 46
+#define IF_CIDRSIZE 50
+
 typedef struct nl_ip {
   struct {
     __u8 v4 : 1;

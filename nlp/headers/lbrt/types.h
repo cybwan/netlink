@@ -19,6 +19,7 @@ typedef struct lbrt_pol_stats {
 #include <lbrt/error.h>
 #include <lbrt/mutex.h>
 #include <lbrt/time.h>
+#include <lbrt/trie.h>
 
 #include <lbrt/datapath.h>
 #include <lbrt/qospol.h>

@@ -128,6 +128,42 @@ void test_lbrt_zone() {
   printf(GREEN "test_lbrt_zone success\n" RESET);
 }
 
+void test_lbrt_rt(void) {
+  lbrt_zone_h_t *zh = lbrt_zone_h_alloc();
+  lbrt_zone_add(zh, "root");
+  lbrt_zone_t *zn = lbrt_zone_find(zh, "root");
+  if (zn) {
+    flb_log(LOG_LEVEL_INFO, "find zone name=[%s] num=[%d] success", zn->name,
+            zn->zone_num);
+  }
+
+  lbrt_rt_h_t *rh = lbrt_rt_h_alloc(zn);
+  lbrt_rt_attr_t ra;
+  memset(&ra, 0, sizeof(ra));
+  ra.ifi = 3;
+  ra.host_route = true;
+  lbrt_rt_nh_attr_t na;
+  memset(&na, 0, sizeof(na));
+  na.link_index = 3;
+  snprintf(na.nh_addr, IF_ADDRSIZE, "%s", "192.178.127.1");
+
+  lbrt_rt_nh_attr_t nas[] = {na};
+  lbrt_rt_add(rh, "8.8.8.0/24", "root", &ra, 1, nas);
+
+  lbrt_rt_t *rt = lbrt_rt_find(rh, "8.8.8.0/24", "root");
+  if (rt) {
+    flb_log(LOG_LEVEL_INFO,
+            "find route cidr=[%s] zone_num=[%u] mark=[%llu] tflags=[%u] "
+            "rt->attr.ifi=[%u] "
+            "rt->nh_attr[0]{link_index=[%u],nh_addr=[%s]}"
+            "success",
+            rt->key.rt_cidr, rt->zone_num, rt->mark, rt->tflags, rt->attr.ifi,
+            rt->nh_attr[0].link_index, rt->nh_attr[0].nh_addr);
+  }
+
+  flb_log(LOG_LEVEL_INFO, "test_lbrt_rt success");
+}
+
 void test_lbrt_net(void) {
   api_port_mod_t ens33;
   memset(&ens33, 0, sizeof(api_port_mod_t));
@@ -183,13 +219,15 @@ void test_lbrt_net(void) {
   flb0.tun_src = "0.0.0.0";
   flb0.tun_dst = "0.0.0.0";
 
-  lbrt_net_init();
+  // lbrt_net_init();
 
-  lbrt_net_port_add(&ens33);
-  lbrt_net_port_add(&ens36);
-  lbrt_net_port_add(&flb0);
+  // lbrt_net_port_add(&ens33);
+  // lbrt_net_port_add(&ens36);
+  // lbrt_net_port_add(&flb0);
 
-  lbrt_net_uninit();
+  // lbrt_net_uninit();
+
+  printf("izeof(struct lbrt_rt)=[%ld]\n", sizeof(struct lbrt_rt));
 }
 
 int main() {
@@ -197,7 +235,9 @@ int main() {
   // test_lbrt_layer2();
   // test_lbrt_counter();
   // test_lbrt_zone();
-  test_lbrt_net();
+  // test_lbrt_net();
+  // test_lbrt_rt();
+  lbrt_tire_test();
 
   // nl_debug = 0;
   // nl_rtattr_t *info = nl_rtattr_new(1, 0, NULL);

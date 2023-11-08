@@ -58,6 +58,7 @@ enum {
   RT_MOD_ERR,
   RT_TRIE_ADD_ERR,
   RT_TRIE_DEL_ERR,
+  RT_ALLOC_ERR,
 };
 
 enum {
@@ -126,6 +127,16 @@ enum {
 enum {
   DP_ERR_BASE = -103000,
   DP_WQ_UNK_ERR,
+};
+
+enum {
+  TrieSuccess,
+  TrieErrPrefix = -6,
+  TrieErrUnknown,
+  TrieErrNoMem,
+  TrieErrNoEnt,
+  TrieErrExists,
+  TrieErrGeneric,
 };
 
 #endif /* __FLB_LBRT_ERROR_H__ */

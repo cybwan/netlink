@@ -96,7 +96,7 @@ int lbrt_port_add(lbrt_ports_h_t *ph, char *name, __u32 osid, __u32 link_type,
   p->sinfo.port_type = link_type;
   p->sinfo.port_real = rp;
 
-  __u8 vmac[ETH_ALEN] = {0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff};
+  //__u8 vmac[ETH_ALEN] = {0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff};
   switch (link_type) {
   case PortReal:
     break;
