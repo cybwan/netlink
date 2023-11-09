@@ -10,7 +10,7 @@ void trie_data2str(lbrt_trie_data_t *d, size_t maxlen, char *buf) {
   }
 }
 
-void testTire(void) {
+void testTire(lbrt_trie_iter_intf_t tf) {
   int ret;
   lbrt_trie_root_t *trieR = lbrt_trie_alloc(false);
   char *route;
@@ -82,9 +82,6 @@ void testTire(void) {
     flb_log(LOG_LEVEL_ERR, "failed to add %s:%d", route, data.v.num);
   }
 
-  lbrt_trie_iter_intf_t tf;
-  tf.trie_data2str = trie_data2str;
-  tf.trie_node_walker = trie_node_walker;
   lbrt_trie_str(trieR, tf);
 
   ip_net_t ipnet;
@@ -215,7 +212,10 @@ void testTire(void) {
 }
 
 int main() {
-  testTire();
+  lbrt_trie_iter_intf_t tf;
+  tf.trie_data2str = trie_data2str;
+  tf.trie_node_walker = trie_node_walker;
+  testTire(tf);
   flb_log(LOG_LEVEL_INFO, "TRIE DONE!");
   return 0;
 }
