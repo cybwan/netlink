@@ -105,14 +105,14 @@ int lbrt_rt_add(lbrt_rt_h_t *rh, const char *dst, const char *zone,
     rt->tflags |= RT_TYPE_SELF;
   }
 
-  lbrt_trie_root_t *tr = NULL;
-  ip_net_t net;
-  parse_ip_net(dst, &net);
-  if (net.ip.f.v4) {
-    tr = rh->trie4;
-  } else {
-    tr = rh->trie6;
-  }
+  // lbrt_trie_root_t *tr = NULL;
+  // ip_net_t net;
+  // parse_ip_net(dst, &net);
+  // if (net.ip.f.v4) {
+  //   tr = rh->trie4;
+  // } else {
+  //   tr = rh->trie6;
+  // }
 
   HASH_ADD(hh, rh->rt_map, key, sizeof(key), rt);
 

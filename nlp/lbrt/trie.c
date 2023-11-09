@@ -1,11 +1,13 @@
 #include <lbrt/trie.h>
 
+static int id=0;
+
 typedef struct trieVar {
   __u8 prefix[16];
 } lbrt_trie_var_t;
 
 typedef struct trieState {
-  lbrt_trie_data_t *trieData;
+  lbrt_trie_data_t trieData;
   int lastMatchLevel;
   int lastMatchPfxLen;
   bool lastMatchEmpty;
@@ -22,6 +24,7 @@ lbrt_trie_root_t *lbrt_trie_alloc(bool v6) {
     return NULL;
   }
   root->v6 = v6;
+  root->id=++id;
   return root;
 }
 
@@ -49,10 +52,12 @@ int cidr2TrieVar(char *cidr, lbrt_trie_var_t *tv) {
     __u8 bitMask = 0xFF;
     if (mask <= (i + 1) * 8) {
       __s8 ones = mask - i * 8;
-      bitMask = bitMask << (8 - ones);
-      ipNet.ip.v6.bytes[i] &= bitMask;
-    } else {
-      ipNet.ip.v6.bytes[i] = 0;
+      if (ones > 0) {
+        bitMask = bitMask << (8 - ones);
+        ipNet.ip.v6.bytes[i] &= bitMask;
+      } else {
+        ipNet.ip.v6.bytes[i] = 0;
+      }
     }
   }
   for (int i = 0; i < 16; i++) {
@@ -61,7 +66,7 @@ int cidr2TrieVar(char *cidr, lbrt_trie_var_t *tv) {
   return ipNet.mask;
 }
 
-void shrinkPrefixArrDat(int arr_cnt, lbrt_trie_data_t **arr, int startPos) {
+void shrinkPrefixArrDat(int arr_cnt, lbrt_trie_data_t *arr, int startPos) {
   if (startPos < 0 || startPos >= arr_cnt) {
     return;
   }
@@ -79,7 +84,7 @@ void shrinkPtrArrDat(int arr_cnt, lbrt_trie_root_t **arr, int startPos) {
   }
 }
 
-void expPrefixArrDat(int arr_cnt, lbrt_trie_data_t **arr, int startPos) {
+void expPrefixArrDat(int arr_cnt, lbrt_trie_data_t *arr, int startPos) {
   if (startPos < 0 || startPos >= arr_cnt) {
     return;
   }
@@ -172,6 +177,9 @@ void UnSetBitInArr(int arr_cnt, __u8 *arr, int bPos) {
 int addTrieInt(lbrt_trie_root_t *t, lbrt_trie_var_t *tv, int currLevel,
                int rPfxLen, lbrt_trie_state_t *ts) {
 
+  // printf("tv prefix[0]=[%u] [1]=[%u] [2]=[%u] [3]=[%u] [4]=[%u]\n",
+  //        tv->prefix[0], tv->prefix[1], tv->prefix[2], tv->prefix[3],
+  //        tv->prefix[34]);
   if (rPfxLen < 0 || ts->errCode != 0) {
     return -1;
   }
@@ -193,16 +201,46 @@ int addTrieInt(lbrt_trie_root_t *t, lbrt_trie_var_t *tv, int currLevel,
       // If no pointer exists, then allocate it
       // Make pointer references
       nextRoot = calloc(1, sizeof(lbrt_trie_root_t));
+      nextRoot->id=++id;
       if (t->ptrData[ptrIdx]) {
         expPtrArrDat(PtrArrLength, t->ptrData, ptrIdx);
-        free(t->ptrData[ptrIdx]);
+        //free(t->ptrData[ptrIdx]);
         t->ptrData[ptrIdx] = NULL;
       }
       t->ptrData[ptrIdx] = nextRoot;
       SetBitInArr(PtrArrNBits, t->ptrArr, (int)cval);
     }
+    printf("t->prefix ");
+    for (int i = 0; i < PrefixArrNbits; i++) {
+      if(t->prefixArr[i]>0){
+        printf("[%u]=%u ", i,t->prefixArr[i]);
+      }
+    }
+    printf("\n");
+    printf("t->ptrArr ");
+    for (int i = 0; i < PtrArrNBits; i++) {
+      if (t->ptrArr[i] > 0) {
+        printf("[%u]=%u ", i, t->ptrArr[i]);
+      }
+    }
+    printf("\n");
+    printf("t->ptdata ");
+    for (int i = 0; i < PrefixArrLenfth; i++) {
+      if (t->prefixData[i].v.num > 0) {
+        printf("[%u]=%u ", i, t->prefixData->v.num);
+      }
+    }
+    printf("\n");
+    printf("t->prroot id=[%d] ",t->id);
+    for (int i = 0; i < PtrArrLength; i++) {
+      if (t->ptrData[i]) {
+        printf("[%u]=[%d] ", i,t->ptrData[i]->id);
+      }
+    }
+    printf("\n");
     return addTrieInt(nextRoot, tv, currLevel + 1, rPfxLen, ts);
   } else {
+    printf("is me....\n");
     int shftBits = TrieJmpLength - rPfxLen;
     int basePos = (1 << rPfxLen) - 1;
     // Find value relevant to currently remaining prefix len
@@ -212,15 +250,40 @@ int addTrieInt(lbrt_trie_root_t *t, lbrt_trie_var_t *tv, int currLevel,
       return TrieErrExists;
     }
     int pfxIdx = CountSetBitsInArr(PrefixArrNbits, t->prefixArr, idx);
-    if (t->prefixData[pfxIdx]) {
+    if (t->prefixData[pfxIdx].f.num || t->prefixData[pfxIdx].f.ptr) {
       expPrefixArrDat(PrefixArrLenfth, t->prefixData, pfxIdx);
-      free(t->prefixData[pfxIdx]);
-      t->prefixData[pfxIdx] = NULL;
+      memset(&t->prefixData[pfxIdx], 0, sizeof(lbrt_trie_data_t));
     }
     SetBitInArr(PrefixArrNbits, t->prefixArr, idx);
-    lbrt_trie_data_t *trieData = calloc(1, sizeof(lbrt_trie_data_t));
-    memcpy(trieData, ts->trieData, sizeof(lbrt_trie_data_t));
-    t->prefixData[pfxIdx] = trieData;
+    memcpy(&t->prefixData[pfxIdx], &ts->trieData, sizeof(lbrt_trie_data_t));
+    printf("t->prefix ");
+    for (int i = 0; i < PrefixArrNbits; i++) {
+      if(t->prefixArr[i]>0){
+        printf("[%u]=%u ", i,t->prefixArr[i]);
+      }
+    }
+    printf("\n");
+    printf("t->ptrArr ");
+    for (int i = 0; i < PtrArrNBits; i++) {
+      if (t->ptrArr[i] > 0) {
+        printf("[%u]=%u ", i, t->ptrArr[i]);
+      }
+    }
+    printf("\n");
+    printf("t->ptdata ");
+    for (int i = 0; i < PrefixArrLenfth; i++) {
+      if (t->prefixData[i].v.num > 0) {
+        printf("[%u]=%u ", i, t->prefixData->v.num);
+      }
+    }
+    printf("\n");
+    printf("t->prroot id=[%d] ",t->id);
+    for (int i = 0; i < PtrArrLength; i++) {
+      if (t->ptrData[i]) {
+        printf("[%u]=[%d] ", i,t->ptrData[i]->id);
+      }
+    }
+    printf("\n");
     return 0;
   }
 }
@@ -282,9 +345,8 @@ int deleteTrieInt(lbrt_trie_root_t *t, lbrt_trie_var_t *tv, int currLevel,
     }
     int pfxIdx = CountSetBitsInArr(PrefixArrNbits, t->prefixArr, idx - 1);
     // Note - This assumes that prefix data should be non-zero
-    if (t->prefixData[pfxIdx]) {
-      free(t->prefixData[pfxIdx]);
-      t->prefixData[pfxIdx] = NULL;
+    if (t->prefixData[pfxIdx].f.num || t->prefixData[pfxIdx].f.ptr) {
+      memset(&t->prefixData[pfxIdx], 0, sizeof(lbrt_trie_data_t));
       shrinkPrefixArrDat(PrefixArrLenfth, t->prefixData, pfxIdx);
       UnSetBitInArr(PrefixArrNbits, t->prefixArr, idx);
       ts->matchFound = true;
@@ -387,7 +449,9 @@ int walkTrieInt(lbrt_trie_root_t *t, lbrt_trie_var_t *tv, int level,
           utstring_printf(pfxStr, "%d.", pfxVal);
         }
       }
-      char *td = tf.trie_data2str(t->prefixData[pfxIdx]);
+      char td[16];
+      memset(td, 0, 16);
+      tf.trie_data2str(&t->prefixData[pfxIdx], 16, td);
       utstring_printf(str, "%20s/%d : %s", utstring_body(pfxStr),
                       pfxLen + pLevelPfxLen, td);
       tf.trie_node_walker(utstring_body(str));
@@ -413,13 +477,13 @@ int walkTrieInt(lbrt_trie_root_t *t, lbrt_trie_var_t *tv, int level,
 // AddTrie - Add a trie entry
 // cidr is the route in cidr format and data is any user-defined data
 // returns 0 on success or non-zero error code on error
-int AddTrie(lbrt_trie_root_t *t, char *cidr, lbrt_trie_data_t *data) {
+int lbrt_trie_add(lbrt_trie_root_t *t, char *cidr, lbrt_trie_data_t *data) {
   lbrt_trie_var_t tv;
   memset(&tv, 0, sizeof(tv));
   lbrt_trie_state_t ts;
   memset(&ts, 0, sizeof(ts));
   ts.maxLevels = 4;
-  ts.trieData = data;
+  memcpy(&ts.trieData, data, sizeof(lbrt_trie_data_t));
 
   int pfxLen = cidr2TrieVar(cidr, &tv);
   if (pfxLen < 0) {
@@ -437,7 +501,7 @@ int AddTrie(lbrt_trie_root_t *t, char *cidr, lbrt_trie_data_t *data) {
 // DelTrie - Delete a trie entry
 // cidr is the route in cidr format
 // returns 0 on success or non-zero error code on error
-int DelTrie(lbrt_trie_root_t *t, char *cidr) {
+int lbrt_trie_del(lbrt_trie_root_t *t, char *cidr) {
   lbrt_trie_var_t tv;
   memset(&tv, 0, sizeof(tv));
   lbrt_trie_state_t ts;
@@ -463,8 +527,8 @@ int DelTrie(lbrt_trie_root_t *t, char *cidr) {
 // 1. 0 on success or non-zero error code on error
 // 2. matching route in *net.IPNet form
 // 3. user-defined data associated with the trie entry
-int FindTrie(lbrt_trie_root_t *t, char *ip, ip_net_t *ipnet,
-             lbrt_trie_data_t *trieData) {
+int lbrt_trie_find(lbrt_trie_root_t *t, char *ip, ip_net_t *ipnet,
+                   lbrt_trie_data_t *trieData) {
   lbrt_trie_var_t tv;
   memset(&tv, 0, sizeof(tv));
   lbrt_trie_state_t ts;
@@ -504,7 +568,7 @@ int FindTrie(lbrt_trie_root_t *t, char *ip, ip_net_t *ipnet,
 }
 
 // Trie2String - stringify the trie table
-void Trie2String(lbrt_trie_root_t *t, lbrt_trie_iter_intf_t tf) {
+void lbrt_trie_str(lbrt_trie_root_t *t, lbrt_trie_iter_intf_t tf) {
   lbrt_trie_var_t tv;
   memset(&tv, 0, sizeof(tv));
   lbrt_trie_state_t ts;

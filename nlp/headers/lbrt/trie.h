@@ -24,24 +24,25 @@ typedef struct lbrt_trie_data {
 
 typedef struct lbrt_trie_iter_intf {
   void (*trie_node_walker)(char *);
-  char *(*trie_data2str)(lbrt_trie_data_t *);
+  void (*trie_data2str)(lbrt_trie_data_t *, size_t maxlen, char *buf);
 } lbrt_trie_iter_intf_t;
 
 typedef struct lbrt_trie_root {
+  int id;
   bool v6;
   __u8 prefixArr[PrefixArrNbits];
   __u8 ptrArr[PtrArrNBits];
-  struct lbrt_trie_data *prefixData[PrefixArrLenfth];
+  struct lbrt_trie_data prefixData[PrefixArrLenfth];
   struct lbrt_trie_root *ptrData[PtrArrLength];
 } lbrt_trie_root_t;
 
 lbrt_trie_root_t *lbrt_trie_alloc(bool v6);
 void lbrt_trie_free(lbrt_trie_root_t *root);
 
-int AddTrie(lbrt_trie_root_t *t, char *cidr, lbrt_trie_data_t *data);
-int DelTrie(lbrt_trie_root_t *t, char *cidr);
-int FindTrie(lbrt_trie_root_t *t, char *ip, ip_net_t *ipnet,
-             lbrt_trie_data_t *trieData);
+int lbrt_trie_add(lbrt_trie_root_t *t, char *cidr, lbrt_trie_data_t *data);
+int lbrt_trie_del(lbrt_trie_root_t *t, char *cidr);
+int lbrt_trie_find(lbrt_trie_root_t *t, char *ip, ip_net_t *ipnet,
+                   lbrt_trie_data_t *trieData);
 
-void Trie2String(lbrt_trie_root_t *t, lbrt_trie_iter_intf_t tf);
+void lbrt_trie_str(lbrt_trie_root_t *t, lbrt_trie_iter_intf_t tf);
 #endif /* __FLB_LBRT_TRIE_H__ */

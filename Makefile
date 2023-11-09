@@ -49,6 +49,10 @@ build:
 run: build
 	@cd build && ./nlp
 
+.PHONY: test-trie
+test-trie: build
+	@cd build && ./trie
+
 .PHONY: net
 net:
 	ip link add eth0 type veth

@@ -237,7 +237,6 @@ int main() {
   // test_lbrt_zone();
   // test_lbrt_net();
   // test_lbrt_rt();
-  lbrt_tire_test();
 
   // nl_debug = 0;
   // nl_rtattr_t *info = nl_rtattr_new(1, 0, NULL);
