@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <time.h>
 
 #include <lbrt/types.h>
 
@@ -10,7 +11,52 @@ void trie_data2str(lbrt_trie_data_t *d, size_t maxlen, char *buf) {
   }
 }
 
-void testTire(lbrt_trie_iter_intf_t tf) {
+__u64 get_clock_sys_time_ns(void) {
+  struct timespec tp;
+  __u64 time_ns = 0;
+  clock_gettime(CLOCK_MONOTONIC, &tp);
+  time_ns = (long long)tp.tv_sec * 1000000000 + tp.tv_nsec;
+  return time_ns;
+}
+
+void tireBenchmark(lbrt_trie_iter_intf_t tf, int loop_cnt) {
+  int ret;
+
+  lbrt_trie_root_t *trieR = lbrt_trie_alloc(false);
+
+  lbrt_trie_data_t data;
+  memset(&data, 0, sizeof(data));
+  data.f.num = 1;
+
+  int i = 0;
+  int j = 0;
+  int k = 0;
+  int pLen = 32;
+
+  char route[IF_CIDRSIZE];
+
+  __u64 nano1 = get_clock_sys_time_ns();
+
+  for (int n = 0; n < loop_cnt; n++) {
+    i = n & 0xff;
+    j = n >> 8 & 0xff;
+    k = n >> 16 & 0xff;
+
+    memset(route, 0, IF_CIDRSIZE);
+    snprintf(route, IF_CIDRSIZE, "192.%d.%d.%d/%d", k, j, i, pLen);
+    data.v.num = n;
+    ret = lbrt_trie_add(trieR, route, &data);
+    if (ret != 0) {
+      flb_log(LOG_LEVEL_ERR, "failed to add %s:%d - (%d)", route, n, ret);
+      // lbrt_trie_str(trieR, tf);
+    }
+  }
+
+  __u64 nano2 = get_clock_sys_time_ns();
+  printf("Benchmark: %7d %4llu ns/op\n", loop_cnt, (nano2 - nano1) / loop_cnt);
+}
+
+void tireTest(lbrt_trie_iter_intf_t tf) {
   int ret;
   lbrt_trie_root_t *trieR = lbrt_trie_alloc(false);
   char *route;
@@ -215,7 +261,12 @@ int main() {
   lbrt_trie_iter_intf_t tf;
   tf.trie_data2str = trie_data2str;
   tf.trie_node_walker = trie_node_walker;
-  testTire(tf);
+  tireTest(tf);
+  tireBenchmark(tf, 1);
+  tireBenchmark(tf, 100);
+  tireBenchmark(tf, 10000);
+  tireBenchmark(tf, 948698);
+  tireBenchmark(tf, 1218399);
   flb_log(LOG_LEVEL_INFO, "TRIE DONE!");
   return 0;
 }
