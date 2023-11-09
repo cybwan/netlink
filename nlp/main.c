@@ -4,6 +4,8 @@
 
 #include <lbrt/types.h>
 
+#include <test.h>
+
 #define RED "\033[0;31m"
 #define GREEN "\033[0;32m"
 #define YELLOW "\033[0;33m"
@@ -230,7 +232,7 @@ void test_lbrt_net(void) {
   printf("izeof(struct lbrt_rt)=[%ld]\n", sizeof(struct lbrt_rt));
 }
 
-int main() {
+int main1() {
   // test_nl_ip_net();
   // test_lbrt_layer2();
   // test_lbrt_counter();
@@ -364,5 +366,18 @@ int main() {
   // printf("ret=[%d]\n", ret);
 
   flb_log(LOG_LEVEL_INFO, "DONE!");
+  return 0;
+}
+
+int main() {
+  lbrt_trie_iter_intf_t tf;
+  lbrt_trie_iter_intf_init(&tf);
+  tireTest(tf);
+  tireBenchmark(tf, 1);
+  tireBenchmark(tf, 100);
+  tireBenchmark(tf, 10000);
+  tireBenchmark(tf, 948698);
+  tireBenchmark(tf, 1218399);
+  flb_log(LOG_LEVEL_INFO, "TRIE DONE!");
   return 0;
 }

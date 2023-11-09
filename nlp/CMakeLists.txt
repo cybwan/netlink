@@ -45,10 +45,9 @@ SET(SOURCES
 	lbrt/vlan.c
 	lbrt/zone.c
 	lbrt/net.c
+	test/trie.c
 )
 
 #ADD_LIBRARY(nlp SHARED ${SOURCES})
 
-#ADD_EXECUTABLE(nlp main.c ${SOURCES})
-
-ADD_EXECUTABLE(trie test/trie.c ${SOURCES})
+ADD_EXECUTABLE(nlp main.c ${SOURCES})
