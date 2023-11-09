@@ -1,7 +1,5 @@
 #include <lbrt/trie.h>
 
-static int id=0;
-
 typedef struct trieVar {
   __u8 prefix[16];
 } lbrt_trie_var_t;
@@ -24,7 +22,6 @@ lbrt_trie_root_t *lbrt_trie_alloc(bool v6) {
     return NULL;
   }
   root->v6 = v6;
-  root->id=++id;
   return root;
 }
 
@@ -176,10 +173,6 @@ void UnSetBitInArr(int arr_cnt, __u8 *arr, int bPos) {
 
 int addTrieInt(lbrt_trie_root_t *t, lbrt_trie_var_t *tv, int currLevel,
                int rPfxLen, lbrt_trie_state_t *ts) {
-
-  // printf("tv prefix[0]=[%u] [1]=[%u] [2]=[%u] [3]=[%u] [4]=[%u]\n",
-  //        tv->prefix[0], tv->prefix[1], tv->prefix[2], tv->prefix[3],
-  //        tv->prefix[34]);
   if (rPfxLen < 0 || ts->errCode != 0) {
     return -1;
   }
@@ -201,46 +194,16 @@ int addTrieInt(lbrt_trie_root_t *t, lbrt_trie_var_t *tv, int currLevel,
       // If no pointer exists, then allocate it
       // Make pointer references
       nextRoot = calloc(1, sizeof(lbrt_trie_root_t));
-      nextRoot->id=++id;
       if (t->ptrData[ptrIdx]) {
         expPtrArrDat(PtrArrLength, t->ptrData, ptrIdx);
-        //free(t->ptrData[ptrIdx]);
+        // free(t->ptrData[ptrIdx]);
         t->ptrData[ptrIdx] = NULL;
       }
       t->ptrData[ptrIdx] = nextRoot;
       SetBitInArr(PtrArrNBits, t->ptrArr, (int)cval);
     }
-    printf("t->prefix ");
-    for (int i = 0; i < PrefixArrNbits; i++) {
-      if(t->prefixArr[i]>0){
-        printf("[%u]=%u ", i,t->prefixArr[i]);
-      }
-    }
-    printf("\n");
-    printf("t->ptrArr ");
-    for (int i = 0; i < PtrArrNBits; i++) {
-      if (t->ptrArr[i] > 0) {
-        printf("[%u]=%u ", i, t->ptrArr[i]);
-      }
-    }
-    printf("\n");
-    printf("t->ptdata ");
-    for (int i = 0; i < PrefixArrLenfth; i++) {
-      if (t->prefixData[i].v.num > 0) {
-        printf("[%u]=%u ", i, t->prefixData->v.num);
-      }
-    }
-    printf("\n");
-    printf("t->prroot id=[%d] ",t->id);
-    for (int i = 0; i < PtrArrLength; i++) {
-      if (t->ptrData[i]) {
-        printf("[%u]=[%d] ", i,t->ptrData[i]->id);
-      }
-    }
-    printf("\n");
     return addTrieInt(nextRoot, tv, currLevel + 1, rPfxLen, ts);
   } else {
-    printf("is me....\n");
     int shftBits = TrieJmpLength - rPfxLen;
     int basePos = (1 << rPfxLen) - 1;
     // Find value relevant to currently remaining prefix len
@@ -256,34 +219,6 @@ int addTrieInt(lbrt_trie_root_t *t, lbrt_trie_var_t *tv, int currLevel,
     }
     SetBitInArr(PrefixArrNbits, t->prefixArr, idx);
     memcpy(&t->prefixData[pfxIdx], &ts->trieData, sizeof(lbrt_trie_data_t));
-    printf("t->prefix ");
-    for (int i = 0; i < PrefixArrNbits; i++) {
-      if(t->prefixArr[i]>0){
-        printf("[%u]=%u ", i,t->prefixArr[i]);
-      }
-    }
-    printf("\n");
-    printf("t->ptrArr ");
-    for (int i = 0; i < PtrArrNBits; i++) {
-      if (t->ptrArr[i] > 0) {
-        printf("[%u]=%u ", i, t->ptrArr[i]);
-      }
-    }
-    printf("\n");
-    printf("t->ptdata ");
-    for (int i = 0; i < PrefixArrLenfth; i++) {
-      if (t->prefixData[i].v.num > 0) {
-        printf("[%u]=%u ", i, t->prefixData->v.num);
-      }
-    }
-    printf("\n");
-    printf("t->prroot id=[%d] ",t->id);
-    for (int i = 0; i < PtrArrLength; i++) {
-      if (t->ptrData[i]) {
-        printf("[%u]=[%d] ", i,t->ptrData[i]->id);
-      }
-    }
-    printf("\n");
     return 0;
   }
 }

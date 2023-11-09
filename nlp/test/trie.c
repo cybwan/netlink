@@ -50,8 +50,8 @@ void testTire(void) {
   data.v.num = 1;
   ret = lbrt_trie_add(trieR, route, &data);
   if (ret == 0) {
-    flb_log(LOG_LEVEL_ERR, "failed to add %s:%d ret=%d", route,
-    data.v.num,ret);
+    flb_log(LOG_LEVEL_ERR, "failed to add %s:%d ret=%d", route, data.v.num,
+            ret);
   }
 
   route = "0.0.0.0/0";

@@ -28,7 +28,6 @@ typedef struct lbrt_trie_iter_intf {
 } lbrt_trie_iter_intf_t;
 
 typedef struct lbrt_trie_root {
-  int id;
   bool v6;
   __u8 prefixArr[PrefixArrNbits];
   __u8 ptrArr[PtrArrNBits];
