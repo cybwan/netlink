@@ -147,4 +147,32 @@ static inline bool mac_pton(const char *s, __u8 *mac) {
   return true;
 }
 
+static inline void ip_ntoa(ip_t *ip, char *str) {
+  memset(str, 0, IF_ADDRSIZE);
+  if (ip->f.v4) {
+    struct in_addr *in = (struct in_addr *)ip->v4.bytes;
+    char *ip_str = inet_ntoa(*in);
+    snprintf(str, IF_ADDRSIZE, "%s", ip_str);
+  } else if (ip->f.v6) {
+    struct in6_addr *in = (struct in6_addr *)ip->v6.bytes;
+    char ip_str[INET6_ADDRSTRLEN];
+    inet_ntop(AF_INET6, in, ip_str, INET6_ADDRSTRLEN);
+    snprintf(str, IF_ADDRSIZE, "%s", ip_str);
+  }
+}
+
+static inline void ip_net_ntoa(ip_net_t *ipnet, char *str) {
+  memset(str, 0, IF_CIDRSIZE);
+  if (ipnet->ip.f.v4) {
+    struct in_addr *in = (struct in_addr *)ipnet->ip.v4.bytes;
+    char *ip_str = inet_ntoa(*in);
+    snprintf(str, IF_CIDRSIZE, "%s/%d", ip_str, ipnet->mask);
+  } else if (ipnet->ip.f.v6) {
+    struct in6_addr *in = (struct in6_addr *)ipnet->ip.v6.bytes;
+    char ip_str[INET6_ADDRSTRLEN];
+    inet_ntop(AF_INET6, in, ip_str, INET6_ADDRSTRLEN);
+    snprintf(str, IF_CIDRSIZE, "%s/%d", ip_str, ipnet->mask);
+  }
+}
+
 #endif /* __FLB_CMN_TYPES_H__ */

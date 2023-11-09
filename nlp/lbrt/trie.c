@@ -194,9 +194,9 @@ int addTrieInt(lbrt_trie_root_t *t, lbrt_trie_var_t *tv, int currLevel,
       // If no pointer exists, then allocate it
       // Make pointer references
       nextRoot = calloc(1, sizeof(lbrt_trie_root_t));
+      nextRoot->v6 = t->v6;
       if (t->ptrData[ptrIdx]) {
         expPtrArrDat(PtrArrLength, t->ptrData, ptrIdx);
-        // free(t->ptrData[ptrIdx]);
         t->ptrData[ptrIdx] = NULL;
       }
       t->ptrData[ptrIdx] = nextRoot;
@@ -315,7 +315,6 @@ int findTrieInt(lbrt_trie_root_t *t, lbrt_trie_var_t *tv, int currLevel,
     cval = cval >> shftBits;
     idx = basePos + (int)cval;
     int pfxVal = (idx - basePos) << shftBits;
-
     if (IsBitSetInArr(PrefixArrNbits, t->prefixArr, idx)) {
       ts->lastMatchLevel = currLevel;
       ts->lastMatchPfxLen = 8 * currLevel + rPfxLen;
@@ -463,7 +462,7 @@ int lbrt_trie_del(lbrt_trie_root_t *t, char *cidr) {
 // 2. matching route in *net.IPNet form
 // 3. user-defined data associated with the trie entry
 int lbrt_trie_find(lbrt_trie_root_t *t, char *ip, ip_net_t *ipnet,
-                   lbrt_trie_data_t *trieData) {
+                   lbrt_trie_data_t *trie_data) {
   lbrt_trie_var_t tv;
   memset(&tv, 0, sizeof(tv));
   lbrt_trie_state_t ts;
@@ -472,6 +471,9 @@ int lbrt_trie_find(lbrt_trie_root_t *t, char *ip, ip_net_t *ipnet,
 
   char cidr[IF_CIDRSIZE];
   memset(cidr, 0, IF_CIDRSIZE);
+
+  memset(ipnet, 0, sizeof(ip_net_t));
+  memset(trie_data, 0, sizeof(lbrt_trie_data_t));
 
   if (!t->v6) {
     snprintf(cidr, IF_CIDRSIZE, "%s/32", ip);
@@ -488,14 +490,16 @@ int lbrt_trie_find(lbrt_trie_root_t *t, char *ip, ip_net_t *ipnet,
 
   if (ts.matchFound) {
     if (!t->v6) {
-      ipnet->mask = 32;
+      ipnet->mask = ts.lastMatchPfxLen;
       ipnet->ip.f.v4 = 1;
       memcpy(ipnet->ip.v4.bytes, ts.lastMatchTv.prefix, 4);
+      memcpy(trie_data, &ts.trieData, sizeof(lbrt_trie_data_t));
       return 0;
     } else {
-      ipnet->mask = 128;
+      ipnet->mask = ts.lastMatchPfxLen;
       ipnet->ip.f.v6 = 1;
       memcpy(ipnet->ip.v6.bytes, ts.lastMatchTv.prefix, 16);
+      memcpy(trie_data, &ts.trieData, sizeof(lbrt_trie_data_t));
       return 0;
     }
   }
