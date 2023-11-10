@@ -2,7 +2,7 @@
 
 extern struct lbrt_net_meta mh;
 
-lbrt_l2_h_t *lbrt_l2_h_alloc(lbrt_zone_t *zone) {
+lbrt_l2_h_t *lbrt_l2_h_new(lbrt_zone_t *zone) {
   lbrt_l2_h_t *l2h;
   l2h = calloc(1, sizeof(*l2h));
   if (!l2h) {

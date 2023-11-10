@@ -79,42 +79,78 @@ static inline bool parse_ip(const char *ip_str, struct nl_ip *ip) {
 }
 
 static inline bool parse_ip_net(const char *ip_net_str,
-                                struct nl_ip_net *ip_net) {
+                                struct nl_ip_net *ip_net, struct nl_ip *ip) {
   memset(ip_net, 0, sizeof(*ip_net));
+  if (ip) {
+    memset(ip, 0, sizeof(*ip));
+  }
+
   char *mask_str = strchr(ip_net_str, '/');
   if (!mask_str) {
     return false;
   }
-  __u8 ip[INET6_ADDRSTRLEN] = {0};
-  memcpy(ip, ip_net_str, mask_str - ip_net_str);
-  if (strchr((char *)ip, '.')) {
+
+  __u8 ip_str[INET6_ADDRSTRLEN] = {0};
+  memcpy(ip_str, ip_net_str, mask_str - ip_net_str);
+  if (strchr((char *)ip_str, '.')) {
     ip_net->ip.f.v4 = 1;
-    if (inet_pton(AF_INET, (char *)ip, (char *)ip_net->ip.v4.bytes) <= 0) {
+    if (inet_pton(AF_INET, (char *)ip_str, (char *)ip_net->ip.v4.bytes) <= 0) {
       return false;
     }
-  } else if (strchr((char *)ip, ':')) {
+  } else if (strchr((char *)ip_str, ':')) {
     ip_net->ip.f.v6 = 1;
-    if (inet_pton(AF_INET6, (char *)ip, (char *)ip_net->ip.v6.bytes) <= 0) {
+    if (inet_pton(AF_INET6, (char *)ip_str, (char *)ip_net->ip.v6.bytes) <= 0) {
       return false;
     }
   } else {
     return false;
   }
+
+  if (ip) {
+    memcpy(ip, &ip_net->ip, sizeof(ip_t));
+  }
+
   mask_str++;
   ip_net->mask = (__u8)atoi(mask_str);
+
+  int len = ip_net->ip.f.v4 ? 4 : 16;
+  __u8 mask_bytes[len];
+  memset(mask_bytes, 0, len);
+  __u32 n = (__u32)ip_net->mask;
+  for (int i = 0; i < len; i++) {
+    if (n >= 8) {
+      mask_bytes[i] = 0xff;
+      n -= 8;
+    } else {
+      mask_bytes[i] = ~(__u8)(0xff >> n);
+      n = 0;
+    }
+  }
+
+  if (ip_net->ip.f.v4) {
+    for (int i = 0; i < 4; i++) {
+      ip_net->ip.v4.bytes[i] = ip_net->ip.v4.bytes[i] & mask_bytes[i];
+    }
+  } else if (ip_net->ip.f.v6) {
+    for (int i = 0; i < 16; i++) {
+      ip_net->ip.v6.bytes[i] = ip_net->ip.v6.bytes[i] & mask_bytes[i];
+    }
+  }
+
   return true;
 }
 
 static inline bool parse_label_net(const char *ip_net_str,
-                                   struct nl_label_net *ip_net) {
+                                   struct nl_label_net *ip_net,
+                                   struct nl_ip *ip) {
   memset(ip_net, 0, sizeof(*ip_net));
   char *label_str = strchr(ip_net_str, ' ');
   if (!label_str) {
-    return parse_ip_net(ip_net_str, (struct nl_ip_net *)ip_net);
+    return parse_ip_net(ip_net_str, (struct nl_ip_net *)ip_net, ip);
   }
-  __u8 ip[INET6_ADDRSTRLEN] = {0};
-  memcpy(ip, ip_net_str, label_str - ip_net_str);
-  parse_ip_net((const char *)ip, (struct nl_ip_net *)ip_net);
+  __u8 ip_str[INET6_ADDRSTRLEN] = {0};
+  memcpy(ip_str, ip_net_str, label_str - ip_net_str);
+  parse_ip_net((const char *)ip_str, (struct nl_ip_net *)ip_net, ip);
   label_str++;
   memcpy(ip_net->label, label_str, strlen(label_str));
   return true;

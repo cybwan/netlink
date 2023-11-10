@@ -4,7 +4,7 @@
 
 extern struct lbrt_net_meta mh;
 
-lbrt_zone_h_t *lbrt_zone_h_alloc(void) {
+lbrt_zone_h_t *lbrt_zone_h_new(void) {
   lbrt_zone_h_t *zh;
   zh = calloc(1, sizeof(*zh));
   if (!zh) {
@@ -13,7 +13,7 @@ lbrt_zone_h_t *lbrt_zone_h_alloc(void) {
   zh->zone_map = NULL;
   zh->zone_brs = NULL;
   zh->zone_ports = NULL;
-  zh->zone_mark = lbrt_counter_alloc(1, MaximumZones);
+  zh->zone_mark = lbrt_counter_new(1, MaximumZones);
   if (zh->zone_mark == NULL) {
     lbrt_zone_h_free(zh);
     return NULL;
@@ -47,12 +47,12 @@ int lbrt_zone_add(lbrt_zone_h_t *zh, const char *name) {
 
   zn->zone_num = zn_num;
   memcpy(zn->name, name, strlen(name));
-  zn->ports = lbrt_ports_h_alloc();
-  zn->vlans = lbrt_vlans_h_alloc(zn);
-  zn->l2 = lbrt_l2_h_alloc(zn);
+  zn->ports = lbrt_ports_h_new();
+  zn->vlans = lbrt_vlans_h_new(zn);
+  zn->l2 = lbrt_l2_h_new(zn);
   // zn.Nh = NeighInit(zone)
-  // zn.Rt = RtInit(zone)
-  // zn.L3 = L3Init(zone)
+  zn->rt = lbrt_rt_h_new(zn);
+  zn->l3 = lbrt_l3_h_new(zn);
   // zn.Rules = RulesInit(zone)
   // zn.Sess = SessInit(zone)
   // zn.Pols = PolInit(zone)

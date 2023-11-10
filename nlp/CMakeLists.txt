@@ -46,6 +46,7 @@ SET(SOURCES
 	lbrt/zone.c
 	lbrt/net.c
 	test/trie.c
+	test/layer3.c
 )
 
 #ADD_LIBRARY(nlp SHARED ${SOURCES})

@@ -45,7 +45,7 @@ typedef struct lbrt_l2_h {
   struct lbrt_zone *zone;
 } lbrt_l2_h_t;
 
-lbrt_l2_h_t *lbrt_l2_h_alloc(struct lbrt_zone *zone);
+lbrt_l2_h_t *lbrt_l2_h_new(struct lbrt_zone *zone);
 void lbrt_l2_h_free(lbrt_l2_h_t *l2h);
 
 bool lbrt_fdb_attr_equal(lbrt_fdb_attr_t *a1, lbrt_fdb_attr_t *a2);

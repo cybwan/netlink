@@ -124,7 +124,7 @@ bool nl_route_add(const char *dst_str, const char *gw_str) {
     return false;
   }
   struct nl_ip_net dst;
-  if (!parse_ip_net(dst_str, &dst) || (!dst.ip.f.v4 && !dst.ip.f.v6)) {
+  if (!parse_ip_net(dst_str, &dst, NULL) || (!dst.ip.f.v4 && !dst.ip.f.v6)) {
     return false;
   }
   struct nl_ip gw;
@@ -244,7 +244,7 @@ bool nl_route_del(const char *dst_str) {
     return false;
   }
   struct nl_ip_net dst;
-  if (!parse_ip_net(dst_str, &dst) || (!dst.ip.f.v4 && !dst.ip.f.v6)) {
+  if (!parse_ip_net(dst_str, &dst, NULL) || (!dst.ip.f.v4 && !dst.ip.f.v6)) {
     return false;
   }
   struct nl_sock *socket = nl_socket_alloc();
@@ -339,7 +339,8 @@ bool _internal_nl_addr_mod(const char *addr_str, const char *ifi_name,
   }
   struct nl_label_net addr;
   memset(&addr, 0, sizeof(addr));
-  if (!parse_label_net(addr_str, &addr) || (!addr.ip.f.v4 && !addr.ip.f.v6)) {
+  if (!parse_label_net(addr_str, &addr, NULL) ||
+      (!addr.ip.f.v4 && !addr.ip.f.v6)) {
     return false;
   }
   nl_port_mod_t port;

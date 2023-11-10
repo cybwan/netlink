@@ -67,7 +67,7 @@ typedef struct lbrt_rt_h {
   struct lbrt_counter *mark;
 } lbrt_rt_h_t;
 
-lbrt_rt_h_t *lbrt_rt_h_alloc(struct lbrt_zone *zone);
+lbrt_rt_h_t *lbrt_rt_h_new(struct lbrt_zone *zone);
 void lbrt_rt_h_free(lbrt_rt_h_t *rh);
 
 lbrt_rt_t *lbrt_rt_find(lbrt_rt_h_t *rh, const char *dst, const char *zone);

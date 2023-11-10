@@ -9,6 +9,10 @@
 
 #include <api/defs.h>
 
+typedef struct lbrt_iter_intf {
+  void (*node_walker)(char *);
+} lbrt_iter_intf_t;
+
 typedef struct lbrt_pol_stats {
   __u64 packets_ok;
   __u64 packets_nok;

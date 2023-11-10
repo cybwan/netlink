@@ -3,19 +3,6 @@
 
 #include <test.h>
 
-void trie_node_walker(char *b) { flb_log(LOG_LEVEL_INFO, "%s", b); }
-
-void trie_data2str(lbrt_trie_data_t *d, size_t maxlen, char *buf) {
-  if (d->f.num) {
-    snprintf(buf, maxlen, "%d", d->v.num);
-  }
-}
-
-void lbrt_trie_iter_intf_init(lbrt_trie_iter_intf_t *tf) {
-  tf->trie_data2str = trie_data2str;
-  tf->trie_node_walker = trie_node_walker;
-}
-
 __u64 get_clock_sys_time_ns(void) {
   struct timespec tp;
   __u64 time_ns = 0;

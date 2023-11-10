@@ -40,7 +40,7 @@ __u8 __lbrt_trie_grab_byte(lbrt_trie_var_t *tv, int pIndex) {
 
 int __lbrt_trie_cidr_2_trie_var(char *cidr, lbrt_trie_var_t *tv) {
   ip_net_t ipNet;
-  bool success = parse_ip_net(cidr, &ipNet);
+  bool success = parse_ip_net(cidr, &ipNet, NULL);
   if (!success) {
     return -1;
   }

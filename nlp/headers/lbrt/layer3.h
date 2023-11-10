@@ -35,6 +35,9 @@ void lbrt_l3_h_free(lbrt_l3_h_t *l3h);
 int lbrt_ifa_add(lbrt_l3_h_t *l3h, const char *obj, const char *cidr);
 int lbrt_ifa_del(lbrt_l3_h_t *l3h, const char *obj, const char *cidr);
 
+void lbrt_ifa_2_str(lbrt_ifa_t *ifa, lbrt_iter_intf_t it);
+void lbrt_ifas_2_str(lbrt_l3_h_t *l3h, lbrt_iter_intf_t it);
+
 int lbrt_ifa_datapath(lbrt_ifa_t *ifa, enum lbrt_dp_work work);
 
 #endif /* __FLB_LBRT_LAYER3_H__ */

@@ -1,6 +1,6 @@
 #include <lbrt/counter.h>
 
-struct lbrt_counter *lbrt_counter_alloc(__u64 begin, __u64 length) {
+struct lbrt_counter *lbrt_counter_new(__u64 begin, __u64 length) {
   struct lbrt_counter *c;
   c = calloc(1, sizeof(*c));
   if (!c) {

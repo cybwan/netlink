@@ -16,7 +16,7 @@ typedef struct lbrt_counter {
   __u64 *counters;
 } lbrt_counter_t;
 
-struct lbrt_counter *lbrt_counter_alloc(__u64 begin, __u64 length);
+struct lbrt_counter *lbrt_counter_new(__u64 begin, __u64 length);
 void lbrt_counter_free(struct lbrt_counter *c);
 
 __u64 lbrt_counter_get_counter(struct lbrt_counter *c);

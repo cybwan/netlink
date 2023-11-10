@@ -45,7 +45,7 @@ typedef struct lbrt_zone_h {
   lbrt_counter_t *zone_mark;
 } lbrt_zone_h_t;
 
-lbrt_zone_h_t *lbrt_zone_h_alloc(void);
+lbrt_zone_h_t *lbrt_zone_h_new(void);
 void lbrt_zone_h_free(lbrt_zone_h_t *zh);
 
 int lbrt_zone_add(lbrt_zone_h_t *zh, const char *name);

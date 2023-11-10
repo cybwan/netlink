@@ -31,7 +31,7 @@ typedef struct lbrt_vlans_h {
 
 struct lbrt_port_hw_info;
 
-lbrt_vlans_h_t *lbrt_vlans_h_alloc(struct lbrt_zone *zone);
+lbrt_vlans_h_t *lbrt_vlans_h_new(struct lbrt_zone *zone);
 void lbrt_vlans_h_free(struct lbrt_vlans_h *vh);
 
 bool lbrt_vlan_valid(__u32 vlan_id);

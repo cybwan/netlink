@@ -8,7 +8,7 @@ void unlock(void) { printf("#UNLOCK#\n"); }
 
 void lbrt_net_init(void) {
   memset(&mh, 0, sizeof(lbrt_net_meta_h));
-  mh.zn = lbrt_zone_h_alloc();
+  mh.zn = lbrt_zone_h_new();
   int ret = lbrt_zone_add(mh.zn, ROOT_ZONE);
   flb_log(LOG_LEVEL_DEBUG, "lbrt_zone_add ret=[%d]", ret);
   mh.zr = lbrt_zone_find(mh.zn, ROOT_ZONE);

@@ -2,16 +2,16 @@
 
 extern struct lbrt_net_meta mh;
 
-lbrt_ports_h_t *lbrt_ports_h_alloc(void) {
+lbrt_ports_h_t *lbrt_ports_h_new(void) {
   lbrt_ports_h_t *ph;
   ph = calloc(1, sizeof(*ph));
   if (!ph) {
     return NULL;
   }
-  ph->port_mark = lbrt_counter_alloc(1, MaxInterfaces);
-  ph->bond_mark = lbrt_counter_alloc(1, MaxBondInterfaces);
-  ph->wg_mark = lbrt_counter_alloc(1, MaxWgInterfaces);
-  ph->vti_mark = lbrt_counter_alloc(1, MaxVtiInterfaces);
+  ph->port_mark = lbrt_counter_new(1, MaxInterfaces);
+  ph->bond_mark = lbrt_counter_new(1, MaxBondInterfaces);
+  ph->wg_mark = lbrt_counter_new(1, MaxWgInterfaces);
+  ph->vti_mark = lbrt_counter_new(1, MaxVtiInterfaces);
   if (ph->port_mark == NULL || ph->bond_mark == NULL || ph->wg_mark == NULL ||
       ph->vti_mark == NULL) {
     lbrt_ports_h_free(ph);

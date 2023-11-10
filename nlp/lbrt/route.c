@@ -2,14 +2,14 @@
 
 extern struct lbrt_net_meta mh;
 
-lbrt_rt_h_t *lbrt_rt_h_alloc(lbrt_zone_t *zone) {
+lbrt_rt_h_t *lbrt_rt_h_new(lbrt_zone_t *zone) {
   lbrt_rt_h_t *rh;
   rh = calloc(1, sizeof(*rh));
   if (!rh) {
     return NULL;
   }
   rh->zone = zone;
-  rh->mark = lbrt_counter_alloc(1, MaxSysRoutes);
+  rh->mark = lbrt_counter_new(1, MaxSysRoutes);
   if (!rh->mark) {
     lbrt_rt_h_free(rh);
     return NULL;

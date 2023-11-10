@@ -95,7 +95,7 @@ typedef struct lbrt_ports_h {
   struct lbrt_counter *vti_mark;
 } lbrt_ports_h_t;
 
-lbrt_ports_h_t *lbrt_ports_h_alloc(void);
+lbrt_ports_h_t *lbrt_ports_h_new(void);
 void lbrt_ports_h_free(lbrt_ports_h_t *ph);
 
 lbrt_port_t *lbrt_port_find_by_name(lbrt_ports_h_t *ph, const char *name);

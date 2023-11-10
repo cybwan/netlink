@@ -14,14 +14,14 @@
 void test_nl_ip_net() {
   char *ip_str = "fe80::20c:29ff:fe79:ab57/64";
   struct nl_ip_net ip_net;
-  if (parse_ip_net(ip_str, &ip_net)) {
+  if (parse_ip_net(ip_str, &ip_net, NULL)) {
     printf("ip_net mask=[%d]\n", ip_net.mask);
   }
   printf(GREEN "test_nl_ip_net success\n" RESET);
 }
 
 void test_lbrt_counter() {
-  struct lbrt_counter *cnt = lbrt_counter_alloc(1, 5);
+  struct lbrt_counter *cnt = lbrt_counter_new(1, 5);
   printf(YELLOW "counter:[%llu]" RESET, lbrt_counter_get_counter(cnt));
   printf(YELLOW "counter:[%llu]" RESET, lbrt_counter_get_counter(cnt));
   printf(YELLOW "counter:[%llu]" RESET, lbrt_counter_get_counter(cnt));
@@ -37,7 +37,7 @@ void test_lbrt_counter() {
 }
 
 void test_lbrt_layer2() {
-  lbrt_l2_h_t *l2h = lbrt_l2_h_alloc(NULL);
+  lbrt_l2_h_t *l2h = lbrt_l2_h_new(NULL);
 
   lbrt_fdb_key_t key;
   memset(&key, 0, sizeof(key));
@@ -68,7 +68,7 @@ void test_lbrt_layer2() {
 }
 
 void test_lbrt_zone() {
-  lbrt_zone_h_t *zh = lbrt_zone_h_alloc();
+  lbrt_zone_h_t *zh = lbrt_zone_h_new();
 
   lbrt_zone_add(zh, "test1");
   lbrt_zone_add(zh, "test2");
@@ -131,7 +131,7 @@ void test_lbrt_zone() {
 }
 
 void test_lbrt_rt(void) {
-  lbrt_zone_h_t *zh = lbrt_zone_h_alloc();
+  lbrt_zone_h_t *zh = lbrt_zone_h_new();
   lbrt_zone_add(zh, "root");
   lbrt_zone_t *zn = lbrt_zone_find(zh, "root");
   if (zn) {
@@ -139,7 +139,7 @@ void test_lbrt_rt(void) {
             zn->zone_num);
   }
 
-  lbrt_rt_h_t *rh = lbrt_rt_h_alloc(zn);
+  lbrt_rt_h_t *rh = lbrt_rt_h_new(zn);
   lbrt_rt_attr_t ra;
   memset(&ra, 0, sizeof(ra));
   ra.ifi = 3;
@@ -370,8 +370,12 @@ int main1() {
 }
 
 int main() {
-  // test_trie_main();
   lbrt_net_init();
+
+  // test_trie_main();
+
+  test_l3_main();
+
   flb_log(LOG_LEVEL_INFO, "DONE!");
   return 0;
 }

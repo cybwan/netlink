@@ -50,12 +50,13 @@ lbrt_ifa_t *lbrt_ifa_find(lbrt_l3_h_t *l3h, const char *obj) {
 int lbrt_ifa_add(lbrt_l3_h_t *l3h, const char *obj, const char *cidr) {
   bool sec = false;
   char addr[IF_ADDRSIZE];
+  ip_t ip;
   ip_net_t network;
-  bool ok = parse_ip_net(cidr, &network);
+  bool ok = parse_ip_net(cidr, &network, &ip);
   if (!ok) {
     return L3_ADDR_ERR;
   } else {
-    ip_ntoa(&network.ip, addr);
+    ip_ntoa(&ip, addr);
   }
 
   __u32 ifObjID = 0;
@@ -70,13 +71,13 @@ int lbrt_ifa_add(lbrt_l3_h_t *l3h, const char *obj, const char *cidr) {
   lbrt_ifa_t *ifa = lbrt_ifa_find(l3h, obj);
 
   if (!ifa) {
-    ifa = calloc(1, sizeof(lbrt_ifa_t));
+    ifa = lbrt_ifa_new();
     memcpy(ifa->ifa_key.obj, obj, strlen(obj));
     ifa->zone = l3h->zone;
 
     lbrt_ifa_ent_t ifaEnt;
     memset(&ifaEnt, 0, sizeof(ifaEnt));
-    memcpy(&ifaEnt.ifa_addr, &network.ip, sizeof(ip_t));
+    memcpy(&ifaEnt.ifa_addr, &ip, sizeof(ip_t));
     memcpy(&ifaEnt.ifa_net, &network, sizeof(ip_net_t));
     utarray_push_back(ifa->ifas, &ifaEnt);
     HASH_ADD(hh, l3h->ifa_map, ifa_key, sizeof(lbrt_ifa_key_t), ifa);
@@ -85,6 +86,7 @@ int lbrt_ifa_add(lbrt_l3_h_t *l3h, const char *obj, const char *cidr) {
     memset(&ra, 0, sizeof(ra));
     ra.ifi = ifObjID;
     int ret = lbrt_rt_add(mh.zr->rt, cidr, ROOT_ZONE, &ra, 0, NULL);
+
     if (ret < 0) {
       flb_log(LOG_LEVEL_DEBUG, "ifa add - %s:%s self-rt error", addr, obj);
       return L3_ADDR_ERR;
@@ -92,15 +94,15 @@ int lbrt_ifa_add(lbrt_l3_h_t *l3h, const char *obj, const char *cidr) {
 
     lbrt_ifa_datapath(ifa, DP_CREATE);
 
+    flb_log(LOG_LEVEL_DEBUG, "ifa added %s:%s", addr, obj);
+
     return 0;
   }
 
   for (lbrt_ifa_ent_t *ifaEnt = (lbrt_ifa_ent_t *)utarray_front(ifa->ifas);
        ifaEnt != NULL;
        (ifaEnt = (lbrt_ifa_ent_t *)utarray_next(ifa->ifas, ifaEnt))) {
-    if (memcmp(&network.ip, &ifaEnt->ifa_addr, sizeof(ip_t)) == 0) {
-      char addr[IF_ADDRSIZE];
-      ip_ntoa(&network.ip, addr);
+    if (memcmp(&ip, &ifaEnt->ifa_addr, sizeof(ip_t)) == 0) {
       flb_log(LOG_LEVEL_DEBUG, "ifa add - exists %s:%s", addr, obj);
       return L3_ADDR_ERR;
     }
@@ -118,7 +120,7 @@ int lbrt_ifa_add(lbrt_l3_h_t *l3h, const char *obj, const char *cidr) {
 
   lbrt_ifa_ent_t ifaEnt;
   memset(&ifaEnt, 0, sizeof(ifaEnt));
-  memcpy(&ifaEnt.ifa_addr, &network.ip, sizeof(ip_t));
+  memcpy(&ifaEnt.ifa_addr, &ip, sizeof(ip_t));
   memcpy(&ifaEnt.ifa_net, &network, sizeof(ip_net_t));
   ifaEnt.secondary = sec;
   utarray_push_back(ifa->ifas, &ifaEnt);
@@ -142,13 +144,14 @@ int lbrt_ifa_add(lbrt_l3_h_t *l3h, const char *obj, const char *cidr) {
 int lbrt_ifa_del(lbrt_l3_h_t *l3h, const char *obj, const char *cidr) {
   bool found = false;
   char addr[IF_ADDRSIZE];
+  ip_t ip;
   ip_net_t network;
-  bool ok = parse_ip_net(cidr, &network);
+  bool ok = parse_ip_net(cidr, &network, &ip);
   if (!ok) {
     flb_log(LOG_LEVEL_ERR, "ifa delete - malformed cidr %s:%s", cidr, obj);
     return L3_ADDR_ERR;
   } else {
-    ip_ntoa(&network.ip, addr);
+    ip_ntoa(&ip, addr);
   }
 
   lbrt_ifa_key_t key;
@@ -164,7 +167,7 @@ int lbrt_ifa_del(lbrt_l3_h_t *l3h, const char *obj, const char *cidr) {
   for (lbrt_ifa_ent_t *ifaEnt = (lbrt_ifa_ent_t *)utarray_front(ifa->ifas);
        ifaEnt != NULL;
        (ifaEnt = (lbrt_ifa_ent_t *)utarray_next(ifa->ifas, ifaEnt))) {
-    if (memcmp(&network.ip, &ifaEnt->ifa_addr, sizeof(ip_t)) == 0) {
+    if (memcmp(&ip, &ifaEnt->ifa_addr, sizeof(ip_t)) == 0) {
       if (memcmp(&network, &ifaEnt->ifa_net, sizeof(ip_net_t)) == 0) {
         __u8 pfxSz1 = ifaEnt->ifa_net.mask;
         __u8 pfxSz2 = network.mask;
@@ -186,7 +189,7 @@ int lbrt_ifa_del(lbrt_l3_h_t *l3h, const char *obj, const char *cidr) {
     if (utarray_len(ifa->ifas) == 0) {
       HASH_DELETE(hh, l3h->ifa_map, ifa);
       lbrt_ifa_datapath(ifa, DP_REMOVE);
-      free(ifa);
+      lbrt_ifa_free(ifa);
       flb_log(LOG_LEVEL_DEBUG, "ifa deleted %s:%s", addr, obj);
     }
   }
@@ -194,6 +197,28 @@ int lbrt_ifa_del(lbrt_l3_h_t *l3h, const char *obj, const char *cidr) {
   flb_log(LOG_LEVEL_DEBUG, "ifa delete - no such %s:%s", addr, obj);
 
   return L3_ADDR_ERR;
+}
+
+void lbrt_ifa_2_str(lbrt_ifa_t *ifa, lbrt_iter_intf_t it) {
+  char addr[IF_ADDRSIZE];
+  char str[70];
+  for (lbrt_ifa_ent_t *ifaEnt = (lbrt_ifa_ent_t *)utarray_front(ifa->ifas);
+       ifaEnt != NULL;
+       (ifaEnt = (lbrt_ifa_ent_t *)utarray_next(ifa->ifas, ifaEnt))) {
+    ip_ntoa(&ifaEnt->ifa_addr, addr);
+    memset(str, 0, 70);
+    if (ifaEnt->secondary) {
+      snprintf(str, 70, "%s/%d - %s", addr, ifaEnt->ifa_net.mask, "Secondary");
+    } else {
+      snprintf(str, 70, "%s/%d - %s", addr, ifaEnt->ifa_net.mask, "Primary");
+    }
+    it.node_walker(str);
+  }
+}
+
+void lbrt_ifas_2_str(lbrt_l3_h_t *l3h, lbrt_iter_intf_t it) {
+  lbrt_ifa_t *ifa, *tmp;
+  HASH_ITER(hh, l3h->ifa_map, ifa, tmp) { lbrt_ifa_2_str(ifa, it); }
 }
 
 int lbrt_ifa_datapath(lbrt_ifa_t *ifa, enum lbrt_dp_work work) { return 0; }
