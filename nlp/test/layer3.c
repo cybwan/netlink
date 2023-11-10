@@ -152,6 +152,10 @@ int test_l3_main(void) {
             target_addr);
   }
 
+  char out_str[56];
+  lbrt_ifa_obj_mk_str(mh.zr->l3, "hs0", true, out_str);
+  flb_log(LOG_LEVEL_DEBUG, "mk_string ifa success to [%s]", out_str);
+
   lbrt_ifa_del_all(mh.zr->l3, "hs0");
 
   flb_log(LOG_LEVEL_INFO, "#### IFA List After DEL ALL ####");

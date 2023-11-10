@@ -355,4 +355,40 @@ void lbrt_ifas_2_str(lbrt_l3_h_t *l3h, lbrt_iter_intf_t it) {
   HASH_ITER(hh, l3h->ifa_map, ifa, tmp) { lbrt_ifa_2_str(ifa, it); }
 }
 
+bool lbrt_ifa_mk_str(lbrt_ifa_t *ifa, bool v4, char out_str[56]) {
+  bool ret = false;
+  char addr[IF_ADDRSIZE];
+  for (lbrt_ifa_ent_t *ifaEnt = (lbrt_ifa_ent_t *)utarray_front(ifa->ifas);
+       ifaEnt != NULL;
+       (ifaEnt = (lbrt_ifa_ent_t *)utarray_next(ifa->ifas, ifaEnt))) {
+    if (!v4 && ifaEnt->ifa_addr.f.v4)
+      continue;
+    if (v4 && ifaEnt->ifa_addr.f.v6)
+      continue;
+
+    char *flagStr = NULL;
+    if (ifaEnt->secondary) {
+      flagStr = "S";
+    } else {
+      flagStr = "P";
+    }
+
+    ip_ntoa(&ifaEnt->ifa_addr, addr);
+    memset(out_str, 0, 56);
+    snprintf(out_str, 56, "%s/%d - %s", addr, ifaEnt->ifa_net.mask, flagStr);
+    ret = true;
+    break;
+  }
+  return ret;
+}
+
+bool lbrt_ifa_obj_mk_str(lbrt_l3_h_t *l3h, const char *obj, bool v4,
+                         char out_str[56]) {
+  lbrt_ifa_t *ifa = lbrt_ifa_find(l3h, obj);
+  if (ifa) {
+    return lbrt_ifa_mk_str(ifa, v4, out_str);
+  }
+  return false;
+}
+
 int lbrt_ifa_datapath(lbrt_ifa_t *ifa, enum lbrt_dp_work work) { return 0; }
