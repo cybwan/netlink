@@ -211,4 +211,39 @@ static inline void ip_net_ntoa(ip_net_t *ipnet, char *str) {
   }
 }
 
+static inline bool ip_net_contains(ip_net_t *ipnet, ip_t *ip) {
+  if (ipnet->ip.f.v4 != ip->f.v4 || ipnet->ip.f.v6 != ip->f.v6) {
+    return false;
+  }
+  int len = ipnet->ip.f.v4 ? 4 : 16;
+  __u8 mask_bytes[len];
+  memset(mask_bytes, 0, len);
+  __u32 n = (__u32)ipnet->mask;
+  for (int i = 0; i < len; i++) {
+    if (n >= 8) {
+      mask_bytes[i] = 0xff;
+      n -= 8;
+    } else {
+      mask_bytes[i] = ~(__u8)(0xff >> n);
+      n = 0;
+    }
+  }
+
+  if (ipnet->ip.f.v4) {
+    for (int i = 0; i < 4; i++) {
+      if ((ipnet->ip.v4.bytes[i] & mask_bytes[i]) !=
+          (ip->v4.bytes[i] & mask_bytes[i]))
+        return false;
+    }
+  }
+  if (ipnet->ip.f.v6) {
+    for (int i = 0; i < 16; i++) {
+      if ((ipnet->ip.v6.bytes[i] & mask_bytes[i]) !=
+          (ip->v6.bytes[i] & mask_bytes[i]))
+        return false;
+    }
+  }
+  return true;
+}
+
 #endif /* __FLB_CMN_TYPES_H__ */
