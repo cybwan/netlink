@@ -172,7 +172,10 @@ int lbrt_ifa_del(lbrt_l3_h_t *l3h, const char *obj, const char *cidr) {
         __u8 pfxSz1 = ifaEnt->ifa_net.mask;
         __u8 pfxSz2 = network.mask;
         if (pfxSz1 == pfxSz2) {
+          __u32 idx = utarray_eltidx(ifa->ifas, ifaEnt);
+          utarray_erase(ifa->ifas, idx, 1);
           found = true;
+          break;
         }
       }
     }
@@ -182,8 +185,7 @@ int lbrt_ifa_del(lbrt_l3_h_t *l3h, const char *obj, const char *cidr) {
     // delete self-routes related to this ifa
     int ret = lbrt_rt_del(mh.zr->rt, cidr, ROOT_ZONE);
     if (ret < 0) {
-      // tk.LogIt(tk.LogError, "ifa delete %s:%s self-rt error\n",
-      // addr.String(), Obj)
+      flb_log(LOG_LEVEL_ERR, "ifa delete %s:%s self-rt error", addr, obj);
       // ontinue after logging error because there is noway to fallback
     }
     if (utarray_len(ifa->ifas) == 0) {
@@ -192,6 +194,7 @@ int lbrt_ifa_del(lbrt_l3_h_t *l3h, const char *obj, const char *cidr) {
       lbrt_ifa_free(ifa);
       flb_log(LOG_LEVEL_DEBUG, "ifa deleted %s:%s", addr, obj);
     }
+    return 0;
   }
 
   flb_log(LOG_LEVEL_DEBUG, "ifa delete - no such %s:%s", addr, obj);

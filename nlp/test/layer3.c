@@ -6,6 +6,9 @@ extern struct lbrt_net_meta mh;
 int test_l3_main(void) {
   int ret;
 
+  lbrt_iter_intf_t tf;
+  lbrt_iter_intf_init(&tf);
+
   __u8 ifmac[6] = {0x1, 0x2, 0x3, 0x4, 0x5, 0x6};
   lbrt_port_hw_info_t hwi;
   memset(&hwi, 0, sizeof(hwi));
@@ -39,9 +42,15 @@ int test_l3_main(void) {
     flb_log(LOG_LEVEL_ERR, "failed to add l3 ifa to hs0");
   }
 
-  lbrt_iter_intf_t tf;
-  lbrt_iter_intf_init(&tf);
+  flb_log(LOG_LEVEL_INFO, "#### IFA List ####");
+  lbrt_ifas_2_str(mh.zr->l3, tf);
 
+  ret = lbrt_ifa_del(mh.zr->l3, "hs0", "11.11.11.2/24");
+  if (ret < 0) {
+    flb_log(LOG_LEVEL_ERR, "failed to add l3 ifa to hs0");
+  }
+
+  flb_log(LOG_LEVEL_INFO, "#### IFA List ####");
   lbrt_ifas_2_str(mh.zr->l3, tf);
 
   flb_log(LOG_LEVEL_INFO, "TEST L3 DONE!");
