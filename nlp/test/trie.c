@@ -261,3 +261,16 @@ void tireTest(lbrt_trie_iter_intf_t tf) {
   flb_log(LOG_LEVEL_INFO, "TRIE6 LEFT");
   lbrt_trie_str(trieR6, tf);
 }
+
+int test_trie_main(void) {
+  lbrt_trie_iter_intf_t tf;
+  lbrt_trie_iter_intf_init(&tf);
+  tireTest(tf);
+  tireBenchmark(tf, 1);
+  tireBenchmark(tf, 100);
+  tireBenchmark(tf, 10000);
+  tireBenchmark(tf, 948698);
+  tireBenchmark(tf, 1218399);
+  flb_log(LOG_LEVEL_INFO, "TRIE DONE!");
+  return 0;
+}

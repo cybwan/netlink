@@ -123,4 +123,8 @@ int lbrt_rt_add(lbrt_rt_h_t *rh, const char *dst, const char *zone,
   return 0;
 }
 
+int lbrt_rt_del(lbrt_rt_h_t *rh, const char *dst, const char *zone) {
+  return 0;
+}
+
 int lbrt_rt_datapath(lbrt_rt_t *rt, enum lbrt_dp_work work) { return 0; }

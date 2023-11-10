@@ -221,9 +221,9 @@ void test_lbrt_net(void) {
   flb0.tun_src = "0.0.0.0";
   flb0.tun_dst = "0.0.0.0";
 
-  // lbrt_net_init();
+  lbrt_net_init();
 
-  // lbrt_net_port_add(&ens33);
+  lbrt_net_port_add(&ens33);
   // lbrt_net_port_add(&ens36);
   // lbrt_net_port_add(&flb0);
 
@@ -370,14 +370,8 @@ int main1() {
 }
 
 int main() {
-  lbrt_trie_iter_intf_t tf;
-  lbrt_trie_iter_intf_init(&tf);
-  tireTest(tf);
-  tireBenchmark(tf, 1);
-  tireBenchmark(tf, 100);
-  tireBenchmark(tf, 10000);
-  tireBenchmark(tf, 948698);
-  tireBenchmark(tf, 1218399);
-  flb_log(LOG_LEVEL_INFO, "TRIE DONE!");
+  // test_trie_main();
+  lbrt_net_init();
+  flb_log(LOG_LEVEL_INFO, "DONE!");
   return 0;
 }

@@ -10,7 +10,7 @@ void lbrt_net_init(void) {
   memset(&mh, 0, sizeof(lbrt_net_meta_h));
   mh.zn = lbrt_zone_h_alloc();
   int ret = lbrt_zone_add(mh.zn, ROOT_ZONE);
-  printf("lbrt_zone_add ret=[%d]\n", ret);
+  flb_log(LOG_LEVEL_DEBUG, "lbrt_zone_add ret=[%d]", ret);
   mh.zr = lbrt_zone_find(mh.zn, ROOT_ZONE);
   mh.mtx = calloc(1, sizeof(lbrt_mutex_t));
   mh.mtx->lock = lock;
