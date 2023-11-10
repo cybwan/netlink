@@ -63,6 +63,95 @@ int test_l3_main(void) {
   flb_log(LOG_LEVEL_INFO, "#### IFA List After DEL 11.11.11.2/24 ####");
   lbrt_ifas_2_str(mh.zr->l3, tf);
 
+  bool any = false;
+  char *target_addr = "11.11.12.100";
+  ip_t target_ip;
+  char via_dev[IF_NAMESIZE];
+  ip_t via_ip;
+  char via_addr[IF_ADDRSIZE];
+
+  parse_ip(target_addr, &target_ip);
+  ret = lbrt_ifa_select(mh.zr->l3, "hs0", &target_ip, any, &via_ip, via_dev);
+  if (ret == 0) {
+    ip_ntoa(&via_ip, via_addr);
+    flb_log(LOG_LEVEL_DEBUG,
+            "select ifa any=[%d] success to [%s] via [%s] dev [%s]", any,
+            target_addr, via_addr, via_dev);
+  } else {
+    flb_log(LOG_LEVEL_ERR, "select ifa any=[%d] failure to [%s]", any,
+            target_addr);
+  }
+
+  any = false;
+  target_addr = "11.11.13.100";
+  parse_ip(target_addr, &target_ip);
+  ret = lbrt_ifa_select(mh.zr->l3, "hs0", &target_ip, any, &via_ip, via_dev);
+  if (ret == 0) {
+    ip_ntoa(&via_ip, via_addr);
+    flb_log(LOG_LEVEL_DEBUG,
+            "select ifa any=[%d] success to [%s] via [%s] dev [%s]", any,
+            target_addr, via_addr, via_dev);
+  } else {
+    flb_log(LOG_LEVEL_DEBUG, "select ifa any=[%d] failure to [%s]", any,
+            target_addr);
+  }
+
+  any = true;
+  target_addr = "11.11.13.100";
+  parse_ip(target_addr, &target_ip);
+  ret = lbrt_ifa_select(mh.zr->l3, "hs0", &target_ip, any, &via_ip, via_dev);
+  if (ret == 0) {
+    ip_ntoa(&via_ip, via_addr);
+    flb_log(LOG_LEVEL_DEBUG,
+            "select ifa any=[%d] success to [%s] via [%s] dev [%s]", any,
+            target_addr, via_addr, via_dev);
+  } else {
+    flb_log(LOG_LEVEL_ERR, "select ifa any=[%d] failure to [%s]", any,
+            target_addr);
+  }
+
+  any = false;
+  target_addr = "11.11.12.88";
+  parse_ip(target_addr, &target_ip);
+  ret = lbrt_ifa_select_any(mh.zr->l3, &target_ip, any, &via_ip, via_dev);
+  if (ret == 0) {
+    ip_ntoa(&via_ip, via_addr);
+    flb_log(LOG_LEVEL_DEBUG,
+            "select_any ifa any=[%d] success to [%s] via [%s] dev [%s]", any,
+            target_addr, via_addr, via_dev);
+  } else {
+    flb_log(LOG_LEVEL_ERR, "select_any ifa any=[%d] failure to [%s]", any,
+            target_addr);
+  }
+
+  any = false;
+  target_addr = "11.11.14.88";
+  parse_ip(target_addr, &target_ip);
+  ret = lbrt_ifa_select_any(mh.zr->l3, &target_ip, any, &via_ip, via_dev);
+  if (ret == 0) {
+    ip_ntoa(&via_ip, via_addr);
+    flb_log(LOG_LEVEL_DEBUG,
+            "select_any ifa any=[%d] success to [%s] via [%s] dev [%s]", any,
+            target_addr, via_addr, via_dev);
+  } else {
+    flb_log(LOG_LEVEL_DEBUG, "select_any ifa any=[%d] failure to [%s]", any,
+            target_addr);
+  }
+
+  any = true;
+  target_addr = "11.11.14.88";
+  parse_ip(target_addr, &target_ip);
+  ret = lbrt_ifa_select_any(mh.zr->l3, &target_ip, any, &via_ip, via_dev);
+  if (ret == 0) {
+    ip_ntoa(&via_ip, via_addr);
+    flb_log(LOG_LEVEL_DEBUG,
+            "select_any ifa any=[%d] success to [%s] via [%s] dev [%s]", any,
+            target_addr, via_addr, via_dev);
+  } else {
+    flb_log(LOG_LEVEL_ERR, "select_any ifa any=[%d] failure to [%s]", any,
+            target_addr);
+  }
+
   lbrt_ifa_del_all(mh.zr->l3, "hs0");
 
   flb_log(LOG_LEVEL_INFO, "#### IFA List After DEL ALL ####");

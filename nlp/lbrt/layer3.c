@@ -219,6 +219,120 @@ int lbrt_ifa_del_all(lbrt_l3_h_t *l3h, const char *obj) {
   return 0;
 }
 
+int lbrt_ifa_select(lbrt_l3_h_t *l3h, const char *obj, ip_t *addr, bool findAny,
+                    ip_t *out_sip, char *out_dev) {
+  lbrt_ifa_t *ifa = lbrt_ifa_find(l3h, obj);
+  if (!ifa) {
+    return L3_OBJ_ERR;
+  }
+
+  memset(out_sip, 0, sizeof(ip_t));
+  memset(out_dev, 0, IF_NAMESIZE);
+
+  for (lbrt_ifa_ent_t *ifaEnt = (lbrt_ifa_ent_t *)utarray_front(ifa->ifas);
+       ifaEnt != NULL;
+       (ifaEnt = (lbrt_ifa_ent_t *)utarray_next(ifa->ifas, ifaEnt))) {
+    if (ifaEnt->secondary)
+      continue;
+    if (addr->f.v6 && ifaEnt->ifa_net.ip.f.v4)
+      continue;
+    if (ip_net_contains(&ifaEnt->ifa_net, addr)) {
+      memcpy(out_dev, obj, strlen(obj));
+      memcpy(out_sip, &ifaEnt->ifa_addr, sizeof(ip_t));
+      return 0;
+    }
+  }
+
+  if (!findAny)
+    return L3_ADDR_ERR;
+
+  // Select first IP
+  if (utarray_len(ifa->ifas) > 0) {
+    lbrt_ifa_ent_t *ifaEnt = (lbrt_ifa_ent_t *)utarray_front(ifa->ifas);
+    memcpy(out_dev, obj, strlen(obj));
+    memcpy(out_sip, &ifaEnt->ifa_addr, sizeof(ip_t));
+    return 0;
+  }
+
+  return L3_ADDR_ERR;
+}
+
+int lbrt_ifa_select_any(lbrt_l3_h_t *l3h, ip_t *addr, bool findAny,
+                        ip_t *out_sip, char *out_dev) {
+  int ret;
+  bool v6 = false;
+  char *ifObj = "";
+  ip_t *firstIP = NULL;
+  char *firstIfObj = NULL;
+  char addr_str[IF_ADDRSIZE];
+  ip_ntoa(addr, addr_str);
+
+  ip_net_t ipnet;
+  lbrt_trie_data_t trie_data;
+  if (addr->f.v4) {
+    ret = lbrt_trie_find(l3h->zone->rt->trie4, addr_str, &ipnet, &trie_data);
+  } else {
+    ret = lbrt_trie_find(l3h->zone->rt->trie6, addr_str, &ipnet, &trie_data);
+    v6 = true;
+  }
+
+  if (ret == 0) {
+    if (trie_data.f.num) {
+      lbrt_port_t *p =
+          lbrt_port_find_by_osid(l3h->zone->ports, trie_data.v.num);
+      if (p) {
+        ifObj = p->name;
+      }
+    } else if (trie_data.f.ptr) {
+      lbrt_neigh_t *n = (lbrt_neigh_t *)trie_data.v.ptr;
+      ifObj = n->o_if_port->name;
+    }
+  }
+
+  if (strcmp(ifObj, "") != 0 && strcmp(ifObj, "lo") != 0) {
+    return lbrt_ifa_select(l3h, ifObj, addr, findAny, out_sip, out_dev);
+  }
+
+  memset(out_sip, 0, sizeof(ip_t));
+  memset(out_dev, 0, IF_NAMESIZE);
+
+  lbrt_ifa_t *ifa, *ifa_tmp = NULL;
+  HASH_ITER(hh, l3h->ifa_map, ifa, ifa_tmp) {
+    if (strcmp(ifa->ifa_key.obj, "lo") == 0)
+      continue;
+
+    for (lbrt_ifa_ent_t *ifaEnt = (lbrt_ifa_ent_t *)utarray_front(ifa->ifas);
+         ifaEnt != NULL;
+         (ifaEnt = (lbrt_ifa_ent_t *)utarray_next(ifa->ifas, ifaEnt))) {
+      if (ifaEnt->secondary)
+        continue;
+      if (v6 && ifaEnt->ifa_net.ip.f.v4)
+        continue;
+      if (ip_net_contains(&ifaEnt->ifa_net, addr)) {
+        memcpy(out_dev, ifa->ifa_key.obj, strlen(ifa->ifa_key.obj));
+        memcpy(out_sip, &ifaEnt->ifa_addr, sizeof(ip_t));
+        return 0;
+      }
+
+      if (!firstIP) {
+        firstIP = &ifaEnt->ifa_addr;
+        firstIfObj = ifa->ifa_key.obj;
+      }
+    }
+  }
+
+  if (!findAny)
+    return L3_ADDR_ERR;
+
+  if (firstIP) {
+    memcpy(out_dev, firstIfObj, strlen(firstIfObj));
+    memcpy(out_sip, firstIP, sizeof(ip_t));
+    return 0;
+  }
+
+  return L3_ADDR_ERR;
+}
+
 void lbrt_ifa_2_str(lbrt_ifa_t *ifa, lbrt_iter_intf_t it) {
   char addr[IF_ADDRSIZE];
   char str[70];

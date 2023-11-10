@@ -36,6 +36,11 @@ int lbrt_ifa_add(lbrt_l3_h_t *l3h, const char *obj, const char *cidr);
 int lbrt_ifa_del(lbrt_l3_h_t *l3h, const char *obj, const char *cidr);
 int lbrt_ifa_del_all(lbrt_l3_h_t *l3h, const char *obj);
 
+int lbrt_ifa_select(lbrt_l3_h_t *l3h, const char *obj, ip_t *addr, bool findAny,
+                    ip_t *out_sip, char *out_dev);
+int lbrt_ifa_select_any(lbrt_l3_h_t *l3h, ip_t *addr, bool findAny,
+                        ip_t *out_sip, char *out_dev);
+
 void lbrt_ifa_2_str(lbrt_ifa_t *ifa, lbrt_iter_intf_t it);
 void lbrt_ifas_2_str(lbrt_l3_h_t *l3h, lbrt_iter_intf_t it);
 
