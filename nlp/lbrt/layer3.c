@@ -65,9 +65,6 @@ int lbrt_ifa_add(lbrt_l3_h_t *l3h, const char *obj, const char *cidr) {
     ifObjID = pObj->sinfo.os_id;
   }
 
-  lbrt_ifa_key_t key;
-  memset(&key, 0, sizeof(key));
-  memcpy(key.obj, obj, strlen(obj));
   lbrt_ifa_t *ifa = lbrt_ifa_find(l3h, obj);
 
   if (!ifa) {
@@ -154,9 +151,6 @@ int lbrt_ifa_del(lbrt_l3_h_t *l3h, const char *obj, const char *cidr) {
     ip_ntoa(&ip, addr);
   }
 
-  lbrt_ifa_key_t key;
-  memset(&key, 0, sizeof(key));
-  memcpy(key.obj, obj, strlen(obj));
   lbrt_ifa_t *ifa = lbrt_ifa_find(l3h, obj);
 
   if (!ifa) {
@@ -200,6 +194,29 @@ int lbrt_ifa_del(lbrt_l3_h_t *l3h, const char *obj, const char *cidr) {
   flb_log(LOG_LEVEL_DEBUG, "ifa delete - no such %s:%s", addr, obj);
 
   return L3_ADDR_ERR;
+}
+
+int lbrt_ifa_del_all(lbrt_l3_h_t *l3h, const char *obj) {
+  lbrt_ifa_t *ifa = lbrt_ifa_find(l3h, obj);
+  if (ifa) {
+    bool last = false;
+    char ip_str[IF_ADDRSIZE];
+    char cidr[IF_CIDRSIZE];
+    lbrt_ifa_ent_t *ifaFirst = NULL, *ifaLast = NULL;
+    while ((ifaFirst = (lbrt_ifa_ent_t *)utarray_front(ifa->ifas)) != NULL) {
+      ifaLast = (lbrt_ifa_ent_t *)utarray_back(ifa->ifas);
+      if (ifaFirst == ifaLast) {
+        last = true;
+      }
+      ip_ntoa(&ifaFirst->ifa_addr, ip_str);
+      memset(cidr, 0, IF_CIDRSIZE);
+      snprintf(cidr, IF_CIDRSIZE, "%s/%d", ip_str, ifaFirst->ifa_net.mask);
+      lbrt_ifa_del(l3h, obj, cidr);
+      if (last)
+        break;
+    }
+  }
+  return 0;
 }
 
 void lbrt_ifa_2_str(lbrt_ifa_t *ifa, lbrt_iter_intf_t it) {

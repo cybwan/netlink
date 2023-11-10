@@ -42,7 +42,17 @@ int test_l3_main(void) {
     flb_log(LOG_LEVEL_ERR, "failed to add l3 ifa to hs0");
   }
 
-  flb_log(LOG_LEVEL_INFO, "#### IFA List ####");
+  ret = lbrt_ifa_add(mh.zr->l3, "hs0", "11.11.12.1/24");
+  if (ret < 0) {
+    flb_log(LOG_LEVEL_ERR, "failed to add l3 ifa to hs0");
+  }
+
+  ret = lbrt_ifa_add(mh.zr->l3, "hs0", "11.11.12.2/24");
+  if (ret < 0) {
+    flb_log(LOG_LEVEL_ERR, "failed to add l3 ifa to hs0");
+  }
+
+  flb_log(LOG_LEVEL_INFO, "#### IFA List ALL ####");
   lbrt_ifas_2_str(mh.zr->l3, tf);
 
   ret = lbrt_ifa_del(mh.zr->l3, "hs0", "11.11.11.2/24");
@@ -50,7 +60,12 @@ int test_l3_main(void) {
     flb_log(LOG_LEVEL_ERR, "failed to add l3 ifa to hs0");
   }
 
-  flb_log(LOG_LEVEL_INFO, "#### IFA List ####");
+  flb_log(LOG_LEVEL_INFO, "#### IFA List After DEL 11.11.11.2/24 ####");
+  lbrt_ifas_2_str(mh.zr->l3, tf);
+
+  lbrt_ifa_del_all(mh.zr->l3, "hs0");
+
+  flb_log(LOG_LEVEL_INFO, "#### IFA List After DEL ALL ####");
   lbrt_ifas_2_str(mh.zr->l3, tf);
 
   flb_log(LOG_LEVEL_INFO, "TEST L3 DONE!");
