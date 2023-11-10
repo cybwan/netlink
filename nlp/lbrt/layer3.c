@@ -278,14 +278,14 @@ int lbrt_ifa_select_any(lbrt_l3_h_t *l3h, ip_t *addr, bool findAny,
   }
 
   if (ret == 0) {
-    if (trie_data.f.num) {
+    if (trie_data.f.osid) {
       lbrt_port_t *p =
-          lbrt_port_find_by_osid(l3h->zone->ports, trie_data.v.num);
+          lbrt_port_find_by_osid(l3h->zone->ports, trie_data.v.osid);
       if (p) {
         ifObj = p->name;
       }
-    } else if (trie_data.f.ptr) {
-      lbrt_neigh_t *n = (lbrt_neigh_t *)trie_data.v.ptr;
+    } else if (trie_data.f.neigh) {
+      lbrt_neigh_t *n = (lbrt_neigh_t *)trie_data.v.neigh;
       ifObj = n->o_if_port->name;
     }
   }

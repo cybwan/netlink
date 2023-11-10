@@ -221,7 +221,7 @@ int __lbrt_trie_add_trie_int(lbrt_trie_root_t *t, lbrt_trie_var_t *tv,
     }
     int pfxIdx =
         __lbrt_trie_count_set_bits_in_arr(PrefixArrNbits, t->prefixArr, idx);
-    if (t->prefixData[pfxIdx].f.num || t->prefixData[pfxIdx].f.ptr) {
+    if (t->prefixData[pfxIdx].f.osid || t->prefixData[pfxIdx].f.neigh) {
       __lbrt_trie_exp_prefix_arr_dat(PrefixArrLenfth, t->prefixData, pfxIdx);
       memset(&t->prefixData[pfxIdx], 0, sizeof(lbrt_trie_data_t));
     }
@@ -292,7 +292,7 @@ int __lbrt_trie_del_trie_int(lbrt_trie_root_t *t, lbrt_trie_var_t *tv,
     int pfxIdx = __lbrt_trie_count_set_bits_in_arr(PrefixArrNbits, t->prefixArr,
                                                    idx - 1);
     // Note - This assumes that prefix data should be non-zero
-    if (t->prefixData[pfxIdx].f.num || t->prefixData[pfxIdx].f.ptr) {
+    if (t->prefixData[pfxIdx].f.osid || t->prefixData[pfxIdx].f.neigh) {
       memset(&t->prefixData[pfxIdx], 0, sizeof(lbrt_trie_data_t));
       __lbrt_trie_shrink_prefix_arr_dat(PrefixArrLenfth, t->prefixData, pfxIdx);
       __lbrt_trie_unset_bit_in_arr(PrefixArrNbits, t->prefixArr, idx);

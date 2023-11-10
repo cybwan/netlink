@@ -13,12 +13,12 @@
 
 typedef struct lbrt_trie_data {
   struct {
-    __u8 ptr : 1;
-    __u8 num : 1;
+    __u8 neigh : 1;
+    __u8 osid : 1;
   } f;
   struct {
-    void *ptr;
-    __u32 num;
+    void *neigh;
+    __u32 osid;
   } v;
 } lbrt_trie_data_t;
 

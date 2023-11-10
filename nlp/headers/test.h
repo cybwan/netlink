@@ -16,8 +16,8 @@ static inline void lbrt_iter_intf_init(lbrt_iter_intf_t *tf) {
 }
 
 static void trie_data2str(lbrt_trie_data_t *d, size_t maxlen, char *buf) {
-  if (d->f.num) {
-    snprintf(buf, maxlen, "%d", d->v.num);
+  if (d->f.osid) {
+    snprintf(buf, maxlen, "%d", d->v.osid);
   }
 }
 
