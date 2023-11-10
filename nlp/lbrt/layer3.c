@@ -166,6 +166,7 @@ int lbrt_ifa_del(lbrt_l3_h_t *l3h, const char *obj, const char *cidr) {
         __u8 pfxSz1 = ifaEnt->ifa_net.mask;
         __u8 pfxSz2 = network.mask;
         if (pfxSz1 == pfxSz2) {
+          flb_log(LOG_LEVEL_DEBUG, "ifa ent deleted %s:%s", cidr, obj);
           __u32 idx = utarray_eltidx(ifa->ifas, ifaEnt);
           utarray_erase(ifa->ifas, idx, 1);
           found = true;
@@ -389,6 +390,56 @@ bool lbrt_ifa_obj_mk_str(lbrt_l3_h_t *l3h, const char *obj, bool v4,
     return lbrt_ifa_mk_str(ifa, v4, out_str);
   }
   return false;
+}
+
+void api_ip_addr_get_dtor(void *_elt) {
+  api_ip_addr_get_t *elt = (api_ip_addr_get_t *)_elt;
+  if (elt->dev) {
+    flb_log(LOG_LEVEL_TRACE, "free elt->dev=[%s]", elt->dev);
+    free(elt->dev);
+  }
+  if (elt->ip_cnt > 0) {
+    flb_log(LOG_LEVEL_TRACE, "free elt->ip[%d]", elt->ip_cnt);
+    for (int i = 0; i < elt->ip_cnt; i++) {
+      flb_log(LOG_LEVEL_TRACE, "free elt->ip[%d]=[%s]", i, elt->ip[i]);
+      free(elt->ip[i]);
+    }
+    free(elt->ip);
+  }
+}
+
+UT_icd api_ip_addr_get_icd = {sizeof(api_ip_addr_get_t), NULL, NULL,
+                              api_ip_addr_get_dtor};
+
+UT_array *lbrt_ifa_get(lbrt_l3_h_t *l3h) {
+  UT_array *ipgets;
+  utarray_new(ipgets, &api_ip_addr_get_icd);
+
+  char ipaddr[IF_ADDRSIZE];
+
+  lbrt_ifa_t *ifa, *ifa_tmp = NULL;
+  HASH_ITER(hh, l3h->ifa_map, ifa, ifa_tmp) {
+    api_ip_addr_get_t *ipget = calloc(1, sizeof(api_ip_addr_get_t));
+    ipget->dev = (char *)calloc(1, IF_NAMESIZE);
+    memcpy(ipget->dev, ifa->ifa_key.obj, IF_NAMESIZE);
+    ipget->sync = ifa->sync;
+    ipget->ip_cnt = utarray_len(ifa->ifas);
+    ipget->ip = (char **)calloc(1, sizeof(char *) * ipget->ip_cnt);
+    int index = 0;
+
+    for (lbrt_ifa_ent_t *ifaEnt = (lbrt_ifa_ent_t *)utarray_front(ifa->ifas);
+         ifaEnt != NULL;
+         (ifaEnt = (lbrt_ifa_ent_t *)utarray_next(ifa->ifas, ifaEnt))) {
+      ipget->ip[index] = (char *)calloc(1, IF_CIDRSIZE);
+      ip_ntoa(&ifaEnt->ifa_addr, ipaddr);
+      snprintf(ipget->ip[index], IF_CIDRSIZE, "%s/%d", ipaddr,
+               ifaEnt->ifa_net.mask);
+      index++;
+    }
+
+    utarray_push_back(ipgets, ipget);
+  }
+  return ipgets;
 }
 
 int lbrt_ifa_datapath(lbrt_ifa_t *ifa, enum lbrt_dp_work work) { return 0; }

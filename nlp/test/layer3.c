@@ -32,6 +32,7 @@ int test_l3_main(void) {
     flb_log(LOG_LEVEL_ERR, "failed to add port %s", "hs0");
   }
 
+  flb_log(LOG_LEVEL_INFO, "#### IFA ADD ####");
   ret = lbrt_ifa_add(mh.zr->l3, "hs0", "11.11.11.1/24");
   if (ret < 0) {
     flb_log(LOG_LEVEL_ERR, "failed to add l3 ifa to hs0");
@@ -55,14 +56,16 @@ int test_l3_main(void) {
   flb_log(LOG_LEVEL_INFO, "#### IFA List ALL ####");
   lbrt_ifas_2_str(mh.zr->l3, tf);
 
+  flb_log(LOG_LEVEL_INFO, "#### IFA DEL ####");
   ret = lbrt_ifa_del(mh.zr->l3, "hs0", "11.11.11.2/24");
   if (ret < 0) {
-    flb_log(LOG_LEVEL_ERR, "failed to add l3 ifa to hs0");
+    flb_log(LOG_LEVEL_ERR, "failed to del l3 ifa[%s] to hs0", "11.11.11.2/24");
   }
 
-  flb_log(LOG_LEVEL_INFO, "#### IFA List After DEL 11.11.11.2/24 ####");
+  flb_log(LOG_LEVEL_INFO, "#### IFA List ALL ####");
   lbrt_ifas_2_str(mh.zr->l3, tf);
 
+  flb_log(LOG_LEVEL_INFO, "#### IFA SELECT ####");
   bool any = false;
   char *target_addr = "11.11.12.100";
   ip_t target_ip;
@@ -110,6 +113,7 @@ int test_l3_main(void) {
             target_addr);
   }
 
+  flb_log(LOG_LEVEL_INFO, "#### IFA SELECT_ANY ####");
   any = false;
   target_addr = "11.11.12.88";
   parse_ip(target_addr, &target_ip);
@@ -152,13 +156,17 @@ int test_l3_main(void) {
             target_addr);
   }
 
+  flb_log(LOG_LEVEL_INFO, "#### IFA OBJ MK STR ####");
   char out_str[56];
   lbrt_ifa_obj_mk_str(mh.zr->l3, "hs0", true, out_str);
   flb_log(LOG_LEVEL_DEBUG, "mk_string ifa success to [%s]", out_str);
 
-  lbrt_ifa_del_all(mh.zr->l3, "hs0");
+  flb_log(LOG_LEVEL_INFO, "#### IFA GET ####");
+  UT_array *ipgets = lbrt_ifa_get(mh.zr->l3);
+  utarray_free(ipgets);
 
   flb_log(LOG_LEVEL_INFO, "#### IFA List After DEL ALL ####");
+  lbrt_ifa_del_all(mh.zr->l3, "hs0");
   lbrt_ifas_2_str(mh.zr->l3, tf);
 
   flb_log(LOG_LEVEL_INFO, "TEST L3 DONE!");

@@ -9,7 +9,7 @@ int test_trie_main(void);
 
 int test_l3_main(void);
 
-static void node_walker(char *b) { flb_log(LOG_LEVEL_INFO, "%s", b); }
+static void node_walker(char *b) { flb_log(LOG_LEVEL_DEBUG, "%s", b); }
 
 static inline void lbrt_iter_intf_init(lbrt_iter_intf_t *tf) {
   tf->node_walker = node_walker;
