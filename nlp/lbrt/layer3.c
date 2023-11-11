@@ -62,7 +62,7 @@ int lbrt_ifa_add(lbrt_l3_h_t *l3h, const char *obj, const char *cidr) {
   __u32 ifObjID = 0;
   lbrt_port_t *pObj = lbrt_port_find_by_name(l3h->zone->ports, obj);
   if (pObj) {
-    ifObjID = pObj->sinfo.os_id;
+    ifObjID = pObj->sinfo.osid;
   }
 
   lbrt_ifa_t *ifa = lbrt_ifa_find(l3h, obj);

@@ -130,13 +130,13 @@ enum {
 };
 
 enum {
-  TrieSuccess,
-  TrieErrPrefix = -6,
-  TrieErrUnknown,
-  TrieErrNoMem,
-  TrieErrNoEnt,
-  TrieErrExists,
-  TrieErrGeneric,
+  TRIE_SUCCESS,
+  TRIE_ERR_PREFIX = -6,
+  TRIE_ERR_UNKNOWN,
+  TRIE_ERR_NO_MEM,
+  TRIE_ERR_NO_ENT,
+  TRIE_ERR_EXISTS,
+  TRIE_ERR_GENERIC,
 };
 
 #endif /* __FLB_LBRT_ERROR_H__ */

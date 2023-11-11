@@ -20,6 +20,7 @@ typedef enum lbrt_port_event {
 } lbrt_port_event_t;
 
 typedef struct lbrt_port_event_intf {
+  void (*port_notifier)(const char *name, int osid, lbrt_port_event_t ev_type);
 } lbrt_port_event_intf_t;
 
 typedef struct lbrt_port_stats_info {
@@ -45,12 +46,14 @@ typedef struct lbrt_port_hw_info {
 
 typedef struct lbrt_port_layer3_info {
   bool routed;
-  // char **ipv4_addrs;
-  // char **ipv6_addrs;
+  __u16 ipv4_addrs_cnt;
+  __u16 ipv6_addrs_cnt;
+  char **ipv4_addrs;
+  char **ipv6_addrs;
 } lbrt_port_layer3_info_t;
 
 typedef struct lbrt_port_sw_info {
-  __u32 os_id;
+  __u32 osid;
   __u32 port_type;
   enum api_port_prop port_prop;
   __u32 port_pol_num;
@@ -100,10 +103,19 @@ void lbrt_ports_h_free(lbrt_ports_h_t *ph);
 
 lbrt_port_t *lbrt_port_find_by_name(lbrt_ports_h_t *ph, const char *name);
 lbrt_port_t *lbrt_port_find_by_osid(lbrt_ports_h_t *ph, __u32 osid);
+
+UT_array *lbrt_port_get_slaves(lbrt_ports_h_t *ph, const char *master);
+bool lbrt_port_has_tun_slaves(lbrt_ports_h_t *ph, const char *master,
+                              __u32 ptype);
+
 int lbrt_port_add(lbrt_ports_h_t *ph, char *name, __u32 osid, __u32 link_type,
                   char *zone, lbrt_port_hw_info_t *hwi,
                   lbrt_port_layer2_info_t *l2i);
 int lbrt_port_del(lbrt_ports_h_t *ph, char *name, __u32 link_type);
+
+bool lbrt_port_is_leaf_port(lbrt_port_t *port);
+bool lbrt_port_is_slave_port(lbrt_port_t *port);
+bool lbrt_port_is_l3_tun_port(lbrt_port_t *port);
 
 int lbrt_port_datapath(lbrt_port_t *port, enum lbrt_dp_work work);
 

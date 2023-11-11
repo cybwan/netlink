@@ -194,7 +194,7 @@ int __lbrt_trie_add_trie_int(lbrt_trie_root_t *t, lbrt_trie_var_t *tv,
     if (__lbrt_trie_is_bit_set_in_arr(PtrArrNBits, t->ptrArr, (int)cval)) {
       nextRoot = t->ptrData[ptrIdx];
       if (!nextRoot) {
-        ts->err_code = TrieErrUnknown;
+        ts->err_code = TRIE_ERR_UNKNOWN;
         return -1;
       }
     } else {
@@ -217,7 +217,7 @@ int __lbrt_trie_add_trie_int(lbrt_trie_root_t *t, lbrt_trie_var_t *tv,
     cval = cval >> shftBits;
     int idx = basePos + (int)cval;
     if (__lbrt_trie_is_bit_set_in_arr(PrefixArrNbits, t->prefixArr, idx)) {
-      return TrieErrExists;
+      return TRIE_ERR_EXISTS;
     }
     int pfxIdx =
         __lbrt_trie_count_set_bits_in_arr(PrefixArrNbits, t->prefixArr, idx);
@@ -255,7 +255,7 @@ int __lbrt_trie_del_trie_int(lbrt_trie_root_t *t, lbrt_trie_var_t *tv,
     nextRoot = t->ptrData[ptrIdx];
     if (!nextRoot) {
       ts->match_found = false;
-      ts->err_code = TrieErrUnknown;
+      ts->err_code = TRIE_ERR_UNKNOWN;
       return -1;
     }
     __lbrt_trie_del_trie_int(nextRoot, tv, currLevel + 1, rPfxLen, ts);
@@ -287,7 +287,7 @@ int __lbrt_trie_del_trie_int(lbrt_trie_root_t *t, lbrt_trie_var_t *tv,
     int idx = basePos + (int)cval;
     if (!__lbrt_trie_is_bit_set_in_arr(PrefixArrNbits, t->prefixArr, idx)) {
       ts->match_found = false;
-      return TrieErrNoEnt;
+      return TRIE_ERR_NO_ENT;
     }
     int pfxIdx = __lbrt_trie_count_set_bits_in_arr(PrefixArrNbits, t->prefixArr,
                                                    idx - 1);
@@ -305,7 +305,7 @@ int __lbrt_trie_del_trie_int(lbrt_trie_root_t *t, lbrt_trie_var_t *tv,
       return 0;
     }
     ts->match_found = false;
-    ts->err_code = TrieErrUnknown;
+    ts->err_code = TRIE_ERR_UNKNOWN;
     return -1;
   }
 }
@@ -439,7 +439,7 @@ int lbrt_trie_add(lbrt_trie_root_t *t, char *cidr, lbrt_trie_data_t *data) {
 
   int pfxLen = __lbrt_trie_cidr_2_trie_var(cidr, &tv);
   if (pfxLen < 0) {
-    return TrieErrPrefix;
+    return TRIE_ERR_PREFIX;
   }
 
   int ret = __lbrt_trie_add_trie_int(t, &tv, 0, pfxLen, &ts);
@@ -462,7 +462,7 @@ int lbrt_trie_del(lbrt_trie_root_t *t, char *cidr) {
 
   int pfxLen = __lbrt_trie_cidr_2_trie_var(cidr, &tv);
   if (pfxLen < 0) {
-    return TrieErrPrefix;
+    return TRIE_ERR_PREFIX;
   }
 
   int ret = __lbrt_trie_del_trie_int(t, &tv, 0, pfxLen, &ts);
@@ -501,7 +501,7 @@ int lbrt_trie_find(lbrt_trie_root_t *t, char *ip, ip_net_t *ipnet,
   int pfxLen = __lbrt_trie_cidr_2_trie_var(cidr, &tv);
 
   if (pfxLen < 0) {
-    return TrieErrPrefix;
+    return TRIE_ERR_PREFIX;
   }
 
   __lbrt_trie_find_trie_int(t, &tv, 0, &ts);
@@ -521,7 +521,7 @@ int lbrt_trie_find(lbrt_trie_root_t *t, char *ip, ip_net_t *ipnet,
       return 0;
     }
   }
-  return TrieErrNoEnt;
+  return TRIE_ERR_NO_ENT;
 }
 
 // Trie2String - stringify the trie table
