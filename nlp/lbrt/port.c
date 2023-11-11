@@ -117,16 +117,100 @@ int lbrt_port_add(lbrt_ports_h_t *ph, char *name, __u32 osid, __u32 link_type,
     }
 
     if (p->sinfo.port_type == PortReal) {
+      if (link_type == PortVlanSif) {
+        p->sinfo.port_type |= link_type;
+        memcpy(p->hinfo.master, hwi->master, strlen(hwi->master));
+        if (memcmp(&p->l2, l2i, sizeof(lbrt_port_layer2_info_t)) != 0) {
+          lbrt_port_t *rp = NULL;
+          bool lds = p->sinfo.bpf_loaded;
+          if (strlen(hwi->real) > 0) {
+            rp = lbrt_port_find_by_name(ph, hwi->real);
+            if (!rp) {
+              flb_log(LOG_LEVEL_ERR, "port add - %s no real-port(%s) sif", name,
+                      hwi->real);
+              return PORT_NO_REAL_DEV_ERR;
+            }
+          } else {
+            p->sinfo.bpf_loaded = false;
+          }
+
+          lbrt_port_datapath(p, DP_REMOVE);
+
+          memcpy(&p->l2, l2i, sizeof(lbrt_port_layer2_info_t));
+          p->sinfo.port_real = rp;
+          p->sinfo.bpf_loaded = lds;
+
+          lbrt_port_datapath(p, DP_CREATE);
+
+          flb_log(LOG_LEVEL_DEBUG, "port add - %s vinfo updated", name);
+
+          return 0;
+        }
+      }
+
+      if (link_type == PortBondSif) {
+        lbrt_port_t *master = lbrt_port_find_by_name(ph, hwi->master);
+        if (!master) {
+          flb_log(LOG_LEVEL_ERR, "port add - %s no master(%s)", name,
+                  hwi->master);
+          return PORT_NO_MASTER_ERR;
+        }
+
+        lbrt_port_datapath(p, DP_REMOVE);
+
+        p->sinfo.port_type |= link_type;
+        memcpy(p->hinfo.master, hwi->master, strlen(hwi->master));
+        p->l2.is_p_vid = true;
+        p->l2.vid = master->port_no + BondIDB;
+
+        return 0;
+      }
     }
 
     if (p->sinfo.port_type == PortBond) {
+      if (link_type == PortVlanSif && l2i->is_p_vid) {
+        if (memcmp(&p->l2, l2i, sizeof(lbrt_port_layer2_info_t)) != 0) {
+          lbrt_port_datapath(p, DP_REMOVE);
+
+          p->sinfo.port_type |= link_type;
+          memcpy(&p->l2, l2i, sizeof(lbrt_port_layer2_info_t));
+
+          lbrt_port_datapath(p, DP_CREATE);
+
+          return 0;
+        }
+      }
     }
 
     if (p->sinfo.port_type == PortVxlanBr) {
+      if (link_type == PortVlanSif && l2i->is_p_vid) {
+        memcpy(p->hinfo.master, hwi->master, strlen(hwi->master));
+        p->sinfo.port_type |= link_type;
+
+        lbrt_port_datapath(p, DP_REMOVE);
+
+        memcpy(&p->l2, l2i, sizeof(lbrt_port_layer2_info_t));
+
+        lbrt_port_datapath(p, DP_CREATE);
+
+        flb_log(LOG_LEVEL_DEBUG, "port add - %s vxinfo updated", name);
+
+        return 0;
+      }
     }
 
     if ((p->sinfo.port_type & (PortReal | PortBondSif)) ==
         (PortReal | PortBondSif)) {
+      if (link_type == PortReal) {
+        p->l2.is_p_vid = true;
+        p->l2.vid = p->port_no + RealPortIDB;
+        p->sinfo.port_type &= ~PortBondSif;
+        memset(p->hinfo.master, 0, IF_NAMESIZE);
+
+        lbrt_port_datapath(p, DP_CREATE);
+
+        return 0;
+      }
     }
 
     flb_log(LOG_LEVEL_ERR, "port add - %s exists", name);
