@@ -25,63 +25,56 @@ enum api_port_prop {
 
 typedef __u8 api_dp_status_t;
 
-struct api_port_layer3_info;
-struct api_port_layer2_info;
-
-typedef struct api_port_dump {       // Generic dump info of a port
-  char *name;                        // name of the port
-  __u32 port_no;                     // port number
-  char *zone;                        // security zone info
-  struct api_port_sw_info *sinfo;    // software specific port information
-  struct api_port_hw_info *hinfo;    // hardware specific port information
-  struct api_port_stats_info *stats; // port statistics related information
-  struct api_port_layer3_info *l3;   // layer3 info related to port
-  struct api_port_layer2_info *l2;   // layer2 info related to port
-  enum api_port_prop sync;           // sync state
-} api_port_dump_t;
-
-typedef struct port_stats_info { // stats information of port
-  __u64 rx_bytes;                // rx Byte count
-  __u64 tx_bytes;                // tx Byte count
-  __u64 rx_packets;              // tx Packets count
-  __u64 tx_packets;              // tx Packets count
-  __u64 rx_error;                // rx error count
-  __u64 tx_error;                // tx error count
+typedef struct api_port_stats_info { // stats information of port
+  __u64 rx_bytes;                    // rx Byte count
+  __u64 tx_bytes;                    // tx Byte count
+  __u64 rx_packets;                  // tx Packets count
+  __u64 tx_packets;                  // tx Packets count
+  __u64 rx_error;                    // rx error count
+  __u64 tx_error;                    // tx error count
 } api_port_stats_info_t;
 
-typedef struct api_port_hw_info { // hw info of a port
-  __u8 mac_addr[ETH_ALEN];        // mac address as byte array
-  char *mac_addr_str;             // mac address in string format
-  bool link;                      // lowerlayer state
-  bool state;                     // administrative state
-  __u32 mtu;                      // maximum transfer unit
-  char *master;                   // master of this port if any
-  char *real;                     // underlying real dev info if any
-  __u32 tun_id;                   // tunnel info if any
+typedef struct api_port_hw_info {    // hw info of a port
+  __u8 mac_addr[ETH_ALEN];           // mac address as byte array
+  char mac_addr_str[IF_MACADDRSIZE]; // mac address in string format
+  bool link;                         // lowerlayer state
+  bool state;                        // administrative state
+  __u32 mtu;                         // maximum transfer unit
+  char master[IF_NAMESIZE];          // master of this port if any
+  char real[IF_NAMESIZE];            // underlying real dev info if any
+  __u32 tun_id;                      // tunnel info if any
 } api_port_hw_info_t;
 
 typedef struct api_port_layer3_info { // layer3 info of a port
   bool routed;                        // routed mode or not
-  __u16 ipv4_cnt;                     // ipv4 address count
-  __u16 ipv6_cnt;                     // ipv6 address count
-  char **ipv4_addrs;                  // ipv4 address set
-  char **ipv6_addrs;                  // ipv6 address set
+  char ipv4_addr[56];                 // ipv4 address set
+  char ipv6_addr[56];                 // ipv6 address set
 } api_port_layer3_info_t;
 
-typedef struct api_port_sw_info {  // software specific info of a port
-  __u32 osid;                      // interface id of an OS
-  __u32 port_type;                 // type of port
-  enum api_port_prop port_prop;    // port property
-  bool port_active;                // port enabled/disabled
-  struct apt_port_dump *port_real; // pointer to real port if any
-  struct apt_port_dump *port_ovl;  // pointer to ovl port if any
-  bool bpf_loaded;                 // eBPF loaded or not flag
+typedef struct api_port_sw_info { // software specific info of a port
+  __u32 osid;                     // interface id of an OS
+  __u32 port_type;                // type of port
+  enum api_port_prop port_prop;   // port property
+  bool port_active;               // port enabled/disabled
+  bool bpf_loaded;                // eBPF loaded or not flag
 } api_port_sw_info_t;
 
 typedef struct api_port_layer2_info { // layer2 info of a port
   bool is_pvid;                       // this vid is Pvid or not
   __u32 vid;                          // vid related to prot
 } api_port_layer2_info_t;
+
+typedef struct api_port_dump {      // Generic dump info of a port
+  char name[IF_NAMESIZE];           // name of the port
+  __u32 port_no;                    // port number
+  char zone[ZONE_NAMESIZE];         // security zone info
+  struct api_port_sw_info sinfo;    // software specific port information
+  struct api_port_hw_info hinfo;    // hardware specific port information
+  struct api_port_stats_info stats; // port statistics related information
+  struct api_port_layer3_info l3;   // layer3 info related to port
+  struct api_port_layer2_info l2;   // layer2 info related to port
+  api_dp_status_t sync;             // sync state
+} api_port_dump_t;
 
 typedef struct api_port_mod { // port modification info
   char *dev;                  // name of port

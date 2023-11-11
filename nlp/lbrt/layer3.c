@@ -383,8 +383,8 @@ bool lbrt_ifa_mk_str(lbrt_ifa_t *ifa, bool v4, char out_str[56]) {
   return ret;
 }
 
-bool lbrt_ifa_obj_mk_str(lbrt_l3_h_t *l3h, const char *obj, bool v4,
-                         char out_str[56]) {
+bool lbrt_if_obj_mk_str(lbrt_l3_h_t *l3h, const char *obj, bool v4,
+                        char out_str[56]) {
   lbrt_ifa_t *ifa = lbrt_ifa_find(l3h, obj);
   if (ifa) {
     return lbrt_ifa_mk_str(ifa, v4, out_str);

@@ -44,8 +44,8 @@ int lbrt_ifa_select_any(lbrt_l3_h_t *l3h, ip_t *addr, bool findAny,
 void lbrt_ifa_2_str(lbrt_ifa_t *ifa, lbrt_iter_intf_t it);
 void lbrt_ifas_2_str(lbrt_l3_h_t *l3h, lbrt_iter_intf_t it);
 
-bool lbrt_ifa_obj_mk_str(lbrt_l3_h_t *l3h, const char *obj, bool v4,
-                         char out_str[56]);
+bool lbrt_if_obj_mk_str(lbrt_l3_h_t *l3h, const char *obj, bool v4,
+                        char out_str[56]);
 
 UT_array *lbrt_ifa_get(lbrt_l3_h_t *l3h);
 

@@ -640,6 +640,117 @@ void lbrt_port_notifier_register(lbrt_ports_h_t *ph,
   utarray_push_back(ph->port_notifs, nf);
 }
 
+bool lbrt_ifi_stat_get(const char *ifi_name, lbrt_ifi_stat_t *stat) {
+  bool found = false;
+  FILE *fp = fopen("/proc/net/dev", "r");
+  char buf[512], ifname[IF_NAMESIZE], t_name[IF_NAMESIZE];
+
+  // skip first two lines
+  for (int i = 0; i < 2; i++) {
+    if (fgets(buf, 512, fp) == NULL) {
+      fclose(fp);
+      return found;
+    }
+  }
+
+  memset(buf, 0, 512);
+  memset(ifname, 0, IF_NAMESIZE);
+  memset(t_name, 0, IF_NAMESIZE);
+
+  while (fgets(buf, 512, fp)) {
+    sscanf(buf,
+           "%[^:]: %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu "
+           "%llu %llu %llu "
+           "%llu",
+           t_name, &stat->rx_bytes, &stat->rx_pkts, &stat->rx_errors,
+           &stat->rx_drops, &stat->rx_fifo, &stat->rx_frame, &stat->rx_comp,
+           &stat->rx_mcast, &stat->tx_bytes, &stat->tx_pkts, &stat->tx_errors,
+           &stat->tx_drops, &stat->tx_fifo, &stat->tx_colls, &stat->tx_carr,
+           &stat->tx_comp);
+    sscanf(t_name, "%s", ifname);
+    if (strcmp(ifi_name, ifname) == 0) {
+      found = true;
+      break;
+    }
+    memset(buf, 0, 512);
+    memset(ifname, 0, IF_NAMESIZE);
+    memset(t_name, 0, IF_NAMESIZE);
+  }
+
+  fclose(fp);
+  return found;
+}
+
+static UT_icd __ports_get_icd = {sizeof(api_port_dump_t *), NULL, NULL, NULL};
+UT_array *lbrt_ports_get(lbrt_ports_h_t *ph) {
+  UT_array *ret;
+  utarray_new(ret, &__ports_get_icd);
+
+  lbrt_port_t *p, *tmp;
+  HASH_ITER(hh_by_name, ph->port_s_map, p, tmp) {
+    lbrt_zone_t *zn = lbrt_zone_find(mh.zn, p->zone);
+    if (!zn) {
+      flb_log(LOG_LEVEL_ERR, "port-zone is not active");
+      continue;
+    }
+
+    lbrt_ifi_stat_t stat;
+    memset(&stat, 0, sizeof(stat));
+    bool found = lbrt_ifi_stat_get(p->name, &stat);
+    if (found) {
+      p->stats.rx_bytes = stat.rx_bytes;
+      p->stats.tx_bytes = stat.tx_bytes;
+      p->stats.rx_packets = stat.rx_pkts;
+      p->stats.tx_packets = stat.tx_pkts;
+      p->stats.rx_error = stat.rx_errors;
+      p->stats.tx_error = stat.tx_errors;
+    }
+
+    api_port_dump_t *dump =
+        (api_port_dump_t *)calloc(1, sizeof(api_port_dump_t));
+    memcpy(dump->name, p->name, strlen(p->name));
+    memcpy(dump->zone, p->zone, strlen(p->zone));
+    dump->port_no = p->port_no;
+
+    dump->sinfo.osid = p->sinfo.osid;
+    dump->sinfo.port_type = p->sinfo.port_type;
+    dump->sinfo.port_active = p->sinfo.port_active;
+    dump->sinfo.bpf_loaded = p->sinfo.bpf_loaded;
+
+    dump->hinfo.link = p->hinfo.link;
+    dump->hinfo.state = p->hinfo.state;
+    dump->hinfo.mtu = p->hinfo.mtu;
+    dump->hinfo.tun_id = p->hinfo.tun_id;
+    memcpy(dump->hinfo.master, p->hinfo.master, strlen(p->hinfo.master));
+    memcpy(dump->hinfo.real, p->hinfo.real, strlen(p->hinfo.real));
+    memcpy(dump->hinfo.mac_addr, p->hinfo.mac_addr, ETH_ALEN);
+    snprintf(dump->hinfo.mac_addr_str, IF_MACADDRSIZE,
+             "%02x:%02x:%02x:%02x:%02x:%02x", p->hinfo.mac_addr[0],
+             p->hinfo.mac_addr[1], p->hinfo.mac_addr[2], p->hinfo.mac_addr[3],
+             p->hinfo.mac_addr[4], p->hinfo.mac_addr[5]);
+
+    dump->stats.rx_bytes = p->stats.rx_bytes;
+    dump->stats.tx_bytes = p->stats.tx_bytes;
+    dump->stats.rx_packets = p->stats.rx_packets;
+    dump->stats.tx_packets = p->stats.tx_packets;
+    dump->stats.rx_error = p->stats.rx_error;
+    dump->stats.tx_error = p->stats.tx_error;
+
+    dump->l2.is_pvid = p->l2.is_p_vid;
+    dump->l2.vid = p->l2.vid;
+
+    bool v4 = lbrt_if_obj_mk_str(zn->l3, p->name, true, dump->l3.ipv4_addr);
+    bool v6 = lbrt_if_obj_mk_str(zn->l3, p->name, false, dump->l3.ipv6_addr);
+    dump->l3.routed = v4 | v6;
+
+    dump->sync = p->sync;
+
+    utarray_push_back(ret, dump);
+  }
+
+  return ret;
+}
+
 void lbrt_port_destruct_all(lbrt_ports_h_t *ph) {
   UT_array *realDevs;
   UT_array *bSlaves;

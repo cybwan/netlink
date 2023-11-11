@@ -377,5 +377,6 @@ int main() {
   test_l3_main();
 
   flb_log(LOG_LEVEL_INFO, "DONE!");
+
   return 0;
 }

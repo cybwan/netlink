@@ -24,6 +24,25 @@ typedef struct lbrt_port_event_intf {
   void (*port_notifier)(const char *name, int osid, lbrt_port_event_t ev_type);
 } lbrt_port_event_intf_t;
 
+typedef struct lbrt_ifi_stat {
+  __u64 rx_bytes;
+  __u64 rx_pkts;
+  __u64 rx_errors;
+  __u64 rx_drops;
+  __u64 rx_fifo;
+  __u64 rx_frame;
+  __u64 rx_comp;
+  __u64 rx_mcast;
+  __u64 tx_bytes;
+  __u64 tx_pkts;
+  __u64 tx_errors;
+  __u64 tx_drops;
+  __u64 tx_fifo;
+  __u64 tx_colls;
+  __u64 tx_carr;
+  __u64 tx_comp;
+} lbrt_ifi_stat_t;
+
 typedef struct lbrt_port_stats_info {
   __u64 rx_bytes;
   __u64 tx_bytes;
@@ -108,6 +127,9 @@ lbrt_port_t *lbrt_port_find_by_osid(lbrt_ports_h_t *ph, __u32 osid);
 UT_array *lbrt_port_get_slaves(lbrt_ports_h_t *ph, const char *master);
 bool lbrt_port_has_tun_slaves(lbrt_ports_h_t *ph, const char *master,
                               __u32 ptype);
+
+bool lbrt_ifi_stat_get(const char *ifi_name, lbrt_ifi_stat_t *stat);
+UT_array *lbrt_ports_get(lbrt_ports_h_t *ph);
 
 int lbrt_port_add(lbrt_ports_h_t *ph, char *name, __u32 osid, __u32 link_type,
                   char *zone, lbrt_port_hw_info_t *hwi,

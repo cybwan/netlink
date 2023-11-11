@@ -19,6 +19,7 @@
 
 #define IF_ADDRSIZE 46
 #define IF_CIDRSIZE 50
+#define IF_MACADDRSIZE 18
 
 typedef struct nl_ip {
   struct {

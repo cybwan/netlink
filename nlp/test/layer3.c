@@ -161,7 +161,7 @@ int test_l3_main(void) {
 
   flb_log(LOG_LEVEL_INFO, "#### IFA OBJ MK STR ####");
   char out_str[56];
-  lbrt_ifa_obj_mk_str(mh.zr->l3, "hs0", true, out_str);
+  lbrt_if_obj_mk_str(mh.zr->l3, "hs0", true, out_str);
   flb_log(LOG_LEVEL_DEBUG, "mk_string ifa success to [%s]", out_str);
 
   flb_log(LOG_LEVEL_INFO, "#### IFA GET ####");
