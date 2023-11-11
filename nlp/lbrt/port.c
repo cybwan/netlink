@@ -2,6 +2,9 @@
 
 extern struct lbrt_net_meta mh;
 
+static UT_icd __port_notifs_icd = {sizeof(lbrt_port_event_intf_t *), NULL, NULL,
+                                   NULL};
+
 lbrt_ports_h_t *lbrt_ports_h_new(void) {
   lbrt_ports_h_t *ph;
   ph = calloc(1, sizeof(*ph));
@@ -17,6 +20,7 @@ lbrt_ports_h_t *lbrt_ports_h_new(void) {
     lbrt_ports_h_free(ph);
     return NULL;
   }
+  utarray_new(ph->port_notifs, &__port_notifs_icd);
   return ph;
 }
 
@@ -34,6 +38,10 @@ void lbrt_ports_h_free(lbrt_ports_h_t *ph) {
   }
   if (ph->vti_mark) {
     free(ph->vti_mark);
+  }
+  if (ph->port_notifs) {
+    utarray_free(ph->port_notifs);
+    ph->port_notifs = NULL;
   }
   free(ph);
 }
@@ -622,6 +630,106 @@ bool lbrt_port_is_l3_tun_port(lbrt_port_t *port) {
     return false;
   }
   return true;
+}
+
+void lbrt_port_notifier_register(lbrt_ports_h_t *ph,
+                                 lbrt_port_event_intf_t notifier) {
+  lbrt_port_event_intf_t *nf = calloc(1, sizeof(lbrt_port_event_intf_t));
+  nf->xh = notifier.xh;
+  nf->port_notifier = notifier.port_notifier;
+  utarray_push_back(ph->port_notifs, nf);
+}
+
+void lbrt_port_destruct_all(lbrt_ports_h_t *ph) {
+  UT_array *realDevs;
+  UT_array *bSlaves;
+  UT_array *bridges;
+  UT_array *bondSlaves;
+  UT_array *bonds;
+  UT_array *tunSlaves;
+  UT_array *tunnels;
+
+  static UT_icd ports_icd = {sizeof(lbrt_port_t *), NULL, NULL, NULL};
+
+  utarray_new(realDevs, &ports_icd);
+  utarray_new(bSlaves, &ports_icd);
+  utarray_new(bridges, &ports_icd);
+  utarray_new(bondSlaves, &ports_icd);
+  utarray_new(bonds, &ports_icd);
+  utarray_new(tunSlaves, &ports_icd);
+  utarray_new(tunnels, &ports_icd);
+
+  lbrt_port_t *p, *tmp;
+  HASH_ITER(hh_by_name, ph->port_s_map, p, tmp) {
+    if ((p->sinfo.port_type & PortReal) == PortReal) {
+      utarray_push_back(realDevs, p);
+    }
+    if ((p->sinfo.port_type & PortVlanSif) == PortVlanSif) {
+      utarray_push_back(bSlaves, p);
+    }
+    if ((p->sinfo.port_type & PortVlanBr) == PortVlanBr) {
+      utarray_push_back(bridges, p);
+    }
+    if ((p->sinfo.port_type & PortBondSif) == PortBondSif) {
+      utarray_push_back(bondSlaves, p);
+    }
+    if ((p->sinfo.port_type & PortBond) == PortBond) {
+      utarray_push_back(bonds, p);
+    }
+    if ((p->sinfo.port_type & PortVxlanSif) == PortVxlanSif) {
+      utarray_push_back(tunSlaves, p);
+    }
+    if ((p->sinfo.port_type & PortVxlanBr) == PortVxlanBr) {
+      utarray_push_back(tunnels, p);
+    }
+  }
+
+  for (lbrt_port_t *e = (lbrt_port_t *)utarray_front(tunSlaves); e != NULL;
+       (e = (lbrt_port_t *)utarray_next(tunSlaves, e))) {
+    lbrt_port_del(ph, p->name, PortVxlanSif);
+  }
+
+  for (lbrt_port_t *e = (lbrt_port_t *)utarray_front(bSlaves); e != NULL;
+       (e = (lbrt_port_t *)utarray_next(bSlaves, e))) {
+    lbrt_port_del(ph, p->name, PortVlanSif);
+  }
+
+  for (lbrt_port_t *e = (lbrt_port_t *)utarray_front(bondSlaves); e != NULL;
+       (e = (lbrt_port_t *)utarray_next(bondSlaves, e))) {
+    lbrt_port_del(ph, p->name, PortBondSif);
+  }
+
+  for (lbrt_port_t *e = (lbrt_port_t *)utarray_front(bonds); e != NULL;
+       (e = (lbrt_port_t *)utarray_next(bonds, e))) {
+    lbrt_port_del(ph, p->name, PortBond);
+  }
+
+  for (lbrt_port_t *e = (lbrt_port_t *)utarray_front(bridges); e != NULL;
+       (e = (lbrt_port_t *)utarray_next(bridges, e))) {
+    lbrt_port_del(ph, p->name, PortVlanBr);
+  }
+
+  for (lbrt_port_t *e = (lbrt_port_t *)utarray_front(tunnels); e != NULL;
+       (e = (lbrt_port_t *)utarray_next(tunnels, e))) {
+    lbrt_port_del(ph, p->name, PortVxlanBr);
+  }
+
+  for (lbrt_port_t *e = (lbrt_port_t *)utarray_front(realDevs); e != NULL;
+       (e = (lbrt_port_t *)utarray_next(realDevs, e))) {
+    lbrt_port_del(ph, p->name, PortReal);
+  }
+
+  utarray_free(realDevs);
+  utarray_free(bSlaves);
+  utarray_free(bridges);
+  utarray_free(bondSlaves);
+  utarray_free(bonds);
+  utarray_free(tunSlaves);
+  utarray_free(tunnels);
+}
+
+void lbrt_port_ticker(lbrt_ports_h_t *ph) {
+  // TODO
 }
 
 int lbrt_port_datapath(lbrt_port_t *port, enum lbrt_dp_work work) { return 0; }

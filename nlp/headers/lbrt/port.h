@@ -20,6 +20,7 @@ typedef enum lbrt_port_event {
 } lbrt_port_event_t;
 
 typedef struct lbrt_port_event_intf {
+  void *xh;
   void (*port_notifier)(const char *name, int osid, lbrt_port_event_t ev_type);
 } lbrt_port_event_intf_t;
 
@@ -91,11 +92,11 @@ typedef struct lbrt_ports_h {
   struct lbrt_port *port_i_map[MaxInterfaces];
   struct lbrt_port *port_s_map;
   struct lbrt_port *port_o_map;
-  struct lbrt_port_event_intf *port_notifs;
   struct lbrt_counter *port_mark;
   struct lbrt_counter *bond_mark;
   struct lbrt_counter *wg_mark;
   struct lbrt_counter *vti_mark;
+  UT_array *port_notifs;
 } lbrt_ports_h_t;
 
 lbrt_ports_h_t *lbrt_ports_h_new(void);
@@ -112,6 +113,7 @@ int lbrt_port_add(lbrt_ports_h_t *ph, char *name, __u32 osid, __u32 link_type,
                   char *zone, lbrt_port_hw_info_t *hwi,
                   lbrt_port_layer2_info_t *l2i);
 int lbrt_port_del(lbrt_ports_h_t *ph, char *name, __u32 link_type);
+void lbrt_port_destruct_all(lbrt_ports_h_t *ph);
 
 bool lbrt_port_l2_addr_match(lbrt_ports_h_t *ph, char *name, lbrt_port_t *mp);
 
@@ -121,6 +123,9 @@ bool lbrt_port_is_leaf_port(lbrt_port_t *port);
 bool lbrt_port_is_slave_port(lbrt_port_t *port);
 bool lbrt_port_is_l3_tun_port(lbrt_port_t *port);
 
+void lbrt_port_notifier_register(lbrt_ports_h_t *ph,
+                                 lbrt_port_event_intf_t notifier);
+void lbrt_port_ticker(lbrt_ports_h_t *ph);
 int lbrt_port_datapath(lbrt_port_t *port, enum lbrt_dp_work work);
 
 #endif /* __FLB_LBRT_PORT_H__ */

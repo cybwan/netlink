@@ -392,7 +392,7 @@ bool lbrt_ifa_obj_mk_str(lbrt_l3_h_t *l3h, const char *obj, bool v4,
   return false;
 }
 
-void api_ip_addr_get_dtor(void *_elt) {
+static void api_ip_addr_get_dtor(void *_elt) {
   api_ip_addr_get_t *elt = (api_ip_addr_get_t *)_elt;
   if (elt->dev) {
     flb_log(LOG_LEVEL_TRACE, "free elt->dev=[%s]", elt->dev);
