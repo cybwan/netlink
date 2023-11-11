@@ -50,10 +50,11 @@ lbrt_port_t *lbrt_port_find_by_osid(lbrt_ports_h_t *ph, __u32 osid) {
   return port;
 }
 
+static UT_icd __slaves_icd = {sizeof(lbrt_port_t *), NULL, NULL, NULL};
+
 UT_array *lbrt_port_get_slaves(lbrt_ports_h_t *ph, const char *master) {
   UT_array *slaves;
-  UT_icd slaves_icd = {sizeof(lbrt_port_t *), NULL, NULL, NULL};
-  utarray_new(slaves, &slaves_icd);
+  utarray_new(slaves, &__slaves_icd);
 
   lbrt_port_t *p, *tmp;
   HASH_ITER(hh_by_name, ph->port_s_map, p, tmp) {
@@ -70,8 +71,7 @@ bool lbrt_port_has_tun_slaves(lbrt_ports_h_t *ph, const char *master,
   bool ret = false;
 
   UT_array *slaves;
-  UT_icd slaves_icd = {sizeof(lbrt_port_t *), NULL, NULL, NULL};
-  utarray_new(slaves, &slaves_icd);
+  utarray_new(slaves, &__slaves_icd);
 
   lbrt_port_t *p, *tmp;
   HASH_ITER(hh_by_name, ph->port_s_map, p, tmp) {
