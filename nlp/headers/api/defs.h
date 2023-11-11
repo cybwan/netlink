@@ -3,7 +3,7 @@
 
 #include <cmn/types.h>
 
-enum {
+typedef enum {
   PortReal = 1, // Base port type
   PortBondSif,  // Bond slave port type
   PortBond,     // Bond port type
@@ -17,7 +17,7 @@ enum {
   PortGre,      // GRE port type
 } api_port_type_t;
 
-enum api_port_prop {
+typedef enum api_port_prop {
   PortPropUpp = 1, // User-plane processing enabled
   PortPropSpan,    //  SPAN is enabled
   PortPropPol,     //  -Policer is active

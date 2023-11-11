@@ -136,6 +136,8 @@ int lbrt_port_add(lbrt_ports_h_t *ph, char *name, __u32 osid, __u32 link_type,
                   lbrt_port_layer2_info_t *l2i);
 int lbrt_port_del(lbrt_ports_h_t *ph, char *name, __u32 link_type);
 void lbrt_port_destruct_all(lbrt_ports_h_t *ph);
+int lbrt_port_update_prop(lbrt_ports_h_t *ph, char *name, api_port_prop_t prop,
+                          char *zone, bool updt, __u32 prop_val);
 
 bool lbrt_port_l2_addr_match(lbrt_ports_h_t *ph, char *name, lbrt_port_t *mp);
 

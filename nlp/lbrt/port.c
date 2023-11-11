@@ -58,11 +58,11 @@ lbrt_port_t *lbrt_port_find_by_osid(lbrt_ports_h_t *ph, __u32 osid) {
   return port;
 }
 
-static UT_icd __slaves_icd = {sizeof(lbrt_port_t *), NULL, NULL, NULL};
+static UT_icd __port_icd = {sizeof(lbrt_port_t *), NULL, NULL, NULL};
 
 UT_array *lbrt_port_get_slaves(lbrt_ports_h_t *ph, const char *master) {
   UT_array *slaves;
-  utarray_new(slaves, &__slaves_icd);
+  utarray_new(slaves, &__port_icd);
 
   lbrt_port_t *p, *tmp;
   HASH_ITER(hh_by_name, ph->port_s_map, p, tmp) {
@@ -79,7 +79,7 @@ bool lbrt_port_has_tun_slaves(lbrt_ports_h_t *ph, const char *master,
   bool ret = false;
 
   UT_array *slaves;
-  utarray_new(slaves, &__slaves_icd);
+  utarray_new(slaves, &__port_icd);
 
   lbrt_port_t *p, *tmp;
   HASH_ITER(hh_by_name, ph->port_s_map, p, tmp) {
@@ -514,6 +514,77 @@ int lbrt_port_del(lbrt_ports_h_t *ph, char *name, __u32 link_type) {
 
   free(p);
 
+  return 0;
+}
+
+int lbrt_port_update_prop(lbrt_ports_h_t *ph, char *name, api_port_prop_t prop,
+                          char *zone, bool updt, __u32 prop_val) {
+  int ret = lbrt_zone_port_is_valid(mh.zn, name, zone);
+  if (ret < 0) {
+    return PORT_ZONE_ERR;
+  }
+
+  lbrt_zone_t *zn = lbrt_zone_find(mh.zn, zone);
+  if (!zn) {
+    return PORT_ZONE_ERR;
+  }
+
+  lbrt_port_t *p = lbrt_port_find_by_name(ph, name);
+  if (!p) {
+    flb_log(LOG_LEVEL_ERR, "port updt - %s doesnt exist", name);
+    return PORT_NOT_EXIST_ERR;
+  }
+
+  if (updt) {
+    if ((p->sinfo.port_prop & prop) == prop) {
+      flb_log(LOG_LEVEL_ERR, "port updt - %s prop exists", name);
+      return PORT_PROP_EXISTS_ERR;
+    }
+  } else {
+    if ((p->sinfo.port_prop & prop) != prop) {
+      flb_log(LOG_LEVEL_ERR, "port updt - %s prop doesnt exists", name);
+      return PORT_PROP_NOT_EXISTS_ERR;
+    }
+  }
+
+  UT_array *alldevs;
+  utarray_new(alldevs, &__port_icd);
+
+  utarray_push_back(alldevs, p);
+
+  lbrt_port_t *pe, *tmp;
+  HASH_ITER(hh_by_name, ph->port_s_map, pe, tmp) {
+    if (p != pe && pe->sinfo.port_real == p &&
+        (pe->sinfo.port_type & PortVlanSif) == PortVlanSif &&
+        (pe->sinfo.port_type & PortVxlanBr) != PortVxlanBr) {
+      utarray_push_back(alldevs, pe);
+    }
+  }
+
+  for (lbrt_port_t *e = (lbrt_port_t *)utarray_front(alldevs); e != NULL;
+       (e = (lbrt_port_t *)utarray_next(alldevs, e))) {
+    if (updt) {
+      e->sinfo.port_prop |= prop;
+      if ((prop & PortPropPol) == PortPropPol) {
+        e->sinfo.port_pol_num = prop_val;
+      } else if ((prop & PortPropSpan) == PortPropSpan) {
+        e->sinfo.port_mir_num = prop_val;
+      }
+    } else {
+      e->sinfo.port_prop &= ~prop;
+      if ((prop & PortPropPol) == PortPropPol) {
+        e->sinfo.port_pol_num = 0;
+      } else if ((prop & PortPropSpan) == PortPropSpan) {
+        e->sinfo.port_mir_num = 0;
+      }
+    }
+
+    flb_log(LOG_LEVEL_DEBUG, "port updt - %s:%d(%d)", name, prop, prop_val);
+
+    lbrt_port_datapath(e, DP_CREATE);
+  }
+
+  utarray_free(alldevs);
   return 0;
 }
 
