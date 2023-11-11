@@ -59,4 +59,6 @@ typedef struct lbrt_neigh_h {
   struct lbrt_zone *zone;
 } lbrt_neigh_h_t;
 
+int lbrt_neigh_del_by_port(lbrt_neigh_h_t *nh, const char *port);
+
 #endif /* __FLB_LBRT_NEIGH_H__ */

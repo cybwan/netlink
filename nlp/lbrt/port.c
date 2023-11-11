@@ -499,9 +499,8 @@ int lbrt_port_del(lbrt_ports_h_t *ph, char *name, __u32 link_type) {
   ph->port_i_map[rid] = NULL;
 
   if (zone) {
-    // TODO
-    // zone.Rt.RtDeleteByPort(p.Name)
-    // zone.Nh.NeighDeleteByPort(p.Name)
+    lbrt_rt_del_by_port(zone->rt, p->name);
+    lbrt_neigh_del_by_port(zone->nh, p->name);
     lbrt_ifa_del_all(zone->l3, p->name);
   }
 
