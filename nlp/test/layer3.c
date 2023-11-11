@@ -53,7 +53,10 @@ int test_l3_main(void) {
     flb_log(LOG_LEVEL_ERR, "failed to add l3 ifa to hs0");
   }
 
-  flb_log(LOG_LEVEL_INFO, "#### IFA List ALL ####");
+  flb_log(LOG_LEVEL_INFO, "#### Interface List ####");
+  lbrt_ports_2_str(mh.zr->ports, tf);
+
+  flb_log(LOG_LEVEL_INFO, "#### IFA List ####");
   lbrt_ifas_2_str(mh.zr->l3, tf);
 
   flb_log(LOG_LEVEL_INFO, "#### IFA DEL ####");
@@ -62,7 +65,7 @@ int test_l3_main(void) {
     flb_log(LOG_LEVEL_ERR, "failed to del l3 ifa[%s] to hs0", "11.11.11.2/24");
   }
 
-  flb_log(LOG_LEVEL_INFO, "#### IFA List ALL ####");
+  flb_log(LOG_LEVEL_INFO, "#### IFA List ####");
   lbrt_ifas_2_str(mh.zr->l3, tf);
 
   flb_log(LOG_LEVEL_INFO, "#### IFA SELECT ####");

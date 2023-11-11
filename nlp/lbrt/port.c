@@ -509,6 +509,100 @@ int lbrt_port_del(lbrt_ports_h_t *ph, char *name, __u32 link_type) {
   return 0;
 }
 
+bool lbrt_port_l2_addr_match(lbrt_ports_h_t *ph, char *name, lbrt_port_t *mp) {
+  lbrt_port_t *p = lbrt_port_find_by_name(ph, name);
+  if (p) {
+    if (memcmp(p->hinfo.mac_addr, mp->hinfo.mac_addr, ETH_ALEN) == 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void __lbrt_port_2_str(lbrt_port_t *e, lbrt_iter_intf_t it) {
+  UT_string *pStr, *s;
+  utstring_new(pStr);
+  utstring_new(s);
+
+  if (e->hinfo.state) {
+    utstring_printf(pStr, "UP");
+  } else {
+    utstring_printf(pStr, "DOWN");
+  }
+
+  if (e->hinfo.link) {
+    utstring_printf(pStr, ",RUNNING");
+  }
+
+  utstring_printf(s, "%-10s: <%s> mtu %d %s\n", e->name, utstring_body(pStr),
+                  e->hinfo.mtu, e->zone);
+
+  utstring_clear(pStr);
+
+  if ((e->sinfo.port_type & PortReal) == PortReal) {
+    utstring_printf(pStr, "phy,");
+  }
+  if ((e->sinfo.port_type & PortVlanSif) == PortVlanSif) {
+    utstring_printf(pStr, "vlan-sif,");
+  }
+  if ((e->sinfo.port_type & PortVlanBr) == PortVlanBr) {
+    utstring_printf(pStr, "vlan,");
+  }
+  if ((e->sinfo.port_type & PortBondSif) == PortBondSif) {
+    utstring_printf(pStr, "bond-sif,");
+  }
+  if ((e->sinfo.port_type & PortBond) == PortBond) {
+    utstring_printf(pStr, "bond,");
+  }
+  if ((e->sinfo.port_type & PortVxlanSif) == PortVxlanSif) {
+    utstring_printf(pStr, "vxlan-sif,");
+  }
+  if ((e->sinfo.port_type & PortVti) == PortVti) {
+    utstring_printf(pStr, "vti,");
+  }
+  if ((e->sinfo.port_type & PortWg) == PortWg) {
+    utstring_printf(pStr, "wg,");
+  }
+  if ((e->sinfo.port_type & PortPropUpp) == PortPropUpp) {
+    utstring_printf(pStr, "upp,");
+  }
+  if ((e->sinfo.port_type & PortPropPol) == PortPropPol) {
+    utstring_printf(pStr, "pol%d,", e->sinfo.port_pol_num);
+  }
+  if ((e->sinfo.port_type & PortPropSpan) == PortPropSpan) {
+    utstring_printf(pStr, "mirr%d,", e->sinfo.port_mir_num);
+  }
+  if ((e->sinfo.port_type & PortVxlanBr) == PortVxlanBr) {
+    utstring_printf(pStr, "vxlan");
+    if (e->sinfo.port_real) {
+      utstring_printf(pStr, "(%s)", e->sinfo.port_real->name);
+    }
+  }
+
+  int l = utstring_len(pStr);
+  if (l > 0) {
+    if (utstring_body(pStr)[l - 1] == ',') {
+      utstring_body(pStr)[l - 1] = 0;
+    }
+  }
+
+  utstring_printf(s, "%-10s  ether %02x:%02x:%02x:%02x:%02x:%02x  %s\n", "",
+                  e->hinfo.mac_addr[0], e->hinfo.mac_addr[1],
+                  e->hinfo.mac_addr[2], e->hinfo.mac_addr[3],
+                  e->hinfo.mac_addr[4], e->hinfo.mac_addr[5],
+                  utstring_body(pStr));
+
+  it.node_walker(utstring_body(s));
+
+  utstring_free(pStr);
+  utstring_free(s);
+}
+
+void lbrt_ports_2_str(lbrt_ports_h_t *ph, lbrt_iter_intf_t it) {
+  lbrt_port_t *p, *tmp;
+  HASH_ITER(hh_by_name, ph->port_s_map, p, tmp) { __lbrt_port_2_str(p, it); }
+}
+
 bool lbrt_port_is_leaf_port(lbrt_port_t *port) {
   if ((port->sinfo.port_type & (PortReal | PortBond | PortVti | PortWg)) == 0) {
     return false;

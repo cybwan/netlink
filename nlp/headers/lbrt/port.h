@@ -113,6 +113,10 @@ int lbrt_port_add(lbrt_ports_h_t *ph, char *name, __u32 osid, __u32 link_type,
                   lbrt_port_layer2_info_t *l2i);
 int lbrt_port_del(lbrt_ports_h_t *ph, char *name, __u32 link_type);
 
+bool lbrt_port_l2_addr_match(lbrt_ports_h_t *ph, char *name, lbrt_port_t *mp);
+
+void lbrt_ports_2_str(lbrt_ports_h_t *ph, lbrt_iter_intf_t it);
+
 bool lbrt_port_is_leaf_port(lbrt_port_t *port);
 bool lbrt_port_is_slave_port(lbrt_port_t *port);
 bool lbrt_port_is_l3_tun_port(lbrt_port_t *port);
