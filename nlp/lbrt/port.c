@@ -452,6 +452,11 @@ int lbrt_port_del(lbrt_ports_h_t *ph, char *name, __u32 link_type) {
 
   __u32 rid = p->port_no;
   if (!ph->port_i_map[rid]) {
+    flb_log(LOG_LEVEL_ERR, "port delete - %s no such num", name);
+    return PORT_MAP_ERR;
+  }
+
+  if (!lbrt_port_find_by_osid(ph, p->sinfo.osid)) {
     flb_log(LOG_LEVEL_ERR, "port delete - %s no such osid", name);
     return PORT_MAP_ERR;
   }
@@ -462,12 +467,7 @@ int lbrt_port_del(lbrt_ports_h_t *ph, char *name, __u32 link_type) {
   switch (p->sinfo.port_type) {
   case PortVxlanBr:
     if (p->sinfo.port_real) {
-      if (p->sinfo.port_real->sinfo.port_ovl) {
-        free(p->sinfo.port_real->sinfo.port_ovl);
-        p->sinfo.port_real->sinfo.port_ovl = NULL;
-      }
-      free(p->sinfo.port_real);
-      p->sinfo.port_real = NULL;
+      p->sinfo.port_real->sinfo.port_ovl = NULL;
     }
     break;
   case PortReal:
@@ -475,12 +475,12 @@ int lbrt_port_del(lbrt_ports_h_t *ph, char *name, __u32 link_type) {
   case PortWg:
   case PortVti:
     if (zone) {
-      // lbrt_vlan_del(zone->vlans,p->l2.vid);
+      lbrt_vlan_del(zone->vlans, p->l2.vid);
     }
     break;
   case PortIPTun:
     if (zone) {
-      // zone.Sess.Mark.PutCounter(p.SInfo.SessMark)
+      lbrt_counter_put_counter(zone->sess->mark, p->sinfo.sess_mark);
     }
     break;
   }
@@ -499,9 +499,10 @@ int lbrt_port_del(lbrt_ports_h_t *ph, char *name, __u32 link_type) {
   ph->port_i_map[rid] = NULL;
 
   if (zone) {
+    // TODO
     // zone.Rt.RtDeleteByPort(p.Name)
     // zone.Nh.NeighDeleteByPort(p.Name)
-    // zone.L3.IfaDeleteAll(p.Name)
+    lbrt_ifa_del_all(zone->l3, p->name);
   }
 
   free(p);
