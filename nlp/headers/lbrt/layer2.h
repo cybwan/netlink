@@ -30,7 +30,6 @@ typedef struct lbrt_fdb_ent {
   struct lbrt_fdb_attr fdb_attr;
   struct lbrt_fdb_tun_attr fdb_tun;
   struct lbrt_port *port;
-  struct lbrt_time itime;
   struct lbrt_time stime;
   bool unreach;
   bool inactive;
