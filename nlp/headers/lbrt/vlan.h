@@ -35,9 +35,21 @@ lbrt_vlans_h_t *lbrt_vlans_h_new(struct lbrt_zone *zone);
 void lbrt_vlans_h_free(struct lbrt_vlans_h *vh);
 
 bool lbrt_vlan_valid(__u32 vlan_id);
+
 int lbrt_vlan_add(struct lbrt_vlans_h *vh, __u32 vlan_id, char *name,
                   char *zone, __u32 osid, struct lbrt_port_hw_info *hwi);
 int lbrt_vlan_del(lbrt_vlans_h_t *vh, __u32 vlan_id);
+
+int lbrt_vlan_port_add(lbrt_vlans_h_t *vh, __u32 vlan_id, char *port_name,
+                       bool tagged);
+int lbrt_vlan_port_del(lbrt_vlans_h_t *vh, __u32 vlan_id, char *port_name,
+                       bool tagged);
+
+void lbrt_vlan_destruct_all(lbrt_vlans_h_t *vh);
+
+void lbrt_vlans_2_str(lbrt_vlans_h_t *vh, lbrt_iter_intf_t it);
+
+void lbrt_vlans_ticker(lbrt_vlans_h_t *vh);
 
 int lbrt_vlan_datapath(lbrt_vlan_t *vlan, enum lbrt_dp_work work);
 
