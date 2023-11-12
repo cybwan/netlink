@@ -104,7 +104,7 @@ typedef struct api_vlan_mod { // Info about a vlan
 
 typedef struct api_vlan_port_mod { // Info about a port attached to a vlan
   __u32 vid;                       // vlan identifier
-  char *dev;                       // name of the related device
+  char dev[IF_NAMESIZE];           // name of the related device
   bool tagged;                     // tagged or not
 } api_vlan_port_mod_t;
 
@@ -115,12 +115,12 @@ typedef struct api_vlan_stat { // statistics for vlan interface
   __u64 out_packets;
 } api_vlan_stat_t;
 
-typedef struct api_vlan_get {        // Info for vlan interface to get
-  __u32 vid;                         // vlan identifier
-  char *dev;                         // name of port
-  __u16 member_cnt;                  // count of slave ports
-  struct api_vlan_port_mod **member; // name of slave ports
-  struct api_vlan_stat *Stat;        // Vlan traffic statistics
+typedef struct api_vlan_get {       // Info for vlan interface to get
+  __u32 vid;                        // vlan identifier
+  char dev[IF_NAMESIZE];            // name of port
+  __u16 member_cnt;                 // count of slave ports
+  struct api_vlan_port_mod *member; // name of slave ports
+  struct api_vlan_stat stat;        // Vlan traffic statistics
 } api_vlan_get_t;
 
 enum {

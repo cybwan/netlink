@@ -229,6 +229,83 @@ void lbrt_vlan_destruct_all(lbrt_vlans_h_t *vh) {
   }
 }
 
+static void api_vlan_get_dtor(void *_elt) {
+  api_vlan_get_t *elt = (api_vlan_get_t *)_elt;
+  if (elt->member_cnt > 0) {
+    flb_log(LOG_LEVEL_TRACE, "free api_vlan_get->member[%d]", elt->member_cnt);
+    free(elt->member);
+  }
+}
+
+static UT_icd __vlans_get_icd = {sizeof(api_vlan_get_t *), NULL, NULL,
+                                 api_vlan_get_dtor};
+static UT_icd __vlans_port_mod_icd = {sizeof(api_vlan_port_mod_t *), NULL, NULL,
+                                      NULL};
+UT_array *lbrt_vlan_get(lbrt_vlans_h_t *vh) {
+  lbrt_vlan_t *v = NULL;
+  lbrt_port_t *mp = NULL;
+  api_vlan_port_mod_t *pm = NULL;
+  UT_array *ret, *membs;
+  utarray_new(ret, &__vlans_get_icd);
+  utarray_new(membs, &__vlans_port_mod_icd);
+  for (int i = 0; i < MaximumVlans; i++) {
+    v = vh->vlan_map[i];
+    if (v && v->created) {
+      api_vlan_get_t *tmp_vlan = calloc(1, sizeof(api_vlan_get_t));
+      tmp_vlan->vid = i;
+      memcpy(tmp_vlan->dev, v->name, strlen(v->name));
+
+      if (v->num_tag_ports > 0) {
+        for (int p = 0; p < MaxInterfaces; p++) {
+          mp = v->tagged_ports[p];
+          if (mp) {
+            api_vlan_port_mod_t tmp_slave;
+            memset(&tmp_slave, 0, sizeof(tmp_slave));
+            memcpy(tmp_slave.dev, mp->name, strlen(mp->name));
+            tmp_slave.vid = i;
+            tmp_slave.tagged = true;
+            utarray_push_back(membs, &tmp_slave);
+          }
+        }
+      }
+
+      if (v->num_un_tag_ports > 0) {
+        for (int p = 0; p < MaxInterfaces; p++) {
+          mp = v->un_tagged_ports[p];
+          if (mp) {
+            api_vlan_port_mod_t tmp_slave;
+            memset(&tmp_slave, 0, sizeof(tmp_slave));
+            memcpy(tmp_slave.dev, mp->name, strlen(mp->name));
+            tmp_slave.vid = i;
+            tmp_slave.tagged = false;
+            utarray_push_back(membs, &tmp_slave);
+          }
+        }
+      }
+
+      tmp_vlan->member_cnt = utarray_len(membs);
+      if (tmp_vlan->member_cnt > 0) {
+        tmp_vlan->member =
+            calloc(1, sizeof(api_vlan_port_mod_t) * tmp_vlan->member_cnt);
+        for (__u32 n = 0; n < tmp_vlan->member_cnt; n++) {
+          pm = (api_vlan_port_mod_t *)utarray_eltptr(membs, n);
+          memcpy(&tmp_vlan->member[n], pm, sizeof(api_vlan_port_mod_t));
+        }
+      }
+      utarray_clear(membs);
+
+      tmp_vlan->stat.in_bytes = v->stat.in_bytes;
+      tmp_vlan->stat.in_packets = v->stat.in_packets;
+      tmp_vlan->stat.out_bytes = v->stat.out_bytes;
+      tmp_vlan->stat.out_packets = v->stat.out_packets;
+
+      utarray_push_back(ret, tmp_vlan);
+    }
+  }
+  utarray_free(membs);
+  return ret;
+}
+
 void lbrt_vlans_2_str(lbrt_vlans_h_t *vh, lbrt_iter_intf_t it) {
   lbrt_vlan_t *v = NULL;
   lbrt_port_t *vp = NULL, *mp = NULL;

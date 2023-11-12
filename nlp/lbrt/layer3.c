@@ -395,13 +395,14 @@ bool lbrt_if_obj_mk_str(lbrt_l3_h_t *l3h, const char *obj, bool v4,
 static void api_ip_addr_get_dtor(void *_elt) {
   api_ip_addr_get_t *elt = (api_ip_addr_get_t *)_elt;
   if (elt->dev) {
-    flb_log(LOG_LEVEL_TRACE, "free elt->dev=[%s]", elt->dev);
+    flb_log(LOG_LEVEL_TRACE, "free api_ip_addr_get->dev=[%s]", elt->dev);
     free(elt->dev);
   }
   if (elt->ip_cnt > 0) {
-    flb_log(LOG_LEVEL_TRACE, "free elt->ip[%d]", elt->ip_cnt);
+    flb_log(LOG_LEVEL_TRACE, "free api_ip_addr_get->ip[%d]", elt->ip_cnt);
     for (int i = 0; i < elt->ip_cnt; i++) {
-      flb_log(LOG_LEVEL_TRACE, "free elt->ip[%d]=[%s]", i, elt->ip[i]);
+      flb_log(LOG_LEVEL_TRACE, "free api_ip_addr_get->ip[%d]=[%s]", i,
+              elt->ip[i]);
       free(elt->ip[i]);
     }
     free(elt->ip);

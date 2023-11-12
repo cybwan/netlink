@@ -5,7 +5,9 @@
 
 #define MaxBondInterfaces 8
 #define MaxRealInterfaces 128
+#ifndef MaxInterfaces
 #define MaxInterfaces 512
+#endif
 #define MaxWgInterfaces 8
 #define MaxVtiInterfaces 8
 #define RealPortIDB 3800

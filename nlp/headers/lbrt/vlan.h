@@ -3,6 +3,10 @@
 
 #include <lbrt/types.h>
 
+#ifndef MaxInterfaces
+#define MaxInterfaces 512
+#endif
+
 #define MaximumVlans 4096 // constant to declare maximum number of vlans
 
 typedef struct lbrt_vlan_stat {
@@ -18,9 +22,9 @@ typedef struct lbrt_vlan {
   char name[IF_NAMESIZE];
   char zone[ZONE_NAMESIZE];
   __u32 num_tag_ports;
-  struct lbrt_port *tagged_ports[MaximumVlans];
+  struct lbrt_port *tagged_ports[MaxInterfaces];
   __u32 num_un_tag_ports;
-  struct lbrt_port *un_tagged_ports[MaximumVlans];
+  struct lbrt_port *un_tagged_ports[MaxInterfaces];
   struct lbrt_vlan_stat stat;
 } lbrt_vlan_t;
 
@@ -46,6 +50,8 @@ int lbrt_vlan_port_del(lbrt_vlans_h_t *vh, __u32 vlan_id, char *port_name,
                        bool tagged);
 
 void lbrt_vlan_destruct_all(lbrt_vlans_h_t *vh);
+
+UT_array *lbrt_vlan_get(lbrt_vlans_h_t *vh);
 
 void lbrt_vlans_2_str(lbrt_vlans_h_t *vh, lbrt_iter_intf_t it);
 
