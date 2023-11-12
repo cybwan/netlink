@@ -371,21 +371,21 @@ int lbrt_port_add(lbrt_ports_h_t *ph, char *name, __u32 osid, __u32 link_type,
   HASH_ADD(hh_by_name, ph->port_s_map, name, strlen(name), p);
   HASH_ADD(hh_by_osid, ph->port_o_map, osid, sizeof(__u32), p);
 
-  {
-    lbrt_port_t *p, *tmp;
-    HASH_ITER(hh_by_name, ph->port_s_map, p, tmp) {
-      flb_log(LOG_LEVEL_DEBUG, "hh_by_name port name=[%s] port no=[%d]",
-              p->name, p->port_no);
-    }
-  }
+  // {
+  //   lbrt_port_t *p, *tmp;
+  //   HASH_ITER(hh_by_name, ph->port_s_map, p, tmp) {
+  //     flb_log(LOG_LEVEL_DEBUG, "hh_by_name port name=[%s] port no=[%d]",
+  //             p->name, p->port_no);
+  //   }
+  // }
 
-  {
-    lbrt_port_t *p, *tmp;
-    HASH_ITER(hh_by_osid, ph->port_o_map, p, tmp) {
-      flb_log(LOG_LEVEL_DEBUG, "hh_by_osid port name=[%s] port no=[%d]",
-              p->name, p->port_no);
-    }
-  }
+  // {
+  //   lbrt_port_t *p, *tmp;
+  //   HASH_ITER(hh_by_osid, ph->port_o_map, p, tmp) {
+  //     flb_log(LOG_LEVEL_DEBUG, "hh_by_osid port name=[%s] port no=[%d]",
+  //             p->name, p->port_no);
+  //   }
+  // }
 
   lbrt_zone_port_add(mh.zn, name, zone);
 

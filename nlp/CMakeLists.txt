@@ -46,6 +46,7 @@ SET(SOURCES
 	lbrt/zone.c
 	lbrt/net.c
 	test/trie.c
+	test/port.c
 	test/layer3.c
 )
 

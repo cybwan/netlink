@@ -373,8 +373,8 @@ int main() {
   lbrt_net_init();
 
   // test_trie_main();
-
-  test_l3_main();
+  test_port_main();
+  // test_l3_main();
 
   flb_log(LOG_LEVEL_INFO, "DONE!");
 
