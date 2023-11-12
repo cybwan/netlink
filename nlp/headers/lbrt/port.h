@@ -94,7 +94,6 @@ typedef struct lbrt_port_layer2_info {
 
 typedef struct lbrt_port {
   char name[IF_NAMESIZE];
-  __u32 osid;
   __u32 port_no;
   char zone[ZONE_NAMESIZE];
   struct lbrt_port_sw_info sinfo;

@@ -369,7 +369,7 @@ int lbrt_port_add(lbrt_ports_h_t *ph, char *name, __u32 osid, __u32 link_type,
 
   ph->port_i_map[rid] = p;
   HASH_ADD(hh_by_name, ph->port_s_map, name, strlen(name), p);
-  HASH_ADD(hh_by_osid, ph->port_o_map, osid, sizeof(__u32), p);
+  HASH_ADD(hh_by_osid, ph->port_o_map, sinfo.osid, sizeof(__u32), p);
 
   // {
   //   lbrt_port_t *p, *tmp;
@@ -831,7 +831,7 @@ void lbrt_port_destruct_all(lbrt_ports_h_t *ph) {
   UT_array *tunSlaves;
   UT_array *tunnels;
 
-  static UT_icd ports_icd = {sizeof(lbrt_port_t *), NULL, NULL, NULL};
+  static UT_icd ports_icd = {sizeof(lbrt_port_t), NULL, NULL, NULL};
 
   utarray_new(realDevs, &ports_icd);
   utarray_new(bSlaves, &ports_icd);
@@ -868,37 +868,37 @@ void lbrt_port_destruct_all(lbrt_ports_h_t *ph) {
 
   for (lbrt_port_t *e = (lbrt_port_t *)utarray_front(tunSlaves); e != NULL;
        (e = (lbrt_port_t *)utarray_next(tunSlaves, e))) {
-    lbrt_port_del(ph, p->name, PortVxlanSif);
+    lbrt_port_del(ph, e->name, PortVxlanSif);
   }
 
   for (lbrt_port_t *e = (lbrt_port_t *)utarray_front(bSlaves); e != NULL;
        (e = (lbrt_port_t *)utarray_next(bSlaves, e))) {
-    lbrt_port_del(ph, p->name, PortVlanSif);
+    lbrt_port_del(ph, e->name, PortVlanSif);
   }
 
   for (lbrt_port_t *e = (lbrt_port_t *)utarray_front(bondSlaves); e != NULL;
        (e = (lbrt_port_t *)utarray_next(bondSlaves, e))) {
-    lbrt_port_del(ph, p->name, PortBondSif);
+    lbrt_port_del(ph, e->name, PortBondSif);
   }
 
   for (lbrt_port_t *e = (lbrt_port_t *)utarray_front(bonds); e != NULL;
        (e = (lbrt_port_t *)utarray_next(bonds, e))) {
-    lbrt_port_del(ph, p->name, PortBond);
+    lbrt_port_del(ph, e->name, PortBond);
   }
 
   for (lbrt_port_t *e = (lbrt_port_t *)utarray_front(bridges); e != NULL;
        (e = (lbrt_port_t *)utarray_next(bridges, e))) {
-    lbrt_port_del(ph, p->name, PortVlanBr);
+    lbrt_port_del(ph, e->name, PortVlanBr);
   }
 
   for (lbrt_port_t *e = (lbrt_port_t *)utarray_front(tunnels); e != NULL;
        (e = (lbrt_port_t *)utarray_next(tunnels, e))) {
-    lbrt_port_del(ph, p->name, PortVxlanBr);
+    lbrt_port_del(ph, e->name, PortVxlanBr);
   }
 
   for (lbrt_port_t *e = (lbrt_port_t *)utarray_front(realDevs); e != NULL;
        (e = (lbrt_port_t *)utarray_next(realDevs, e))) {
-    lbrt_port_del(ph, p->name, PortReal);
+    lbrt_port_del(ph, e->name, PortReal);
   }
 
   utarray_free(realDevs);

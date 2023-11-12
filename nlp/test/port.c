@@ -102,8 +102,8 @@ int test_port_main(void) {
     l2i.is_p_vid = false;
     l2i.vid = 10;
 
-    ret =
-        lbrt_port_add(mh.zr->ports, "hs2", 100, PortReal, ROOT_ZONE, &hwi, &l2i);
+    ret = lbrt_port_add(mh.zr->ports, "hs2", 100, PortReal, ROOT_ZONE, &hwi,
+                        &l2i);
     if (ret < 0) {
       flb_log(LOG_LEVEL_ERR, "failed to add port %s, ret=%d", "hs2", ret);
     }
@@ -117,19 +117,26 @@ int test_port_main(void) {
     hwi.link = true;
     hwi.state = true;
     hwi.mtu = 1500;
-    memcpy(hwi.real,"hs4",strlen("hs4"));
+    memcpy(hwi.real, "hs4", strlen("hs4"));
 
     memset(&l2i, 0, sizeof(l2i));
     l2i.is_p_vid = false;
     l2i.vid = 10;
 
-    ret =
-        lbrt_port_add(mh.zr->ports, "hs4", 400, PortReal, ROOT_ZONE, &hwi, &l2i);
+    ret = lbrt_port_add(mh.zr->ports, "hs4", 400, PortReal, ROOT_ZONE, &hwi,
+                        &l2i);
     if (ret < 0) {
       flb_log(LOG_LEVEL_ERR, "failed to add port %s, ret=%d", "hs4", ret);
     }
   }
 
+  flb_log(LOG_LEVEL_INFO, "#### IF List ####");
+  lbrt_ports_2_str(mh.zr->ports, tf);
+
+  flb_log(LOG_LEVEL_INFO, "#### IF DEL ALL ####");
+  lbrt_port_destruct_all(mh.zr->ports);
+
+  flb_log(LOG_LEVEL_INFO, "#### IF List ####");
   lbrt_ports_2_str(mh.zr->ports, tf);
 
   flb_log(LOG_LEVEL_INFO, "TEST Port DONE!");
