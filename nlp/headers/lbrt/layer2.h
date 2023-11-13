@@ -55,6 +55,11 @@ lbrt_fdb_t *lbrt_fdb_find(lbrt_l2_h_t *l2h, lbrt_fdb_key_t *key);
 
 int lbrt_fdb_add(lbrt_l2_h_t *l2h, lbrt_fdb_key_t *key, lbrt_fdb_attr_t *attr);
 int lbrt_fdb_del(lbrt_l2_h_t *l2h, lbrt_fdb_key_t *key);
+void lbrt_fdb_destruct_all(lbrt_l2_h_t *l2h);
+
+void lbrt_fdbs_2_str(lbrt_l2_h_t *l2h, lbrt_iter_intf_t it);
+
+void lbrt_fdb_ticker(lbrt_l2_h_t *l2h);
 
 int lbrt_fdb_datapath(lbrt_fdb_t *fdb, enum lbrt_dp_work work);
 

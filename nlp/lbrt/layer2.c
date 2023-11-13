@@ -2,6 +2,9 @@
 
 extern struct lbrt_net_meta mh;
 
+void lbrt_fdb_port_notifier(void *xh, const char *name, int osid,
+                            lbrt_port_event_t ev_type);
+
 lbrt_l2_h_t *lbrt_l2_h_new(lbrt_zone_t *zone) {
   lbrt_l2_h_t *l2h;
   l2h = calloc(1, sizeof(*l2h));
@@ -12,8 +15,7 @@ lbrt_l2_h_t *lbrt_l2_h_new(lbrt_zone_t *zone) {
   lbrt_port_event_intf_t notifier;
   memset(&notifier, 0, sizeof(notifier));
   notifier.xh = (void *)l2h;
-  // TODO
-  notifier.port_notifier = NULL;
+  notifier.port_notifier = lbrt_fdb_port_notifier;
   lbrt_port_notifier_register(zone->ports, notifier);
   return l2h;
 }
@@ -37,8 +39,79 @@ void lbrt_fdb_attr_copy(lbrt_fdb_attr_t *dst, lbrt_fdb_attr_t *src) {
 
 lbrt_fdb_t *lbrt_fdb_find(lbrt_l2_h_t *l2h, lbrt_fdb_key_t *key) {
   lbrt_fdb_t *fdb = NULL;
-  HASH_FIND(hh, l2h->fdb_map, &key, sizeof(key), fdb);
+  HASH_FIND(hh, l2h->fdb_map, key, sizeof(lbrt_fdb_key_t), fdb);
   return fdb;
+}
+
+int lbrt_fdb_resolve_nh(lbrt_fdb_t *fdb, bool *un_reach) {
+  lbrt_port_t *p = fdb->port;
+  if (!p) {
+    *un_reach = true;
+    return L2_VXATTR_ERR;
+  }
+
+  lbrt_zone_t *zone = lbrt_zone_find(mh.zn, p->zone);
+  if (!zone) {
+    *un_reach = true;
+    return L2_VXATTR_ERR;
+  }
+
+  bool unRch = false;
+  lbrt_fdb_attr_t *attr = &fdb->fdb_attr;
+  char dst_str[IF_ADDRSIZE];
+  ip_ntoa(&attr->dst, dst_str);
+
+  if ((p->sinfo.port_type & PortVxlanBr) == PortVxlanBr) {
+    if (attr->type != FdbTun) {
+      *un_reach = true;
+      return L2_VXATTR_ERR;
+    }
+
+    if (!attr->dst.f.v4) {
+      *un_reach = true;
+      return L2_VXATTR_ERR;
+    }
+
+    flb_log(LOG_LEVEL_DEBUG, "fdb tun rt lookup %s", dst_str);
+
+    ip_net_t pDstNet;
+    lbrt_trie_data_t tDat;
+    int ret = lbrt_trie_find(zone->rt->trie4, dst_str, &pDstNet, &tDat);
+    if (ret == 0 && (pDstNet.ip.f.v4 || pDstNet.ip.f.v6)) {
+      if (tDat.f.neigh) {
+        if (!tDat.v.neigh) {
+          *un_reach = true;
+          return -1;
+        }
+      } else {
+        *un_reach = true;
+        return -1;
+      }
+
+      lbrt_neigh_t *nh = (lbrt_neigh_t *)tDat.v.neigh;
+      if (!nh->in_active) {
+        char dst_net_str[IF_CIDRSIZE];
+        ip_net_ntoa(&pDstNet, dst_net_str);
+        lbrt_rt_t *rt = lbrt_rt_find(zone->rt, dst_net_str, zone->name);
+        if (!rt) {
+          unRch = true;
+          flb_log(LOG_LEVEL_DEBUG, "fdb tun rtlookup %s no-rt", dst_str);
+        } else {
+          // TODO
+        }
+      }
+    } else {
+      unRch = true;
+      flb_log(LOG_LEVEL_DEBUG, "fdb tun rtlookup %s no trie-ent", dst_str);
+    }
+  }
+
+  if (unRch) {
+    flb_log(LOG_LEVEL_DEBUG, "fdb tun rtlookup %s unreachable", dst_str);
+  }
+
+  *un_reach = unRch;
+  return 0;
 }
 
 int lbrt_fdb_add(lbrt_l2_h_t *l2h, lbrt_fdb_key_t *key, lbrt_fdb_attr_t *attr) {
@@ -67,7 +140,16 @@ int lbrt_fdb_add(lbrt_l2_h_t *l2h, lbrt_fdb_key_t *key, lbrt_fdb_attr_t *attr) {
   lbrt_time_now(&fdb->itime);
   lbrt_time_now(&fdb->stime);
 
-  // TODO
+  if ((p->sinfo.port_type & PortVxlanBr) == PortVxlanBr) {
+    bool unRch;
+    int ret = lbrt_fdb_resolve_nh(fdb, &unRch);
+    if (ret < 0) {
+      flb_log(LOG_LEVEL_DEBUG, "tun-fdb ent resolve error,key[%d, %s]",
+              key->bridge_id, mac_ntop(key->mac_addr));
+      return ret;
+    }
+    fdb->unreach = unRch;
+  }
 
   HASH_ADD(hh, l2h->fdb_map, fdb_key, sizeof(lbrt_fdb_key_t), fdb);
 
@@ -79,14 +161,83 @@ int lbrt_fdb_add(lbrt_l2_h_t *l2h, lbrt_fdb_key_t *key, lbrt_fdb_attr_t *attr) {
 }
 
 int lbrt_fdb_del(lbrt_l2_h_t *l2h, lbrt_fdb_key_t *key) {
-  lbrt_fdb_t *fdb = NULL;
-  HASH_FIND(hh, l2h->fdb_map, key, sizeof(lbrt_fdb_key_t), fdb);
-  if (!fdb)
+  lbrt_fdb_t *fdb = lbrt_fdb_find(l2h, key);
+  if (!fdb) {
+    flb_log(LOG_LEVEL_DEBUG, "fdb ent not found, key[%d, %s]", key->bridge_id,
+            mac_ntop(key->mac_addr));
     return L2_NO_FDB_ERR;
+  }
+
+  if (fdb->port->sinfo.port_type == PortVxlanBr) {
+    if (fdb->fdb_tun.rt) {
+      // TODO
+    }
+
+    fdb->fdb_tun.rt = NULL;
+    if (fdb->fdb_tun.nh) {
+      fdb->fdb_tun.nh->resolved = false;
+      fdb->fdb_tun.nh = NULL;
+    }
+    fdb->fdb_tun.ep = NULL;
+  }
+
+  lbrt_fdb_datapath(fdb, DP_REMOVE);
 
   fdb->inactive = true;
+
   HASH_DEL(l2h->fdb_map, fdb);
+
+  flb_log(LOG_LEVEL_DEBUG, "deleted fdb ent, key[%d, %s]", key->bridge_id,
+          mac_ntop(key->mac_addr));
+
   return 0;
+}
+
+void lbrt_fdb_destruct_all(lbrt_l2_h_t *l2h) {
+  lbrt_fdb_t *f, *tmp;
+  HASH_ITER(hh, l2h->fdb_map, f, tmp) { lbrt_fdb_del(l2h, &f->fdb_key); }
+}
+
+void lbrt_fdb_port_notifier(void *xh, const char *name, int osid,
+                            lbrt_port_event_t ev_type) {
+  lbrt_l2_h_t *l2h = (lbrt_l2_h_t *)xh;
+  if ((ev_type & (PortEvDown | PortEvDelete | PortEvLowerDown)) != 0) {
+    lbrt_fdb_t *f, *tmp;
+    HASH_ITER(hh, l2h->fdb_map, f, tmp) {
+      if (strcmp(f->fdb_attr.oif, name) == 0) {
+        lbrt_fdb_del(l2h, &f->fdb_key);
+      }
+    }
+  }
+}
+
+void __lbrt_fdb_2_str(lbrt_fdb_t *fdb, lbrt_iter_intf_t it, int n) {
+  UT_string *s;
+  utstring_new(s);
+
+  utstring_printf(
+      s, "FdbEnt%-3d : ether %02x:%02x:%02x:%02x:%02x:%02x,br %d :: Oif %s", n,
+      fdb->fdb_key.mac_addr[0], fdb->fdb_key.mac_addr[1],
+      fdb->fdb_key.mac_addr[2], fdb->fdb_key.mac_addr[3],
+      fdb->fdb_key.mac_addr[4], fdb->fdb_key.mac_addr[5],
+      fdb->fdb_key.bridge_id, fdb->fdb_attr.oif);
+
+  it.node_walker(utstring_body(s));
+
+  utstring_free(s);
+}
+
+void lbrt_fdbs_2_str(lbrt_l2_h_t *l2h, lbrt_iter_intf_t it) {
+  int n = 1;
+  lbrt_fdb_t *f, *tmp;
+  HASH_ITER(hh, l2h->fdb_map, f, tmp) {
+    __lbrt_fdb_2_str(f, it, n);
+    n++;
+  }
+}
+
+void lbrt_fdb_ticker(lbrt_l2_h_t *l2h) {
+  // TODO
 }
 
 int lbrt_fdb_datapath(lbrt_fdb_t *fdb, enum lbrt_dp_work work) { return 0; }

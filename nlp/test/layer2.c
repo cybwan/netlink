@@ -43,15 +43,29 @@ int test_l2_main(void) {
   fdb_attr.type = FdbVlan;
   parse_ip("0.0.0.0", &fdb_attr.dst);
 
+  flb_log(LOG_LEVEL_INFO, "#### FDB ADD ####");
   ret = lbrt_fdb_add(mh.zr->l2, &fdb_key, &fdb_attr);
   if (ret < 0) {
     flb_log(LOG_LEVEL_ERR, "failed to add fdb hs0:vlan100");
   }
 
+  flb_log(LOG_LEVEL_INFO, "#### FDB ADD ####");
   ret = lbrt_fdb_add(mh.zr->l2, &fdb_key, &fdb_attr);
   if (ret == 0) {
     flb_log(LOG_LEVEL_ERR, "added duplicate fdb vlan100");
   }
+
+  flb_log(LOG_LEVEL_INFO, "#### FDB List ####");
+  lbrt_fdbs_2_str(mh.zr->l2, tf);
+
+  flb_log(LOG_LEVEL_INFO, "#### FDB DEL ####");
+  ret = lbrt_fdb_del(mh.zr->l2, &fdb_key);
+  if (ret < 0) {
+    flb_log(LOG_LEVEL_ERR, "failed to add del hs0:vlan100");
+  }
+
+  flb_log(LOG_LEVEL_INFO, "#### FDB List ####");
+  lbrt_fdbs_2_str(mh.zr->l2, tf);
 
   return 0;
 }
