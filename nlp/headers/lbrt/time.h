@@ -11,6 +11,8 @@ typedef struct lbrt_time {
 
 void lbrt_time_now(lbrt_time_t *time);
 
-__u64 get_clock_sys_time_ns(void);
+__s64 lbrt_time_sub(lbrt_time_t *t1, lbrt_time_t *t2);
+
+__s64 get_clock_sys_time_ns(void);
 
 #endif /* __FLB_LBRT_TIME_H__ */
