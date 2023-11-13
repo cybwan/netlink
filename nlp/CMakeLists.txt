@@ -33,6 +33,7 @@ SET(SOURCES
 	nlp/route.c
 	lbrt/counter.c
 	lbrt/trie.c
+	lbrt/time.c
 	lbrt/layer2.c
 	lbrt/layer3.c
 	lbrt/mirror.c
@@ -47,6 +48,7 @@ SET(SOURCES
 	lbrt/net.c
 	test/trie.c
 	test/port.c
+	test/layer2.c
 	test/layer3.c
 )
 

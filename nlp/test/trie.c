@@ -1,15 +1,7 @@
+#include <lbrt/time.h>
 #include <stdio.h>
-#include <time.h>
 
 #include <test.h>
-
-__u64 get_clock_sys_time_ns(void) {
-  struct timespec tp;
-  __u64 time_ns = 0;
-  clock_gettime(CLOCK_MONOTONIC, &tp);
-  time_ns = (long long)tp.tv_sec * 1000000000 + tp.tv_nsec;
-  return time_ns;
-}
 
 void tireBenchmark(lbrt_trie_iter_intf_t tf, int loop_cnt) {
   int ret;

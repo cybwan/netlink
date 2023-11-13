@@ -30,6 +30,7 @@ typedef struct lbrt_fdb_ent {
   struct lbrt_fdb_attr fdb_attr;
   struct lbrt_fdb_tun_attr fdb_tun;
   struct lbrt_port *port;
+  struct lbrt_time itime;
   struct lbrt_time stime;
   bool unreach;
   bool inactive;
@@ -37,7 +38,7 @@ typedef struct lbrt_fdb_ent {
 
   UT_hash_handle hh;
 
-} lbrt_fdb_ent_t;
+} lbrt_fdb_t;
 
 typedef struct lbrt_l2_h {
   struct lbrt_fdb_ent *fdb_map;
@@ -50,8 +51,11 @@ void lbrt_l2_h_free(lbrt_l2_h_t *l2h);
 bool lbrt_fdb_attr_equal(lbrt_fdb_attr_t *a1, lbrt_fdb_attr_t *a2);
 void lbrt_fdb_attr_copy(lbrt_fdb_attr_t *dst, lbrt_fdb_attr_t *src);
 
-int lbrt_l2_fdb_add(lbrt_l2_h_t *l2h, lbrt_fdb_key_t *key,
-                    lbrt_fdb_attr_t *attr);
-int lbrt_l2_fdb_del(lbrt_l2_h_t *l2h, lbrt_fdb_key_t *key);
+lbrt_fdb_t *lbrt_fdb_find(lbrt_l2_h_t *l2h, lbrt_fdb_key_t *key);
+
+int lbrt_fdb_add(lbrt_l2_h_t *l2h, lbrt_fdb_key_t *key, lbrt_fdb_attr_t *attr);
+int lbrt_fdb_del(lbrt_l2_h_t *l2h, lbrt_fdb_key_t *key);
+
+int lbrt_fdb_datapath(lbrt_fdb_t *fdb, enum lbrt_dp_work work);
 
 #endif /* __FLB_LBRT_LAYER2_H__ */

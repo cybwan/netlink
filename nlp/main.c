@@ -49,15 +49,15 @@ void test_lbrt_layer2() {
   attr.type = 8;
   snprintf(attr.oif, IF_NAMESIZE, "ens33");
 
-  lbrt_l2_fdb_add(l2h, &key, &attr);
+  lbrt_fdb_add(l2h, &key, &attr);
 
-  lbrt_fdb_ent_t *p, *tmp;
+  lbrt_fdb_t *p, *tmp;
   HASH_ITER(hh, l2h->fdb_map, p, tmp) {
     printf(YELLOW "bridge_id=[%d] type=[%d] oif=[%s]" RESET,
            p->fdb_key.bridge_id, p->fdb_attr.type, p->fdb_attr.oif);
   }
 
-  lbrt_l2_fdb_del(l2h, &key);
+  lbrt_fdb_del(l2h, &key);
 
   HASH_ITER(hh, l2h->fdb_map, p, tmp) {
     printf(YELLOW "bridge_id=[%d] type=[%d] oif=[%s]" RESET,
@@ -373,7 +373,8 @@ int main() {
   lbrt_net_init();
 
   // test_trie_main();
-  test_port_main();
+  // test_port_main();
+  test_l2_main();
   // test_l3_main();
 
   flb_log(LOG_LEVEL_INFO, "DONE!");
