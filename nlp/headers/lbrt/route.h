@@ -35,6 +35,14 @@ typedef struct lbrt_rt_stat {
 } lbrt_rt_stat_t;
 
 typedef struct lbrt_rt_dep_obj {
+  struct {
+    __u8 neigh : 1;
+    __u8 fdb : 1;
+  } f;
+  struct {
+    struct lbrt_neigh *neigh;
+    struct lbrt_fdb *fdb;
+  } v;
 } lbrt_rt_dep_obj_t;
 
 typedef struct lbrt_rt {

@@ -17,7 +17,7 @@ typedef struct lbrt_trie_data {
     __u8 osid : 1;
   } f;
   struct {
-    void *neigh;
+    struct lbrt_neigh *neigh;
     __u32 osid;
   } v;
 } lbrt_trie_data_t;

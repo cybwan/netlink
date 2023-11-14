@@ -88,7 +88,7 @@ int lbrt_fdb_resolve_nh(lbrt_fdb_t *fdb, bool *un_reach) {
         return -1;
       }
 
-      lbrt_neigh_t *nh = (lbrt_neigh_t *)tDat.v.neigh;
+      lbrt_neigh_t *nh = tDat.v.neigh;
       if (!nh->in_active) {
         char dst_net_str[IF_CIDRSIZE];
         ip_net_ntoa(&pDstNet, dst_net_str);
