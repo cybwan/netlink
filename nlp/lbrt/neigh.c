@@ -93,4 +93,72 @@ void lbrt_neigh_activate(lbrt_neigh_h_t *nhh, lbrt_neigh_t *nh) {
   lbrt_time_now(&nh->ats);
 }
 
+lbrt_neigh_tun_ep_t *lbrt_neigh_add_tun_ep(lbrt_neigh_h_t *nhh,
+                                           lbrt_neigh_t *nh, ip_t *rip,
+                                           ip_t *sip, __u32 tun_id,
+                                           lbrt_dp_tun_t tun_type, bool sync) {
+  lbrt_port_t *port = nh->o_if_port;
+  if (!port || (port->sinfo.port_ovl == NULL && tun_type != DP_TUN_IPIP)) {
+    return NULL;
+  }
+
+  lbrt_neigh_tun_ep_t *tep = NULL;
+
+  __u32 tep_cnt = utarray_len(nh->tun_eps);
+  for (__u32 i = 0; i < tep_cnt; i++) {
+    tep = (lbrt_neigh_tun_ep_t *)utarray_eltptr(nh->tun_eps, i);
+    if (memcmp(&tep->r_ip, rip, sizeof(ip_t)) == 0 && tep->tun_id == tun_id &&
+        tep->tun_type == tun_type) {
+      return tep;
+    }
+  }
+
+  if (!sip || (!sip->f.v4 && !sip->f.v6)) {
+    ip_t s_ip;
+    char dev[IF_NAMESIZE];
+    int ret =
+        lbrt_ifa_select(nhh->zone->l3, port->name, rip, false, &s_ip, dev);
+    if (ret < 0) {
+      flb_log(LOG_LEVEL_ERR, "%s:ifa select error", port->name);
+      return NULL;
+    }
+    sip = &s_ip;
+  }
+
+  __u64 idx = lbrt_counter_get_counter(nhh->neigh_tid);
+  if (idx == COUNTER_OVERFLOW) {
+    return NULL;
+  }
+
+  tep = calloc(1, sizeof(lbrt_neigh_tun_ep_t));
+  tep->tun_id = tun_id;
+  tep->tun_type = tun_type;
+  tep->mark = idx;
+  tep->parent = nh;
+  memcpy(&tep->r_ip, rip, sizeof(ip_t));
+  memcpy(&tep->s_ip, sip, sizeof(ip_t));
+
+  utarray_push_back(nh->tun_eps, tep);
+  free(tep);
+  tep = (lbrt_neigh_tun_ep_t *)utarray_back(nh->tun_eps);
+
+  nh->type |= NH_TUN;
+
+  if (sync) {
+    lbrt_neigh_tun_ep_datapath(tep,DP_CREATE);
+  }
+
+  char sip_addr[IF_ADDRSIZE];
+  char rip_addr[IF_ADDRSIZE];
+  ip_ntoa(sip, sip_addr);
+  ip_ntoa(rip, sip_addr);
+
+  flb_log(LOG_LEVEL_DEBUG, "neigh tunep added - %s:%s (%d)\n", sip_addr,
+          rip_addr, tun_id);
+
+  return tep;
+}
+
 int lbrt_neigh_del_by_port(lbrt_neigh_h_t *nh, const char *port) { return 0; }
+
+int lbrt_neigh_tun_ep_datapath(lbrt_neigh_tun_ep_t *tep, enum lbrt_dp_work work) { return 0; }
