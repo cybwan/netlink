@@ -145,7 +145,7 @@ lbrt_neigh_tun_ep_t *lbrt_neigh_add_tun_ep(lbrt_neigh_h_t *nhh,
   nh->type |= NH_TUN;
 
   if (sync) {
-    lbrt_neigh_tun_ep_datapath(tep,DP_CREATE);
+    lbrt_neigh_tun_ep_datapath(tep, DP_CREATE);
   }
 
   char sip_addr[IF_ADDRSIZE];
@@ -159,6 +159,27 @@ lbrt_neigh_tun_ep_t *lbrt_neigh_add_tun_ep(lbrt_neigh_h_t *nhh,
   return tep;
 }
 
+void lbrt_neigh_del_tun_ep(lbrt_neigh_t *nh, __u32 idx) {
+  utarray_erase(nh->tun_eps, idx, 1);
+}
+
+void lbrt_neigh_del_all_tun_ep(lbrt_neigh_h_t *nhh, lbrt_neigh_t *nh) {
+  __u32 tep_cnt = utarray_len(nh->tun_eps);
+  if (tep_cnt > 0) {
+    lbrt_neigh_tun_ep_t *tep = NULL;
+    for (__s32 idx = tep_cnt - 1; idx >= 0; idx--) {
+      tep = (lbrt_neigh_tun_ep_t *)utarray_eltptr(nh->tun_eps, (__u32)idx);
+      lbrt_neigh_tun_ep_datapath(tep, DP_REMOVE);
+      lbrt_counter_put_counter(nhh->neigh_tid, tep->mark);
+      tep->in_active = true;
+      lbrt_neigh_del_tun_ep(nh, (__u32)idx);
+    }
+  }
+}
+
 int lbrt_neigh_del_by_port(lbrt_neigh_h_t *nh, const char *port) { return 0; }
 
-int lbrt_neigh_tun_ep_datapath(lbrt_neigh_tun_ep_t *tep, enum lbrt_dp_work work) { return 0; }
+int lbrt_neigh_tun_ep_datapath(lbrt_neigh_tun_ep_t *tep,
+                               enum lbrt_dp_work work) {
+  return 0;
+}

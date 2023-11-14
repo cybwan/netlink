@@ -71,9 +71,12 @@ lbrt_neigh_tun_ep_t *lbrt_neigh_add_tun_ep(lbrt_neigh_h_t *nhh,
                                            lbrt_neigh_t *nh, ip_t *rip,
                                            ip_t *sip, __u32 tun_id,
                                            lbrt_dp_tun_t tun_type, bool sync);
+void lbrt_neigh_del_tun_ep(lbrt_neigh_t *nh, __u32 idx);
+void lbrt_neigh_del_all_tun_ep(lbrt_neigh_h_t *nhh, lbrt_neigh_t *nh);
 
 int lbrt_neigh_del_by_port(lbrt_neigh_h_t *nh, const char *port);
 
-int lbrt_neigh_tun_ep_datapath(lbrt_neigh_tun_ep_t *tep, enum lbrt_dp_work work);
+int lbrt_neigh_tun_ep_datapath(lbrt_neigh_tun_ep_t *tep,
+                               enum lbrt_dp_work work);
 
 #endif /* __FLB_LBRT_NEIGH_H__ */
