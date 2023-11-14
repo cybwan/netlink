@@ -170,7 +170,18 @@ int lbrt_fdb_del(lbrt_l2_h_t *l2h, lbrt_fdb_key_t *key) {
 
   if (fdb->port->sinfo.port_type == PortVxlanBr) {
     if (fdb->fdb_tun.rt) {
-      // TODO
+      lbrt_rt_t *rt = fdb->fdb_tun.rt;
+      __u32 dep_obj_cnt = utarray_len(rt->rt_dep_objs);
+      lbrt_rt_dep_obj_t *dep_obj = NULL;
+      for (__u32 i = 0; i < dep_obj_cnt; i++) {
+        dep_obj = (lbrt_rt_dep_obj_t *)utarray_eltptr(rt->rt_dep_objs, i);
+        if (dep_obj->f.fdb) {
+          if ((lbrt_fdb_t *)dep_obj->v.fdb == fdb) {
+            utarray_erase(rt->rt_dep_objs, i, 1);
+            break;
+          }
+        }
+      }
     }
 
     fdb->fdb_tun.rt = NULL;

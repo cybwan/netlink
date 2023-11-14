@@ -154,13 +154,13 @@ void test_lbrt_rt(void) {
 
   lbrt_rt_t *rt = lbrt_rt_find(rh, "8.8.8.0/24", "root");
   if (rt) {
-    flb_log(LOG_LEVEL_INFO,
-            "find route cidr=[%s] zone_num=[%u] mark=[%llu] tflags=[%u] "
-            "rt->attr.ifi=[%u] "
-            "rt->nh_attr[0]{link_index=[%u],nh_addr=[%s]}"
-            "success",
-            rt->key.rt_cidr, rt->zone_num, rt->mark, rt->tflags, rt->attr.ifi,
-            rt->nh_attr[0].link_index, rt->nh_attr[0].nh_addr);
+    // flb_log(LOG_LEVEL_INFO,
+    //         "find route cidr=[%s] zone_num=[%u] mark=[%llu] tflags=[%u] "
+    //         "rt->attr.ifi=[%u] "
+    //         "rt->nh_attr[0]{link_index=[%u],nh_addr=[%s]}"
+    //         "success",
+    //         rt->key.rt_cidr, rt->zone_num, rt->mark, rt->tflags,
+    //         rt->attr.ifi, rt->nh_attr[0].link_index, rt->nh_attr[0].nh_addr);
   }
 
   flb_log(LOG_LEVEL_INFO, "test_lbrt_rt success");

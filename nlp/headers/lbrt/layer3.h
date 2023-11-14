@@ -28,10 +28,10 @@ typedef struct lbrt_l3_h {
   struct lbrt_zone *zone;
 } lbrt_l3_h_t;
 
-lbrt_ifa_t *lbrt_ifa_find(lbrt_l3_h_t *l3h, const char *obj);
 lbrt_l3_h_t *lbrt_l3_h_new(struct lbrt_zone *zone);
 void lbrt_l3_h_free(lbrt_l3_h_t *l3h);
 
+lbrt_ifa_t *lbrt_ifa_find(lbrt_l3_h_t *l3h, const char *obj);
 int lbrt_ifa_add(lbrt_l3_h_t *l3h, const char *obj, const char *cidr);
 int lbrt_ifa_del(lbrt_l3_h_t *l3h, const char *obj, const char *cidr);
 int lbrt_ifa_del_all(lbrt_l3_h_t *l3h, const char *obj);

@@ -41,7 +41,7 @@ typedef struct lbrt_rt_dep_obj {
   } f;
   struct {
     struct lbrt_neigh *neigh;
-    struct lbrt_fdb *fdb;
+    struct lbrt_fdb_ent *fdb;
   } v;
 } lbrt_rt_dep_obj_t;
 
@@ -56,12 +56,9 @@ typedef struct lbrt_rt {
   struct lbrt_rt_stat stat;
   bool dead;
 
-  __u16 nh_attr_cnt;
-  __u16 next_hops_cnt;
-  __u16 rt_dep_objs_cnt;
-  struct lbrt_rt_nh_attr *nh_attr;
-  struct lbrt_neigh **next_hops;
-  struct lbrt_rt_dep_obj *rt_dep_objs;
+  UT_array *nh_attr;
+  UT_array *next_hops;
+  UT_array *rt_dep_objs;
 
   UT_hash_handle hh;
 
