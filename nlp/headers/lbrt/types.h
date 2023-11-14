@@ -28,6 +28,7 @@ typedef struct lbrt_pol_stats {
 #include <lbrt/datapath.h>
 #include <lbrt/qospol.h>
 
+#include <lbrt/ext.h>
 #include <lbrt/layer2.h>
 #include <lbrt/layer3.h>
 #include <lbrt/mirror.h>

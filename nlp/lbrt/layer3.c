@@ -30,10 +30,10 @@ lbrt_l3_h_t *lbrt_l3_h_new(lbrt_zone_t *zone) {
 void lbrt_l3_h_free(lbrt_l3_h_t *l3h) {
   if (!l3h)
     return;
-  lbrt_ifa_t *p, *tmp;
-  HASH_ITER(hh, l3h->ifa_map, p, tmp) {
-    HASH_DEL(l3h->ifa_map, p);
-    free(p);
+  lbrt_ifa_t *ifa, *tmp;
+  HASH_ITER(hh, l3h->ifa_map, ifa, tmp) {
+    HASH_DEL(l3h->ifa_map, ifa);
+    lbrt_ifa_free(ifa);
   }
   free(l3h);
 }

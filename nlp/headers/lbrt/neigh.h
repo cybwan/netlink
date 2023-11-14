@@ -4,8 +4,8 @@
 #include <lbrt/types.h>
 
 typedef struct lbrt_neigh_key {
-  char *nh;
-  char *zone;
+  char nh[IF_ADDRSIZE];
+  char zone[ZONE_NAMESIZE];
 } lbrt_neigh_key_t;
 
 typedef struct lbrt_neigh_attr {
@@ -41,12 +41,12 @@ typedef struct lbrt_neigh {
   __u64 r_mark;
   struct lbrt_neigh *rec_nh;
   struct lbrt_fdb_ent *t_fdb;
-  struct lbrt_neigh_tun_ep **tun_eps;
+  UT_array *tun_eps; // lbrt_neigh_tun_ep_t
   enum lbrt_nh_type type;
   enum lbrt_dp_status sync;
   struct lbrt_port *o_if_port;
   struct lbrt_time ats;
-  struct lbrt_rt *nh_rt_m;
+  struct lbrt_rt *nh_rt_m; // map
 
   UT_hash_handle hh;
 
@@ -58,6 +58,14 @@ typedef struct lbrt_neigh_h {
   struct lbrt_counter *neigh_tid;
   struct lbrt_zone *zone;
 } lbrt_neigh_h_t;
+
+void lbrt_neigh_free(lbrt_neigh_t *nh);
+void lbrt_neigh_h_free(lbrt_neigh_h_t *nhh);
+
+lbrt_neigh_t *lbrt_neigh_find(lbrt_neigh_h_t *nhh, const char *addr,
+                              const char *zone);
+
+void lbrt_neigh_activate(lbrt_neigh_h_t *nhh, lbrt_neigh_t *nh);
 
 int lbrt_neigh_del_by_port(lbrt_neigh_h_t *nh, const char *port);
 
