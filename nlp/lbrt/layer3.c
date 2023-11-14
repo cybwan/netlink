@@ -409,8 +409,8 @@ static void api_ip_addr_get_dtor(void *_elt) {
   }
 }
 
-UT_icd api_ip_addr_get_icd = {sizeof(api_ip_addr_get_t), NULL, NULL,
-                              api_ip_addr_get_dtor};
+static UT_icd api_ip_addr_get_icd = {sizeof(api_ip_addr_get_t), NULL, NULL,
+                                     api_ip_addr_get_dtor};
 
 UT_array *lbrt_ifa_get(lbrt_l3_h_t *l3h) {
   UT_array *ipgets;

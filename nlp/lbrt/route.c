@@ -246,6 +246,151 @@ int lbrt_rt_del(lbrt_rt_h_t *rh, const char *dst, const char *zone) {
   return 0;
 }
 
-int lbrt_rt_del_by_port(lbrt_rt_h_t *rh, const char *port) { return 0; }
+int lbrt_rt_del_by_port(lbrt_rt_h_t *rh, const char *port) {
+  __u32 nh_cnt = 0;
+  UT_array *dsts;
+  utarray_new(dsts, &ut_str_icd);
+  lbrt_neigh_t *nh = NULL;
+  lbrt_rt_t *r, *tmp;
+  HASH_ITER(hh, rh->rt_map, r, tmp) {
+    if (r->attr.host_route) {
+      continue;
+    }
+    nh_cnt = utarray_len(r->next_hops);
+    for (__u32 i = 0; i < nh_cnt; i++) {
+      nh = (lbrt_neigh_t *)utarray_eltptr(r->next_hops, i);
+      if (strcmp(nh->o_if_port->name, port) == 0) {
+        utarray_push_back(dsts, &r->key.rt_cidr);
+      }
+    }
+  }
+
+  char **dst = NULL;
+  __u32 dst_cnt = utarray_len(dsts);
+  for (__u32 i = 0; i < dst_cnt; i++) {
+    dst = (char **)utarray_eltptr(dsts, i);
+    lbrt_rt_del(rh, *dst, rh->zone->name);
+  }
+  utarray_free(dsts);
+
+  return 0;
+}
+
+int lbrt_rt_destruct_all(lbrt_rt_h_t *rh) {
+  UT_array *dsts;
+  utarray_new(dsts, &ut_str_icd);
+  lbrt_rt_t *r, *tmp;
+  HASH_ITER(hh, rh->rt_map, r, tmp) {
+    utarray_push_back(dsts, &r->key.rt_cidr);
+  }
+
+  char **dst = NULL;
+  __u32 dst_cnt = utarray_len(dsts);
+  for (__u32 i = 0; i < dst_cnt; i++) {
+    dst = (char **)utarray_eltptr(dsts, i);
+    lbrt_rt_del(rh, *dst, rh->zone->name);
+  }
+  utarray_free(dsts);
+
+  return 0;
+}
+
+void __lbrt_rt_2_str(lbrt_rt_t *rt, lbrt_iter_intf_t it) {
+  UT_string *s;
+  utstring_new(s);
+
+  utstring_printf(s, "%16s ", rt->key.rt_cidr);
+  if (utarray_len(rt->nh_attr) > 0) {
+    lbrt_rt_nh_attr_t *attr =
+        (lbrt_rt_nh_attr_t *)utarray_eltptr(rt->nh_attr, 0);
+    utstring_printf(s, "via %12s : ", attr->nh_addr);
+  }
+
+  if ((rt->tflags & RT_TYPE_DYN) == RT_TYPE_DYN) {
+    utstring_printf(s, "Dyn");
+  } else {
+    utstring_printf(s, "Static");
+  }
+
+  if ((rt->tflags & RT_TYPE_IND) == RT_TYPE_IND) {
+    utstring_printf(s, ",In");
+  } else {
+    utstring_printf(s, ",Dr");
+  }
+
+  if ((rt->tflags & RT_TYPE_SELF) == RT_TYPE_SELF) {
+    utstring_printf(s, ",Self");
+  }
+
+  if ((rt->tflags & RT_TYPE_HOST) == RT_TYPE_HOST) {
+    utstring_printf(s, ",Host");
+  }
+
+  if (rt->mark > 0) {
+    utstring_printf(s, " Mark %lld", rt->mark);
+  }
+
+  utstring_printf(s, ",%s", rt->key.zone);
+
+  it.node_walker(utstring_body(s));
+
+  utstring_free(s);
+}
+
+void lbrt_rts_2_str(lbrt_rt_h_t *rh, lbrt_iter_intf_t it) {
+  lbrt_rt_t *rt, *tmp;
+  HASH_ITER(hh, rh->rt_map, rt, tmp) { __lbrt_rt_2_str(rt, it); }
+}
+
+static UT_icd api_route_get_icd = {sizeof(api_route_get_t), NULL, NULL, NULL};
+
+UT_array *lbrt_route_get(lbrt_rt_h_t *rh) {
+  UT_array *routes;
+  utarray_new(routes, &api_route_get_icd);
+
+  UT_string *flags;
+  utstring_new(flags);
+
+  lbrt_rt_nh_attr_t *nh_attr = NULL;
+  lbrt_rt_t *rt, *rt_tmp = NULL;
+  HASH_ITER(hh, rh->rt_map, rt, rt_tmp) {
+    api_route_get_t *route = calloc(1, sizeof(api_route_get_t));
+    route->hardware_mark = (__u32)rt->mark;
+    route->protocol = rt->attr.protocol;
+    route->statistic.bytes = (__u32)rt->stat.bytes;
+    route->statistic.packets = (__u32)rt->stat.packets;
+    route->sync = rt->sync;
+    memcpy(route->dst, rt->key.rt_cidr, strlen(rt->key.rt_cidr));
+    if (utarray_len(rt->nh_attr) > 0) {
+      nh_attr = (lbrt_rt_nh_attr_t *)utarray_eltptr(rt->nh_attr, 0);
+      memcpy(route->gw, nh_attr->nh_addr, strlen(nh_attr->nh_addr));
+    }
+
+    utstring_clear(flags);
+    if ((rt->tflags & RT_TYPE_IND) != 0) {
+      utstring_printf(flags, "Ind ");
+    }
+    if ((rt->tflags & RT_TYPE_DYN) != 0) {
+      utstring_printf(flags, "Dyn ");
+    }
+    if ((rt->tflags & RT_TYPE_SELF) != 0) {
+      utstring_printf(flags, "Self ");
+    }
+    if ((rt->tflags & RT_TYPE_HOST) != 0) {
+      utstring_printf(flags, "Host ");
+    }
+    memcpy(route->flags, utstring_body(flags), utstring_len(flags));
+
+    utarray_push_back(routes, route);
+  }
+
+  utstring_free(flags);
+
+  return routes;
+}
+
+void lbrt_rt_ticker(lbrt_rt_h_t *rh) {
+  // TODO
+}
 
 int lbrt_rt_datapath(lbrt_rt_t *rt, enum lbrt_dp_work work) { return 0; }

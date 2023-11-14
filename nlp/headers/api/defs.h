@@ -162,15 +162,15 @@ typedef struct api_route_get_entry_statistic { // Info about an route statistic
   __u32 packets; // Statistic of the egress port bytes.
 } api_route_get_entry_statistic_t;
 
-typedef struct api_route_get {                     // Info about an route
-  __u32 protocol;                                  // Protocol type
-  char *flags;                                     // flag type
-  char *gw;                                        // gateway information if any
-  __u32 link_index;                                // OS allocated index
-  char *dst;                                       // ip addr
-  __u32 hardware_mark;                             // index of the route
-  struct api_route_get_entry_statistic *statistic; // statistic
-  api_dp_status_t sync;                            // sync
+typedef struct api_route_get {                    // Info about an route
+  __u32 protocol;                                 // Protocol type
+  char flags[20];                                 // flag type
+  char gw[IF_ADDRSIZE];                           // gateway information if any
+  __u32 link_index;                               // OS allocated index
+  char dst[IF_CIDRSIZE];                          // ip addr
+  __u32 hardware_mark;                            // index of the route
+  struct api_route_get_entry_statistic statistic; // statistic
+  api_dp_status_t sync;                           // sync
 } api_route_get_t;
 
 typedef struct api_route_mod { // Info about a route
