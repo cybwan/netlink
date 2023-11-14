@@ -177,9 +177,124 @@ void lbrt_neigh_del_all_tun_ep(lbrt_neigh_h_t *nhh, lbrt_neigh_t *nh) {
   }
 }
 
+bool lbrt_neigh_recursive_resolve(lbrt_neigh_h_t *nhh, lbrt_neigh_t *nh) {
+  bool chg = false;
+  lbrt_port_t *port = nh->o_if_port;
+  if (!port) {
+    return chg;
+  }
+
+  lbrt_neigh_attr_t *attr = &nh->attr;
+  if (is_zero_mac(attr->hardware_addr)) {
+    nh->resolved = false;
+  } else {
+    nh->resolved = true;
+  }
+
+  if (nh->t_fdb && (nh->t_fdb->inactive || nh->t_fdb->unreach)) {
+    nh->resolved = false;
+    nh->type &= ~NH_RECURSIVE;
+    nh->t_fdb = NULL;
+    nh->r_mark = 0;
+  }
+
+  if (nh->resolved) {
+    if (lbrt_port_is_l3_tun_port(port)) {
+      char tun_dst_addr[IF_ADDRSIZE];
+      ip_ntoa(&port->hinfo.tun_dst, tun_dst_addr);
+      ip_net_t dst_net;
+      lbrt_trie_data_t t_data;
+      int ret =
+          lbrt_trie_find(nhh->zone->rt->trie4, tun_dst_addr, &dst_net, &t_data);
+      if (ret == 0 && (dst_net.ip.f.v4 || dst_net.ip.f.v6)) {
+        if (!t_data.f.neigh) {
+          nh->resolved = false;
+          nh->r_mark = 0;
+          return false;
+        }
+
+        if (!t_data.v.neigh) {
+          nh->resolved = false;
+          nh->r_mark = 0;
+          return false;
+        }
+
+        if (!t_data.v.neigh->in_active) {
+          char dst_net_addr[IF_CIDRSIZE];
+          ip_net_ntoa(&dst_net, dst_net_addr);
+          lbrt_rt_t *rt =
+              lbrt_rt_find(nhh->zone->rt, dst_net_addr, nhh->zone->name);
+          if (!rt) {
+            nh->resolved = false;
+            nh->r_mark = 0;
+            return false;
+          }
+          if (nh->r_mark == 0 || !nh->rec_nh || nh->rec_nh != nh) {
+            flb_log(LOG_LEVEL_DEBUG, "IPTun-NH for %s:%s", tun_dst_addr,
+                    nh->key.nh);
+            lbrt_neigh_tun_ep_t *tep = lbrt_neigh_add_tun_ep(
+                nhh, nh, &port->hinfo.tun_dst, &port->hinfo.tun_src,
+                port->hinfo.tun_id, DP_TUN_IPIP, true);
+            if (tep) {
+              lbrt_rt_dep_obj_t dep;
+              memset(&dep, 0, sizeof(dep));
+              dep.f.neigh = true;
+              dep.v.neigh = t_data.v.neigh;
+              utarray_push_back(rt->rt_dep_objs, &dep);
+              nh->r_mark = tep->mark;
+              nh->resolved = true;
+              nh->rec_nh = t_data.v.neigh;
+              nh->type |= NH_RECURSIVE;
+            }
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    lbrt_fdb_key_t key;
+    memset(&key, 0, sizeof(key));
+    memcpy(&key.mac_addr, attr->hardware_addr, ETH_ALEN);
+    key.bridge_id = port->l2.vid;
+
+    lbrt_fdb_t *f = lbrt_fdb_find(nhh->zone->l2, &key);
+    if (!f) {
+      bool hasTun =
+          lbrt_port_has_tun_slaves(nhh->zone->ports, port->name, PortVxlanSif);
+      if (hasTun) {
+        nh->t_fdb = NULL;
+        nh->resolved = false;
+        nh->r_mark = 0;
+      }
+    } else {
+      if (f->fdb_attr.type == FdbTun) {
+        if (f->unreach || !f->fdb_tun.ep) {
+          nh->resolved = false;
+          nh->r_mark = 0;
+        } else {
+          if (nh->t_fdb != f) {
+            nh->t_fdb = f;
+            nh->r_mark = f->fdb_tun.ep->mark;
+            chg = true;
+          } else if (nh->r_mark != f->fdb_tun.ep->mark) {
+            nh->r_mark = f->fdb_tun.ep->mark;
+            chg = true;
+          }
+          nh->type |= NH_RECURSIVE;
+        }
+      }
+    }
+  }
+
+  return chg;
+}
+
 int lbrt_neigh_del_by_port(lbrt_neigh_h_t *nh, const char *port) { return 0; }
 
 int lbrt_neigh_tun_ep_datapath(lbrt_neigh_tun_ep_t *tep,
                                enum lbrt_dp_work work) {
   return 0;
 }
+
+int lbrt_neigh_datapath(lbrt_neigh_t *nh, enum lbrt_dp_work work) { return 0; }
