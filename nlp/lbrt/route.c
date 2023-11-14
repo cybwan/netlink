@@ -202,6 +202,47 @@ void __lbrt_rt_clear_deps(lbrt_rt_t *rt) {
 }
 
 int lbrt_rt_del(lbrt_rt_h_t *rh, const char *dst, const char *zone) {
+  lbrt_rt_key_t key;
+  memset(&key, 0, sizeof(key));
+  memcpy(&key.rt_cidr, dst, strlen(dst));
+  memcpy(&key.zone, zone, strlen(zone));
+
+  lbrt_rt_t *rt = lbrt_rt_find(rh, dst, zone);
+  if (!rt) {
+    flb_log(LOG_LEVEL_ERR, "rt delete - %s:%s not found", dst, zone);
+    return RT_NO_ENT_ERR;
+  }
+
+  // Take care of any dependencies on this route object
+  __lbrt_rt_clear_deps(rt);
+
+  // TODO
+
+  lbrt_trie_root_t *tr = NULL;
+  ip_net_t net;
+  parse_ip_net(dst, &net, NULL);
+  if (net.ip.f.v4) {
+    tr = rh->trie4;
+  } else {
+    tr = rh->trie6;
+  }
+
+  int tret = lbrt_trie_del(tr, (char *)dst);
+  if (tret < 0) {
+    flb_log(LOG_LEVEL_ERR, "rt delete - %s:%s lpm not found", dst, zone);
+    return RT_TRIE_DEL_ERR;
+  }
+
+  HASH_DELETE(hh, rh->rt_map, rt);
+
+  lbrt_counter_put_counter(rh->mark, rt->mark);
+
+  lbrt_rt_datapath(rt, DP_REMOVE);
+
+  lbrt_rt_free(rt);
+
+  flb_log(LOG_LEVEL_DEBUG, "rt deleted - %s:%s", dst, zone);
+
   return 0;
 }
 
