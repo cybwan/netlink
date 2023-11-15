@@ -44,4 +44,12 @@ lbrt_pol_t *lbrt_pol_find(lbrt_pol_h_t *ph, lbrt_pol_key_t *key);
 bool lbrt_pol_info_xlate_validate(api_pol_info_t *pinfo);
 bool lbrt_pol_obj_validate(api_pol_obj_t *pobj);
 
+int lbrt_pol_add(lbrt_pol_h_t *ph, const char *name, api_pol_info_t *pinfo,
+                 api_pol_obj_t *pobjargs);
+int lbrt_pol_del(lbrt_pol_h_t *ph, const char *name);
+
+int lbrt_pol_obj_info_datapath(lbrt_pol_obj_info_t *pobjinfo,
+                               enum lbrt_dp_work work);
+int lbrt_pol_datapath(lbrt_pol_t *p, enum lbrt_dp_work work);
+
 #endif /* __FLB_LBRT_QOSPOL_H__ */
