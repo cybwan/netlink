@@ -411,10 +411,10 @@ typedef struct api_mirr_mod { // information related to a  mirror entry
 } api_mirr_mod_t;
 
 typedef struct api_mirr_get { // information related to Get a mirror entry
-  char *ident;                // unique identifier for the mirror
-  struct api_mirr_info *info; // information about the mirror
+  char ident[MIRR_NAMESIZE];  // unique identifier for the mirror
+  struct api_mirr_info info;  // information about the mirror
   struct api_mirr_obj
-      *target; // information about object to which mirror needs to be attached
+      target; // information about object to which mirror needs to be attached
   api_dp_status_t sync; // sync state
 } api_mirr_get_t;
 

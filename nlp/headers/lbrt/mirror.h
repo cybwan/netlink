@@ -52,4 +52,16 @@ bool lbrt_mirr_info_validate(api_mirr_info_t *minfo);
 bool lbrt_mirr_obj_validate(api_mirr_obj_t *mobj);
 bool lbrt_mirr_info_cmp(api_mirr_info_t *minfo1, api_mirr_info_t *minfo2);
 
+int lbrt_mirr_add(lbrt_mirr_h_t *mh, const char *name, api_mirr_info_t *minfo,
+                  api_mirr_obj_t *mobjargs);
+int lbrt_mirr_del(lbrt_mirr_h_t *mh, const char *name);
+void lbrt_mirr_port_del(lbrt_mirr_h_t *mh, const char *name);
+void lbrt_mirr_destruct_all(lbrt_mirr_h_t *mh);
+
+UT_array *lbrt_mirr_get(lbrt_mirr_h_t *mh);
+
+int lbrt_mirr_obj_info_datapath(lbrt_mirr_obj_info_t *mobjinfo,
+                                enum lbrt_dp_work work);
+int lbrt_mirr_datapath(lbrt_mirr_t *m, enum lbrt_dp_work work);
+
 #endif /* __FLB_LBRT_MIRROR_H__ */
