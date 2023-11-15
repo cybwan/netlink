@@ -2,9 +2,6 @@
 
 extern struct lbrt_net_meta mh;
 
-void lbrt_fdb_port_notifier(void *xh, const char *name, int osid,
-                            lbrt_port_event_t ev_type);
-
 lbrt_l2_h_t *lbrt_l2_h_new(lbrt_zone_t *zone) {
   lbrt_l2_h_t *l2h;
   l2h = calloc(1, sizeof(*l2h));
@@ -210,7 +207,7 @@ void lbrt_fdb_destruct_all(lbrt_l2_h_t *l2h) {
 }
 
 void lbrt_fdb_port_notifier(void *xh, const char *name, int osid,
-                            lbrt_port_event_t ev_type) {
+                            __u8 ev_type) {
   lbrt_l2_h_t *l2h = (lbrt_l2_h_t *)xh;
   if ((ev_type & (PortEvDown | PortEvDelete | PortEvLowerDown)) != 0) {
     lbrt_fdb_t *f, *tmp;

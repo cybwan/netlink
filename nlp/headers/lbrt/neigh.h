@@ -86,6 +86,15 @@ int lbrt_neigh_pair_rt(lbrt_neigh_h_t *nhh, lbrt_neigh_t *nh,
 int lbrt_neigh_un_pair_rt(lbrt_neigh_h_t *nhh, lbrt_neigh_t *nh,
                           struct lbrt_rt *rt);
 
+void lbrt_neighs_2_str(lbrt_neigh_h_t *nhh, lbrt_iter_intf_t it);
+
+UT_array *lbrt_neigh_get(lbrt_neigh_h_t *nhh);
+
+void lbrt_neigh_port_notifier(void *xh, const char *name, int osid,
+                              __u8 ev_type);
+
+void lbrt_heigh_ticker(lbrt_neigh_h_t *nhh);
+
 int lbrt_neigh_tun_ep_datapath(lbrt_neigh_tun_ep_t *tep,
                                enum lbrt_dp_work work);
 int lbrt_neigh_datapath(lbrt_neigh_t *nh, enum lbrt_dp_work work);

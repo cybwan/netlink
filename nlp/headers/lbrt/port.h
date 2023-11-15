@@ -23,8 +23,7 @@ typedef enum lbrt_port_event {
 
 typedef struct lbrt_port_event_intf {
   void *xh;
-  void (*port_notifier)(void *xh, const char *name, int osid,
-                        lbrt_port_event_t ev_type);
+  void (*port_notifier)(void *xh, const char *name, int osid, __u8 ev_type);
 } lbrt_port_event_intf_t;
 
 typedef struct lbrt_ifi_stat {

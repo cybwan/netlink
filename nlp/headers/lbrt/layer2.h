@@ -59,6 +59,8 @@ void lbrt_fdb_destruct_all(lbrt_l2_h_t *l2h);
 
 void lbrt_fdbs_2_str(lbrt_l2_h_t *l2h, lbrt_iter_intf_t it);
 
+void lbrt_fdb_port_notifier(void *xh, const char *name, int osid, __u8 ev_type);
+
 void lbrt_fdb_ticker(lbrt_l2_h_t *l2h);
 
 int lbrt_fdb_datapath(lbrt_fdb_t *fdb, enum lbrt_dp_work work);

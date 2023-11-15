@@ -539,6 +539,67 @@ int lbrt_neigh_un_pair_rt(lbrt_neigh_h_t *nhh, lbrt_neigh_t *nh,
   return 0;
 }
 
+void __lbrt_neigh_2_str(lbrt_neigh_t *nh, lbrt_iter_intf_t it) {
+  UT_string *s;
+  utstring_new(s);
+
+  utstring_printf(
+      s, "%16s: %02x:%02x:%02x:%02x:%02x:%02x (R:%d) Oif %8s Mark %lld",
+      nh->key.nh, nh->attr.hardware_addr[0], nh->attr.hardware_addr[1],
+      nh->attr.hardware_addr[2], nh->attr.hardware_addr[3],
+      nh->attr.hardware_addr[4], nh->attr.hardware_addr[5], nh->resolved,
+      nh->o_if_port->name, nh->mark);
+
+  it.node_walker(utstring_body(s));
+
+  utstring_free(s);
+}
+
+void lbrt_neighs_2_str(lbrt_neigh_h_t *nhh, lbrt_iter_intf_t it) {
+  lbrt_neigh_t *nh, *tmp;
+  HASH_ITER(hh, nhh->neigh_map, nh, tmp) { __lbrt_neigh_2_str(nh, it); }
+}
+
+static UT_icd api_neigh_mod_icd = {sizeof(api_neigh_mod_t), NULL, NULL, NULL};
+
+UT_array *lbrt_neigh_get(lbrt_neigh_h_t *nhh) {
+  UT_array *nhms;
+  utarray_new(nhms, &api_neigh_mod_icd);
+
+  api_neigh_mod_t nhm;
+  lbrt_neigh_t *nh, *nh_tmp = NULL;
+  HASH_ITER(hh, nhh->neigh_map, nh, nh_tmp) {
+    memset(&nhm, 0, sizeof(nhm));
+    nhm.link_index = nh->o_if_port->sinfo.osid;
+    nhm.state = (__u32)nh->sync;
+    memcpy(nhm.hardware_addr, nh->attr.hardware_addr, ETH_ALEN);
+    ip_ntoa(&nh->addr, nhm.ip);
+
+    utarray_push_back(nhms, &nhm);
+  }
+
+  return nhms;
+}
+
+void lbrt_neigh_port_notifier(void *xh, const char *name, int osid,
+                              __u8 ev_type) {
+  lbrt_neigh_h_t *nhh = (lbrt_neigh_h_t *)xh;
+  if ((ev_type & (PortEvDown | PortEvDelete | PortEvLowerDown)) != 0) {
+    ip_t addr;
+    lbrt_neigh_t *nh, *tmp;
+    HASH_ITER(hh, nhh->neigh_map, nh, tmp) {
+      if (strcmp(nh->o_if_port->name, name) == 0) {
+        parse_ip(nh->key.nh, &addr);
+        lbrt_neigh_del(nhh, &addr, nh->key.zone);
+      }
+    }
+  }
+}
+
+void lbrt_heigh_ticker(lbrt_neigh_h_t *nhh) {
+  // TODO
+}
+
 int lbrt_neigh_tun_ep_datapath(lbrt_neigh_tun_ep_t *tep,
                                enum lbrt_dp_work work) {
   return 0;

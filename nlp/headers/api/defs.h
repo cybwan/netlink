@@ -144,7 +144,7 @@ typedef struct api_ip_addr_mod { // Info about an ip address
 } api_ip_addr_mod_t;
 
 typedef struct api_neigh_mod {  // Info about an neighbor
-  char *ip;                     // The IP address
+  char ip[IF_ADDRSIZE];         // The IP address
   __u32 link_index;             // OS allocated index
   __u32 state;                  // active or inactive
   __u8 hardware_addr[ETH_ALEN]; // resolved hardware address if any
