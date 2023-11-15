@@ -20,6 +20,11 @@ lbrt_l2_h_t *lbrt_l2_h_new(lbrt_zone_t *zone) {
 void lbrt_l2_h_free(lbrt_l2_h_t *l2h) {
   if (!l2h)
     return;
+  lbrt_fdb_t *fdb, *tmp;
+  HASH_ITER(hh, l2h->fdb_map, fdb, tmp) {
+    HASH_DEL(l2h->fdb_map, fdb);
+    free(fdb);
+  }
   free(l2h);
 }
 

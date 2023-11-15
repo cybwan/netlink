@@ -17,6 +17,9 @@
 /* Length of zone name.  */
 #define ZONE_NAMESIZE 16
 
+/* Length of mirror name.  */
+#define MIRR_NAMESIZE 50
+
 #define IF_ADDRSIZE 46
 #define IF_CIDRSIZE 50
 #define IF_MACADDRSIZE 18

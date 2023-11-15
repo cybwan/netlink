@@ -383,14 +383,14 @@ enum {
 
 typedef struct api_mirr_info { // information related to a mirror entry
   __u32 mirr_type; // one of MirrTypeSpan, MirrTypeRspan or MirrTypeErspan
-  char *mirr_port; // port where mirrored traffic needs to be sent
+  char mirr_port[IF_NAMESIZE]; // port where mirrored traffic needs to be sent
   __u32 mirr_vlan; // for RSPAN we may need to send tagged mirror traffic
-  char *mirr_r_ip; // RemoteIP. For ERSPAN we may need to send tunnelled mirror
-                   // traffic
-  char *mirr_s_ip; // SourceIP. For ERSPAN we may need to send tunnelled mirror
-                   // traffic
-  __u32 mirr_tid;  // mirror tunnel-id. For ERSPAN we may need to send tunnelled
-                   // mirror traffic
+  char mirr_r_ip[IF_ADDRSIZE]; // RemoteIP. For ERSPAN we may need to send
+                               // tunnelled mirror traffic
+  char mirr_s_ip[IF_ADDRSIZE]; // SourceIP. For ERSPAN we may need to send
+                               // tunnelled mirror traffic
+  __u32 mirr_tid; // mirror tunnel-id. For ERSPAN we may need to send tunnelled
+                  // mirror traffic
 } api_mirr_info_t;
 
 typedef enum api_mirr_obj_type {
@@ -399,7 +399,7 @@ typedef enum api_mirr_obj_type {
 } api_mirr_obj_type_t;
 
 typedef struct api_mirr_obj {        // information of object attached to mirror
-  char *mirr_obj_name;               // object name to be attached to mirror
+  char mirr_obj_name[MIRR_NAMESIZE]; // object name to be attached to mirror
   enum api_mirr_obj_type attachment; // one of MirrAttachPort or MirrAttachRule
 } api_mirr_obj_t;
 
