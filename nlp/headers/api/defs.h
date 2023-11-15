@@ -370,9 +370,9 @@ typedef struct api_pol_obj { // Information related to policer attachment point
 } api_pol_obj_t;
 
 typedef struct api_pol_mod {  // Information related to policer entry
-  char *ident;                // identifier
-  struct api_pol_info *info;  // policer info of type PolInfo
-  struct api_pol_obj *target; // target object information
+  char ident[POL_NAMESIZE];                // identifier
+  struct api_pol_info info;  // policer info of type PolInfo
+  struct api_pol_obj target; // target object information
 } api_pol_mod_t;
 
 enum {

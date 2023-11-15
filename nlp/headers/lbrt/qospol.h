@@ -47,6 +47,9 @@ bool lbrt_pol_obj_validate(api_pol_obj_t *pobj);
 int lbrt_pol_add(lbrt_pol_h_t *ph, const char *name, api_pol_info_t *pinfo,
                  api_pol_obj_t *pobjargs);
 int lbrt_pol_del(lbrt_pol_h_t *ph, const char *name);
+void lbrt_pol_destruct_all(lbrt_pol_h_t *ph);
+
+UT_array *lbrt_pol_get(lbrt_pol_h_t *ph);
 
 int lbrt_pol_obj_info_datapath(lbrt_pol_obj_info_t *pobjinfo,
                                enum lbrt_dp_work work);
