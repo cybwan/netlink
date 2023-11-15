@@ -365,8 +365,8 @@ typedef enum api_pol_obj_type { // type  of a policer attachment object
 } api_pol_obj_type_t;
 
 typedef struct api_pol_obj { // Information related to policer attachment point
-  char *pol_obj_name;        // name of the object
-  enum api_pol_obj_type *attachment; // attach point type of the object
+  char pol_obj_name[POL_NAMESIZE];  // name of the object
+  enum api_pol_obj_type attachment; // attach point type of the object
 } api_pol_obj_t;
 
 typedef struct api_pol_mod {  // Information related to policer entry

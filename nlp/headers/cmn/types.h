@@ -20,6 +20,9 @@
 /* Length of mirror name.  */
 #define MIRR_NAMESIZE 50
 
+/* Length of pol name.  */
+#define POL_NAMESIZE 50
+
 #define IF_ADDRSIZE 46
 #define IF_CIDRSIZE 50
 #define IF_MACADDRSIZE 18

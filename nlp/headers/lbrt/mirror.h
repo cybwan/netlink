@@ -14,12 +14,8 @@ typedef struct lbrt_mirr_stats {
   __u64 bytes;
 } lbrt_mirr_stats_t;
 
-typedef struct lbrt_mirr_attach_obj {
-} lbrt_mirr_attach_obj_t;
-
 typedef struct lbrt_mirr_obj_info {
   api_mirr_obj_t args;
-  lbrt_mirr_attach_obj_t attach_obj;
   struct lbrt_mirr_entry *parent;
   enum lbrt_dp_status sync;
 } lbrt_mirr_obj_info_t;
