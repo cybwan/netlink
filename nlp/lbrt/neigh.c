@@ -290,7 +290,254 @@ bool lbrt_neigh_recursive_resolve(lbrt_neigh_h_t *nhh, lbrt_neigh_t *nh) {
   return chg;
 }
 
-int lbrt_neigh_del_by_port(lbrt_neigh_h_t *nh, const char *port) { return 0; }
+int lbrt_neigh_add(lbrt_neigh_h_t *nhh, ip_t *addr, const char *zone,
+                   lbrt_neigh_attr_t *attr) {
+  char addr_str[IF_ADDRSIZE];
+  ip_ntoa(addr, addr_str);
+  lbrt_port_t *port =
+      lbrt_port_find_by_osid(nhh->zone->ports, attr->os_link_index);
+  if (!port) {
+    flb_log(LOG_LEVEL_ERR, "neigh add - %s:%s no oport\n", addr_str, zone);
+    return NEIGH_OIF_ERR;
+  }
+
+  if (lbrt_port_is_l3_tun_port(port)) {
+    mac_pton("00:11:22:33:44:55", attr->hardware_addr);
+  }
+
+  lbrt_neigh_t *nh = lbrt_neigh_find(nhh, addr_str, zone);
+  if (nh) {
+    nh->in_active = false;
+    if (is_zero_mac(attr->hardware_addr)) {
+      nh->resolved = true;
+    } else {
+      if (memcmp(attr->hardware_addr, nh->attr.hardware_addr, ETH_ALEN) != 0 ||
+          !nh->resolved) {
+        memcpy(nh->attr.hardware_addr, attr->hardware_addr, ETH_ALEN);
+        nh->resolved = true;
+        lbrt_neigh_recursive_resolve(nhh, nh);
+        flb_log(LOG_LEVEL_DEBUG, "nh update - %s:%s (%d)", addr_str, zone,
+                nh->resolved);
+        lbrt_neigh_datapath(nh, DP_CREATE);
+        goto NhExist;
+      }
+    }
+    flb_log(LOG_LEVEL_ERR, "nh add - %s:%s exists", addr_str, zone);
+    return NEIGH_EXISTS_ERR;
+  }
+
+  __u64 idx = lbrt_counter_get_counter(nhh->neigh_id);
+  if (idx == COUNTER_OVERFLOW) {
+    flb_log(LOG_LEVEL_ERR, "neigh add - %s:%s no marks", addr_str, zone);
+    return NEIGH_RANGE_ERR;
+  }
+
+  nh = lbrt_neigh_new();
+  memcpy(nh->key.nh, addr_str, strlen(addr_str));
+  memcpy(nh->key.zone, zone, strlen(zone));
+  memcpy(&nh->addr, addr, sizeof(ip_t));
+  nh->o_if_port = port;
+  nh->mark = idx;
+  nh->type |= NH_NORMAL;
+  nh->in_active = false;
+
+  lbrt_neigh_recursive_resolve(nhh, nh);
+  HASH_ADD(hh, nhh->neigh_map, key, sizeof(lbrt_neigh_key_t), nh);
+  lbrt_neigh_datapath(nh, DP_CREATE);
+
+NhExist:
+
+  flb_log(LOG_LEVEL_DEBUG, "nh exists - %s:%s", addr_str, zone);
+
+  ip_net_t ip_net;
+  memcpy(&ip_net.ip, addr, sizeof(ip_t));
+  if (addr->f.v4) {
+    ip_net.mask = 32;
+  } else {
+    ip_net.mask = 128;
+  }
+  char ip_net_str[IF_CIDRSIZE];
+  ip_net_ntoa(&ip_net, ip_net_str);
+
+  lbrt_rt_attr_t ra;
+  memset(&ra, 0, sizeof(ra));
+  ra.protocol = 0;
+  ra.os_flags = 0;
+  ra.host_route = true;
+  ra.ifi = attr->os_link_index;
+
+  lbrt_rt_nh_attr_t na[1];
+  memset(&na[0], 0, sizeof(na[0]));
+  na[0].link_index = attr->os_link_index;
+  memcpy(na[0].nh_addr, addr_str, strlen(addr_str));
+
+  // Add a host specific to this neighbor
+  int ret = lbrt_rt_add(nhh->zone->rt, ip_net_str, zone, &ra, 1, na);
+  if (ret < 0 && ret != RT_EXISTS_ERR) {
+    lbrt_neigh_del(nhh, addr, zone);
+    flb_log(LOG_LEVEL_ERR, "neigh add - %s:%s host-rt fail(%s)", addr_str, zone,
+            ret);
+    return NEIGH_HOST_RT_ERR;
+  }
+
+  // Add a related L2 Pair entry if needed
+  if (!lbrt_port_is_slave_port(port) && lbrt_port_is_leaf_port(port) &&
+      nh->resolved) {
+    __u32 vid;
+    if ((port->sinfo.port_type & PortReal) != 0) {
+      vid = port->port_no + RealPortIDB;
+    } else {
+      vid = port->port_no + BondIDB;
+    }
+
+    lbrt_fdb_key_t fdb_key;
+    memset(&fdb_key, 0, sizeof(fdb_key));
+    memcpy(fdb_key.mac_addr, nh->attr.hardware_addr, ETH_ALEN);
+    fdb_key.bridge_id = vid;
+
+    lbrt_fdb_attr_t fdb_attr;
+    memset(&fdb_attr, 0, sizeof(fdb_attr));
+    memcpy(fdb_attr.oif, port->name, strlen(port->name));
+    parse_ip("0.0.0.0", &fdb_attr.dst);
+    fdb_attr.type = FdbPhy;
+
+    ret = lbrt_fdb_add(nhh->zone->l2, &fdb_key, &fdb_attr);
+    if (ret < 0 && ret != L2_SAME_FDB_ERR) {
+      lbrt_rt_del(nhh->zone->rt, ip_net_str, zone);
+      lbrt_neigh_del(nhh, addr, zone);
+      flb_log(LOG_LEVEL_ERR, "neigh add - %s:%s mac fail", addr_str, zone);
+      return NEIGH_MAC_ERR;
+    }
+  }
+
+  lbrt_neigh_activate(nhh, nh);
+
+  flb_log(LOG_LEVEL_DEBUG, "neigh added - %s:%s (%lld)", addr_str, zone,
+          nh->mark);
+
+  return 0;
+}
+
+int lbrt_neigh_del(lbrt_neigh_h_t *nhh, ip_t *addr, const char *zone) {
+  char addr_str[IF_ADDRSIZE];
+  ip_ntoa(addr, addr_str);
+
+  lbrt_neigh_t *nh = lbrt_neigh_find(nhh, addr_str, zone);
+  if (!nh) {
+    flb_log(LOG_LEVEL_ERR, "neigh delete - %s:%s doesnt exist", addr_str, zone);
+    return NEIGH_NO_ENT_ERR;
+  }
+
+  // Delete related L2 Pair entry if needed
+  lbrt_port_t *port = nh->o_if_port;
+  if (port && !lbrt_port_is_slave_port(port) && lbrt_port_is_leaf_port(port) &&
+      nh->resolved) {
+    __u32 vid;
+    if ((port->sinfo.port_type & PortReal) != 0) {
+      vid = port->port_no + RealPortIDB;
+    } else {
+      vid = port->port_no + BondIDB;
+    }
+
+    lbrt_fdb_key_t fdb_key;
+    memset(&fdb_key, 0, sizeof(fdb_key));
+    memcpy(fdb_key.mac_addr, nh->attr.hardware_addr, ETH_ALEN);
+    fdb_key.bridge_id = vid;
+
+    lbrt_fdb_del(nhh->zone->l2, &fdb_key);
+  }
+
+  // Delete the host specific to this NH
+  ip_net_t ip_net;
+  memcpy(&ip_net.ip, addr, sizeof(ip_t));
+  if (addr->f.v4) {
+    ip_net.mask = 32;
+  } else {
+    ip_net.mask = 128;
+  }
+  char ip_net_str[IF_CIDRSIZE];
+  ip_net_ntoa(&ip_net, ip_net_str);
+
+  int ret = lbrt_rt_del(nhh->zone->rt, ip_net_str, zone);
+  if (ret < 0) {
+    flb_log(LOG_LEVEL_ERR, "neigh delete - %s:%s host-rt fail", addr_str, zone);
+  }
+
+  lbrt_neigh_datapath(nh, DP_REMOVE);
+
+  if (HASH_COUNT(nh->nh_rt_m) > 0) {
+    nh->resolved = false;
+    nh->in_active = true;
+    memset(nh->attr.hardware_addr, 0, ETH_ALEN);
+
+    lbrt_neigh_activate(nhh, nh);
+    flb_log(LOG_LEVEL_DEBUG, "neigh deactivated - %s:%s", addr_str, zone);
+    return 0;
+  }
+
+  lbrt_neigh_del_all_tun_ep(nhh, nh);
+  lbrt_counter_put_counter(nhh->neigh_id, nh->mark);
+
+  nh->t_fdb = NULL;
+  nh->mark = COUNTER_OVERFLOW;
+  nh->o_if_port = NULL;
+  nh->in_active = true;
+  nh->resolved = false;
+
+  HASH_DEL(nhh->neigh_map, nh);
+  lbrt_neigh_free(nh);
+  flb_log(LOG_LEVEL_DEBUG, "neigh deleted - %s:%s", addr_str, zone);
+
+  return 0;
+}
+
+int lbrt_neigh_del_by_port(lbrt_neigh_h_t *nhh, const char *port) {
+  lbrt_neigh_t *nh, *tmp;
+  HASH_ITER(hh, nhh->neigh_map, nh, tmp) {
+    if (strcmp(nh->o_if_port->name, port) == 0) {
+      lbrt_neigh_del(nhh, &nh->addr, nh->key.zone);
+    }
+  }
+  return 0;
+}
+
+void lbrt_neigh_destruct_all(lbrt_neigh_h_t *nhh) {
+  ip_t addr;
+  lbrt_neigh_t *nh, *tmp;
+  HASH_ITER(hh, nhh->neigh_map, nh, tmp) {
+    parse_ip(nh->key.nh, &addr);
+    lbrt_neigh_del(nhh, &addr, nh->key.zone);
+  }
+}
+
+int lbrt_neigh_pair_rt(lbrt_neigh_h_t *nhh, lbrt_neigh_t *nh, lbrt_rt_t *rt) {
+  lbrt_rt_t *rtm = NULL;
+  HASH_FIND(hh, nh->nh_rt_m, &rt->key, sizeof(rt->key), rtm);
+  if (rtm) {
+    return 1;
+  }
+  HASH_ADD(hh, nh->nh_rt_m, key, sizeof(rt->key), rt);
+  return 0;
+}
+
+int lbrt_neigh_un_pair_rt(lbrt_neigh_h_t *nhh, lbrt_neigh_t *nh,
+                          lbrt_rt_t *rt) {
+  lbrt_rt_t *rtm = NULL;
+  HASH_FIND(hh, nh->nh_rt_m, &rt->key, sizeof(rt->key), rtm);
+  if (!rtm) {
+    return -1;
+  }
+
+  HASH_DEL(nh->nh_rt_m, rt);
+  if (HASH_COUNT(nh->nh_rt_m) == 0 && nh->in_active) {
+    flb_log(LOG_LEVEL_DEBUG, "neigh rt unpair - %s->%s", rt->key.rt_cidr,
+            nh->key.nh);
+    lbrt_neigh_del(nhh, &nh->addr, nh->key.zone);
+    lbrt_neigh_datapath(nh, DP_REMOVE);
+  }
+
+  return 0;
+}
 
 int lbrt_neigh_tun_ep_datapath(lbrt_neigh_tun_ep_t *tep,
                                enum lbrt_dp_work work) {
