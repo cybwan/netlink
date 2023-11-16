@@ -52,6 +52,7 @@ SET(SOURCES
 	test/port.c
 	test/layer2.c
 	test/layer3.c
+	test/qospol.c
 )
 
 #ADD_LIBRARY(nlp SHARED ${SOURCES})

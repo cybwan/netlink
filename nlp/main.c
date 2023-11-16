@@ -362,7 +362,9 @@ int main() {
 
   // test_lbrt_rt();
 
-  counterBenchmark(pow(2, 20));
+  // counterBenchmark(pow(2, 20));
+
+  polBenchmark(pow(2, 20));
 
   flb_log(LOG_LEVEL_INFO, "DONE!");
 
