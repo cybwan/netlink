@@ -1,5 +1,6 @@
 // #include <net_api.h>
 // #include <nlp.h>
+#include <math.h>
 #include <stdio.h>
 
 #include <lbrt/types.h>
@@ -18,22 +19,6 @@ void test_nl_ip_net() {
     printf("ip_net mask=[%d]\n", ip_net.mask);
   }
   printf(GREEN "test_nl_ip_net success\n" RESET);
-}
-
-void test_lbrt_counter() {
-  struct lbrt_counter *cnt = lbrt_counter_new(1, 5);
-  printf(YELLOW "counter:[%llu]" RESET, lbrt_counter_get_counter(cnt));
-  printf(YELLOW "counter:[%llu]" RESET, lbrt_counter_get_counter(cnt));
-  printf(YELLOW "counter:[%llu]" RESET, lbrt_counter_get_counter(cnt));
-  printf(YELLOW "counter:[%llu]" RESET, lbrt_counter_get_counter(cnt));
-  printf(YELLOW "counter:[%llu]" RESET, lbrt_counter_get_counter(cnt));
-  printf(YELLOW "counter:[%llu]" RESET, lbrt_counter_get_counter(cnt));
-  lbrt_counter_put_counter(cnt, 4);
-  printf(YELLOW "counter:[%llu]" RESET, lbrt_counter_get_counter(cnt));
-  printf(YELLOW "counter:[%llu]" RESET, lbrt_counter_get_counter(cnt));
-  printf(YELLOW "counter:[%llu]" RESET, lbrt_counter_get_counter(cnt));
-  lbrt_counter_free(cnt);
-  printf(GREEN "test_lbrt_counter success\n" RESET);
 }
 
 void test_lbrt_layer2() {
@@ -375,7 +360,9 @@ int main() {
   // test_l2_main();
   // // test_l3_main();
 
-  test_lbrt_rt();
+  // test_lbrt_rt();
+
+  counterBenchmark(pow(2, 20));
 
   flb_log(LOG_LEVEL_INFO, "DONE!");
 

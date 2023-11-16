@@ -3,6 +3,9 @@
 
 #include <lbrt/types.h>
 
+void counterTest();
+void counterBenchmark(__u64 loop_cnt);
+
 void tireTest(struct lbrt_trie_iter_intf tf);
 void tireBenchmark(struct lbrt_trie_iter_intf tf, int loop_cnt);
 int test_trie_main(void);
