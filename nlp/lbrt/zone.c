@@ -1,4 +1,4 @@
-#include <lbrt/types.h>
+#include <lbrt/zone.h>
 
 #define MaximumZones 256
 
@@ -50,13 +50,13 @@ int lbrt_zone_add(lbrt_zone_h_t *zh, const char *name) {
   zn->ports = lbrt_ports_h_new();
   zn->vlans = lbrt_vlans_h_new(zn);
   zn->l2 = lbrt_l2_h_new(zn);
-  // zn.Nh = NeighInit(zone)
+  zn->nh = lbrt_neigh_h_new(zn);
   zn->rt = lbrt_rt_h_new(zn);
   zn->l3 = lbrt_l3_h_new(zn);
   // zn.Rules = RulesInit(zone)
   // zn.Sess = SessInit(zone)
-  // zn.Pols = PolInit(zone)
-  // zn.Mirrs = MirrInit(zone)
+  zn->pols = lbrt_pol_h_new(zn);
+  zn->mirrs = lbrt_mirr_h_new(zn);
 
   HASH_ADD(hh, zh->zone_map, name, strlen(name), zn);
 

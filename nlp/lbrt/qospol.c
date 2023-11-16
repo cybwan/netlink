@@ -198,8 +198,8 @@ UT_array *lbrt_pol_get(lbrt_pol_h_t *ph) {
     memcpy(pm.ident, p->key.pol_name, strlen(p->key.pol_name));
 
     pm.info.color_aware = p->info.color_aware;
-    pm.info.peak_info_rate = p->info.peak_info_rate/1000000;
-    pm.info.committed_info_rate = p->info.committed_info_rate/1000000;
+    pm.info.peak_info_rate = p->info.peak_info_rate / 1000000;
+    pm.info.committed_info_rate = p->info.committed_info_rate / 1000000;
     pm.info.committed_blk_size = p->info.committed_blk_size;
     pm.info.excess_blk_size = p->info.excess_blk_size;
     pm.info.pol_type = p->info.pol_type;

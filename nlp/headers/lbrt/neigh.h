@@ -59,7 +59,10 @@ typedef struct lbrt_neigh_h {
   struct lbrt_zone *zone;
 } lbrt_neigh_h_t;
 
+lbrt_neigh_t *lbrt_neigh_new();
 void lbrt_neigh_free(lbrt_neigh_t *nh);
+
+lbrt_neigh_h_t *lbrt_neigh_h_new(struct lbrt_zone *zone);
 void lbrt_neigh_h_free(lbrt_neigh_h_t *nhh);
 
 lbrt_neigh_t *lbrt_neigh_find(lbrt_neigh_h_t *nhh, const char *addr,
