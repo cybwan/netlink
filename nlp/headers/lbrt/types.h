@@ -3,6 +3,8 @@
 
 #include <uthash.h>
 
+#include <arp.h>
+
 #include <log/log.h>
 
 #include <cmn/types.h>

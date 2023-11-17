@@ -21,9 +21,9 @@ void polTest() {
 
     api_pol_obj_t pobjargs;
     memset(&pobjargs, 0, sizeof(pobjargs));
-    pobjargs.attachment=PolAttachPort;
+    pobjargs.attachment = PolAttachPort;
 
-    lbrt_pol_add(ph,"test",&pinfo,&pobjargs);
+    lbrt_pol_add(ph, "test", &pinfo, &pobjargs);
 
     lbrt_pol_h_free(ph);
   }
