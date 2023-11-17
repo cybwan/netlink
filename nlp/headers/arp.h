@@ -19,8 +19,8 @@
 #include <nlp.h>
 
 /* ARP protocol opcodes. */
-#define ARPOP_REQUEST 1   /* ARP request.  */
-#define ARPOP_REPLY 2     /* ARP reply.  */
+#define ARPOP_REQUEST 1 /* ARP request.  */
+#define ARPOP_REPLY 2   /* ARP reply.  */
 
 typedef struct arp_msg {
   /* ARP Header */
@@ -38,8 +38,11 @@ typedef struct arp_msg {
   __u8 ar_tip[IP4_ALEN]; /* Target IP address.  */
 } flb_arp_msg_t;
 
-int flb_arp_grat(const char *adv_ipv4, const char *ifname);
-int flb_arp_ping(const char *dst_ipv4, const char *src_ipv4,
-                 const char *ifname);
+int flb_arp_grat(ip_t *adv_addr, const char *ifname);
+int flb_arp_grat_addr(const char *adv_ipv4, const char *ifname);
+
+int flb_arp_ping(ip_t *dst_addr, ip_t *src_addr, const char *ifname);
+int flb_arp_ping_addr(const char *dst_ipv4, const char *src_ipv4,
+                      const char *ifname);
 
 #endif /* __FLB_ARP_H__ */

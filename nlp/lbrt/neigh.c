@@ -88,7 +88,7 @@ void lbrt_neigh_activate(lbrt_neigh_h_t *nhh, lbrt_neigh_t *nh) {
     return;
   }
 
-  lbrt_arp_ping(&nh->addr, &sip, nh->o_if_port->name);
+  flb_arp_ping(&nh->addr, &sip, nh->o_if_port->name);
 
   lbrt_time_now(&nh->ats);
 }

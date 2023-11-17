@@ -1,9 +1,17 @@
 #include <arp.h>
 
-int flb_arp_grat(const char *adv_ipv4, const char *ifname) {
+int flb_arp_grat_addr(const char *adv_ipv4, const char *ifname) {
   ip_t adv_addr;
-  if (!parse_ip(adv_ipv4, &adv_addr) && adv_addr.f.v4) {
+  if (!parse_ip(adv_ipv4, &adv_addr) || !adv_addr.f.v4) {
     flb_log(LOG_LEVEL_ERR, "invalid adv ipv4 (%s)", adv_ipv4);
+    return -1;
+  }
+  return flb_arp_grat(&adv_addr, ifname);
+}
+
+int flb_arp_grat(ip_t *adv_addr, const char *ifname) {
+  if (!adv_addr || !adv_addr->f.v4) {
+    flb_log(LOG_LEVEL_ERR, "invalid adv ipv4");
     return -1;
   }
 
@@ -65,10 +73,10 @@ int flb_arp_grat(const char *adv_ipv4, const char *ifname) {
   msg.ar_op = htons(ARPOP_REPLY);
 
   memcpy(msg.ar_sha, port.hwaddr, ETH_ALEN);
-  memcpy(msg.ar_sip, adv_addr.v4.bytes, IP4_ALEN);
+  memcpy(msg.ar_sip, adv_addr->v4.bytes, IP4_ALEN);
 
   memset(msg.ar_tha, 0xff, ETH_ALEN);
-  memcpy(msg.ar_tip, adv_addr.v4.bytes, IP4_ALEN);
+  memcpy(msg.ar_tip, adv_addr->v4.bytes, IP4_ALEN);
 
   ret = sendto(fd, &msg, sizeof(msg), 0, (struct sockaddr *)&ll, sizeof(ll));
   if (ret < 0) {
@@ -82,17 +90,30 @@ int flb_arp_grat(const char *adv_ipv4, const char *ifname) {
   return 0;
 }
 
-int flb_arp_ping(const char *dst_ipv4, const char *src_ipv4,
-                 const char *ifname) {
+int flb_arp_ping_addr(const char *dst_ipv4, const char *src_ipv4,
+                      const char *ifname) {
   ip_t dst_addr;
-  if (!parse_ip(dst_ipv4, &dst_addr) && dst_addr.f.v4) {
+  if (!parse_ip(dst_ipv4, &dst_addr) || !dst_addr.f.v4) {
     flb_log(LOG_LEVEL_ERR, "invalid dst ipv4 (%s)", dst_ipv4);
     return -1;
   }
 
   ip_t src_addr;
-  if (!parse_ip(src_ipv4, &src_addr) && src_addr.f.v4) {
+  if (!parse_ip(src_ipv4, &src_addr) || !src_addr.f.v4) {
     flb_log(LOG_LEVEL_ERR, "invalid src ipv4 (%s)", src_ipv4);
+    return -1;
+  }
+  return flb_arp_ping(&dst_addr, &src_addr, ifname);
+}
+
+int flb_arp_ping(ip_t *dst_addr, ip_t *src_addr, const char *ifname) {
+  if (!dst_addr || !dst_addr->f.v4) {
+    flb_log(LOG_LEVEL_ERR, "invalid dst ipv4");
+    return -1;
+  }
+
+  if (!src_addr || !src_addr->f.v4) {
+    flb_log(LOG_LEVEL_ERR, "invalid src ipv4");
     return -1;
   }
 
@@ -144,10 +165,10 @@ int flb_arp_ping(const char *dst_ipv4, const char *src_ipv4,
   msg.ar_op = htons(ARPOP_REQUEST);
 
   memcpy(msg.ar_sha, port.hwaddr, ETH_ALEN);
-  memcpy(msg.ar_sip, src_addr.v4.bytes, IP4_ALEN);
+  memcpy(msg.ar_sip, src_addr->v4.bytes, IP4_ALEN);
 
   memset(msg.ar_tha, 0x00, ETH_ALEN);
-  memcpy(msg.ar_tip, dst_addr.v4.bytes, IP4_ALEN);
+  memcpy(msg.ar_tip, dst_addr->v4.bytes, IP4_ALEN);
 
   ret = sendto(fd, &msg, sizeof(msg), 0, (struct sockaddr *)&ll, sizeof(ll));
   if (ret < 0) {
