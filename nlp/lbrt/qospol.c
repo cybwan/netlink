@@ -155,6 +155,7 @@ int lbrt_pol_del(lbrt_pol_h_t *ph, const char *name) {
 
   lbrt_pol_datapath(p, DP_REMOVE);
   HASH_DEL(ph->pol_map, p);
+  lbrt_counter_put_counter(ph->mark, p->hw_num);
   lbrt_pol_free(p);
 
   flb_log(LOG_LEVEL_INFO, "policer deleted - %s", name);

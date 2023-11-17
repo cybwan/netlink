@@ -168,6 +168,7 @@ int lbrt_mirr_del(lbrt_mirr_h_t *mh, const char *name) {
 
   lbrt_mirr_datapath(m, DP_REMOVE);
   HASH_DEL(mh->mirr_map, m);
+  lbrt_counter_put_counter(mh->mark, m->hw_num);
   lbrt_mirr_free(m);
 
   flb_log(LOG_LEVEL_INFO, "mirror deleted - %s", name);

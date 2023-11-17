@@ -14,7 +14,7 @@ int test_port_main(void);
 int test_l2_main(void);
 int test_l3_main(void);
 
-void polTest();
+void polTest(lbrt_pol_h_t *ph);
 void polBenchmark(__u64 loop_cnt);
 
 static void node_walker(char *b) { flb_log(LOG_LEVEL_DEBUG, "%s", b); }
