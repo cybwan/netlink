@@ -18,23 +18,28 @@
 #include <log/log.h>
 #include <nlp.h>
 
-typedef struct grat_arp_msg {
+/* ARP protocol opcodes. */
+#define ARPOP_REQUEST 1   /* ARP request.  */
+#define ARPOP_REPLY 2     /* ARP reply.  */
+
+typedef struct arp_msg {
   /* ARP Header */
-  __u16 hardware_type;
-  __u16 protocol_type;
+  __u16 ar_hrd; /* Format of hardware address.  */
+  __u16 ar_pro; /* Format of protocol address.  */
 
-  __u8 hardware_address_length;
-  __u8 protocol_address_length;
+  __u8 ar_hln; /* Length of hardware address.  */
+  __u8 ar_pln; /* Length of protocol address.  */
 
-  __u16 arp_options;
+  __u16 ar_op; /* ARP opcode (command).  */
 
-  __u8 src_hardware_address[ETH_ALEN];
-  __u8 src_protocol_address[4];
+  __u8 ar_sha[ETH_ALEN]; /* Sender hardware address.  */
+  __u8 ar_sip[IP4_ALEN]; /* Sender IP address.  */
+  __u8 ar_tha[ETH_ALEN]; /* Target hardware address.  */
+  __u8 ar_tip[IP4_ALEN]; /* Target IP address.  */
+} flb_arp_msg_t;
 
-  __u8 tgt_hardware_address[ETH_ALEN];
-  __u8 tgt_protocol_address[4];
-} grat_arp_msg_t;
-
-int flb_grat_arp_req(const char *adv_ipv4, const char *ifname);
+int flb_arp_grat(const char *adv_ipv4, const char *ifname);
+int flb_arp_ping(const char *dst_ipv4, const char *src_ipv4,
+                 const char *ifname);
 
 #endif /* __FLB_ARP_H__ */

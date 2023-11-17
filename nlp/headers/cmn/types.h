@@ -27,6 +27,9 @@
 #define IF_CIDRSIZE 50
 #define IF_MACADDRSIZE 18
 
+#define IP4_ALEN 4
+#define IP6_ALEN 16
+
 typedef struct nl_ip {
   struct {
     __u8 v4 : 1;
@@ -34,13 +37,13 @@ typedef struct nl_ip {
   } f;
   union {
     union {
-      __u8 bytes[16];
-      __u32 s_addr[4];
+      __u8 bytes[IP6_ALEN];
+      __u32 s_addr[IP4_ALEN];
     } v6;
     union {
-      __u8 _pad[12];
+      __u8 _pad[IP6_ALEN - IP4_ALEN];
       union {
-        __u8 bytes[4];
+        __u8 bytes[IP4_ALEN];
         __u32 s_addr;
       };
     } v4;
@@ -58,7 +61,7 @@ typedef struct nl_label_net {
   __u8 label[IF_NAMESIZE];
 } label_net_t;
 
-static __u8 zero_mac[ETH_ALEN] = {0};
+static __u8 zero_mac[ETH_ALEN] = {0x00};
 
 static inline bool is_zero_mac(__u8 mac[ETH_ALEN]) {
   if (memcmp(mac, zero_mac, ETH_ALEN) == 0) {
@@ -97,7 +100,7 @@ static inline bool parse_ip_net(const char *ip_net_str,
     return false;
   }
 
-  __u8 ip_str[INET6_ADDRSTRLEN] = {0};
+  __u8 ip_str[INET6_ADDRSTRLEN] = {0x00};
   memcpy(ip_str, ip_net_str, mask_str - ip_net_str);
   if (strchr((char *)ip_str, '.')) {
     ip_net->ip.f.v4 = 1;
@@ -120,7 +123,7 @@ static inline bool parse_ip_net(const char *ip_net_str,
   mask_str++;
   ip_net->mask = (__u8)atoi(mask_str);
 
-  int len = ip_net->ip.f.v4 ? 4 : 16;
+  int len = ip_net->ip.f.v4 ? IP4_ALEN : IP6_ALEN;
   __u8 mask_bytes[len];
   memset(mask_bytes, 0, len);
   __u32 n = (__u32)ip_net->mask;
@@ -135,11 +138,11 @@ static inline bool parse_ip_net(const char *ip_net_str,
   }
 
   if (ip_net->ip.f.v4) {
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < IP4_ALEN; i++) {
       ip_net->ip.v4.bytes[i] = ip_net->ip.v4.bytes[i] & mask_bytes[i];
     }
   } else if (ip_net->ip.f.v6) {
-    for (int i = 0; i < 16; i++) {
+    for (int i = 0; i < IP6_ALEN; i++) {
       ip_net->ip.v6.bytes[i] = ip_net->ip.v6.bytes[i] & mask_bytes[i];
     }
   }
@@ -230,7 +233,7 @@ static inline bool ip_net_contains(ip_net_t *ipnet, ip_t *ip) {
   if (ipnet->ip.f.v4 != ip->f.v4 || ipnet->ip.f.v6 != ip->f.v6) {
     return false;
   }
-  int len = ipnet->ip.f.v4 ? 4 : 16;
+  int len = ipnet->ip.f.v4 ? IP4_ALEN : IP6_ALEN;
   __u8 mask_bytes[len];
   memset(mask_bytes, 0, len);
   __u32 n = (__u32)ipnet->mask;
@@ -245,14 +248,14 @@ static inline bool ip_net_contains(ip_net_t *ipnet, ip_t *ip) {
   }
 
   if (ipnet->ip.f.v4) {
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < IP4_ALEN; i++) {
       if ((ipnet->ip.v4.bytes[i] & mask_bytes[i]) !=
           (ip->v4.bytes[i] & mask_bytes[i]))
         return false;
     }
   }
   if (ipnet->ip.f.v6) {
-    for (int i = 0; i < 16; i++) {
+    for (int i = 0; i < IP6_ALEN; i++) {
       if ((ipnet->ip.v6.bytes[i] & mask_bytes[i]) !=
           (ip->v6.bytes[i] & mask_bytes[i]))
         return false;

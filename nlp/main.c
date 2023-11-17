@@ -366,7 +366,9 @@ int main() {
 
   // polBenchmark(pow(2, 20));
 
-  flb_grat_arp_req("192.168.127.23", "ens33");
+  flb_arp_grat("192.168.226.11", "ens36");
+
+  flb_arp_ping("192.168.226.22", "192.168.226.11", "ens36");
 
   flb_log(LOG_LEVEL_INFO, "DONE!");
 

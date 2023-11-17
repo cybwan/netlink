@@ -1,6 +1,6 @@
 #include <arp.h>
 
-int flb_grat_arp_req(const char *adv_ipv4, const char *ifname) {
+int flb_arp_grat(const char *adv_ipv4, const char *ifname) {
   ip_t adv_addr;
   if (!parse_ip(adv_ipv4, &adv_addr) && adv_addr.f.v4) {
     flb_log(LOG_LEVEL_ERR, "invalid adv ipv4 (%s)", adv_ipv4);
@@ -44,7 +44,7 @@ int flb_grat_arp_req(const char *adv_ipv4, const char *ifname) {
   ll.sll_ifindex = port.index;
   ll.sll_pkttype = 0;
   ll.sll_hatype = 1;
-  ll.sll_halen = 6;
+  ll.sll_halen = ETH_ALEN;
   memset(ll.sll_addr, 0xff, 8);
 
   ret = bind(fd, (struct sockaddr *)&ll, sizeof(ll));
@@ -54,21 +54,21 @@ int flb_grat_arp_req(const char *adv_ipv4, const char *ifname) {
     return -1;
   }
 
-  grat_arp_msg_t msg;
+  flb_arp_msg_t msg;
   memset(&msg, 0, sizeof(msg));
-  msg.hardware_type = htons(0x0001);
-  msg.protocol_type = htons(0x0800);
+  msg.ar_hrd = htons(0x0001);
+  msg.ar_pro = htons(0x0800);
 
-  msg.hardware_address_length = 6;
-  msg.protocol_address_length = 4;
+  msg.ar_hln = ETH_ALEN;
+  msg.ar_pln = IP4_ALEN;
 
-  msg.arp_options = htons(0x0002);
+  msg.ar_op = htons(ARPOP_REPLY);
 
-  memcpy(msg.src_hardware_address, port.hwaddr, ETH_ALEN);
-  memcpy(msg.src_protocol_address, adv_addr.v4.bytes, 4);
+  memcpy(msg.ar_sha, port.hwaddr, ETH_ALEN);
+  memcpy(msg.ar_sip, adv_addr.v4.bytes, IP4_ALEN);
 
-  memset(msg.tgt_hardware_address, 0xff, ETH_ALEN);
-  memcpy(msg.tgt_protocol_address, adv_addr.v4.bytes, 4);
+  memset(msg.ar_tha, 0xff, ETH_ALEN);
+  memcpy(msg.ar_tip, adv_addr.v4.bytes, IP4_ALEN);
 
   ret = sendto(fd, &msg, sizeof(msg), 0, (struct sockaddr *)&ll, sizeof(ll));
   if (ret < 0) {
@@ -79,7 +79,84 @@ int flb_grat_arp_req(const char *adv_ipv4, const char *ifname) {
 
   close(fd);
 
-  flb_log(LOG_LEVEL_DEBUG, "test");
+  return 0;
+}
+
+int flb_arp_ping(const char *dst_ipv4, const char *src_ipv4,
+                 const char *ifname) {
+  ip_t dst_addr;
+  if (!parse_ip(dst_ipv4, &dst_addr) && dst_addr.f.v4) {
+    flb_log(LOG_LEVEL_ERR, "invalid dst ipv4 (%s)", dst_ipv4);
+    return -1;
+  }
+
+  ip_t src_addr;
+  if (!parse_ip(src_ipv4, &src_addr) && src_addr.f.v4) {
+    flb_log(LOG_LEVEL_ERR, "invalid src ipv4 (%s)", src_ipv4);
+    return -1;
+  }
+
+  nl_port_mod_t port;
+  memset(&port, 0, sizeof(port));
+  int ret = nl_link_get_by_name(ifname, &port);
+  if (ret < 0) {
+    flb_log(LOG_LEVEL_ERR, "could not get device (%s)", ifname);
+    return -1;
+  }
+
+  int fd = socket(AF_PACKET, SOCK_DGRAM, htons(ETH_P_ARP));
+  if (!fd) {
+    return -1;
+  }
+
+  ret = setsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE, ifname, strlen(ifname));
+  if (ret != 0) {
+    flb_log(LOG_LEVEL_ERR, "could not set SO_BINDTODEVICE (%s)", strerror(ret));
+    close(fd);
+    return -1;
+  }
+
+  struct sockaddr_ll ll;
+  memset(&ll, 0, sizeof(ll));
+  ll.sll_family = AF_PACKET;
+  ll.sll_protocol = htons(ETH_P_ARP);
+  ll.sll_ifindex = port.index;
+  ll.sll_pkttype = 0;
+  ll.sll_hatype = 1;
+  ll.sll_halen = ETH_ALEN;
+  memset(ll.sll_addr, 0xff, 8);
+
+  ret = bind(fd, (struct sockaddr *)&ll, sizeof(ll));
+  if (ret < 0) {
+    flb_log(LOG_LEVEL_ERR, "could not bind (%s)", strerror(ret));
+    close(fd);
+    return -1;
+  }
+
+  flb_arp_msg_t msg;
+  memset(&msg, 0, sizeof(msg));
+  msg.ar_hrd = htons(0x0001);
+  msg.ar_pro = htons(0x0800);
+
+  msg.ar_hln = ETH_ALEN;
+  msg.ar_pln = IP4_ALEN;
+
+  msg.ar_op = htons(ARPOP_REQUEST);
+
+  memcpy(msg.ar_sha, port.hwaddr, ETH_ALEN);
+  memcpy(msg.ar_sip, src_addr.v4.bytes, IP4_ALEN);
+
+  memset(msg.ar_tha, 0x00, ETH_ALEN);
+  memcpy(msg.ar_tip, dst_addr.v4.bytes, IP4_ALEN);
+
+  ret = sendto(fd, &msg, sizeof(msg), 0, (struct sockaddr *)&ll, sizeof(ll));
+  if (ret < 0) {
+    flb_log(LOG_LEVEL_ERR, "error on sending packet: (%s)", strerror(ret));
+    close(fd);
+    return -1;
+  }
+
+  close(fd);
 
   return 0;
 }
